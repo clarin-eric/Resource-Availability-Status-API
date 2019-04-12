@@ -16,13 +16,14 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers;
+package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
 
-public interface RasaFactory {
+public class ACDHLinkToBeCheckedResource implements eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource {
 
-    public ACDHCheckedLinkResource getCheckedLinkResource();
-    public LinkToBeCheckedResource getLinkToBeCheckedResource();
+    public ACDHLinkToBeCheckedResource(MongoCollection<Document> linksToBeChecked){
+
+    }
 }

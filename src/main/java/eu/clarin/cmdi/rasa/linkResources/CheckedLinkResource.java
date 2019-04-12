@@ -19,6 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.helpers.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 
 import java.net.URI;
@@ -40,9 +41,9 @@ public interface CheckedLinkResource {
     /* batch retrieval with URI as key (to be normalised before retrieval)  with optional filtering
        get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
     */
-    public Map<URI, CheckedLink> get(Collection<URI> uri, Optional<CheckedLinkFilter> filter);
+    public Map<URI, CheckedLink> get(Collection<URI> uri, Optional<ACDHCheckedLinkFilter> filter);
 
     /* retrieval of history for one URI  as key with optional filtering */
-    public Stream<CheckedLink> getHistory(URI uri, Order order, Optional<CheckedLinkFilter> filter);
+    public Stream<CheckedLink> getHistory(URI uri, Order order, Optional<ACDHCheckedLinkFilter> filter);
 
 }

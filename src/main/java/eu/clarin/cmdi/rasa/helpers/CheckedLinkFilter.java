@@ -18,10 +18,13 @@
 
 package eu.clarin.cmdi.rasa.helpers;
 
+import org.apache.commons.lang3.Range;
+
 import java.time.LocalDateTime;
 
+//all three fields are nullable
 public interface CheckedLinkFilter {
-    public Integer getStatus();
+    public Range<Integer> getStatus();
     public LocalDateTime getCheckedBeforeDate();
     public LocalDateTime getCheckedAfterDate();
 

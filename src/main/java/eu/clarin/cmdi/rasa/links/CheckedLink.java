@@ -18,6 +18,8 @@
 
 package eu.clarin.cmdi.rasa.links;
 
+import org.bson.Document;
+
 public class CheckedLink {
     private String url;
     private String method;
@@ -31,6 +33,22 @@ public class CheckedLink {
     private String collection;
     private String record;
     private String expectedMimeType;
+
+    public CheckedLink(Document document){
+        this.url = document.getString("url");
+        this.method = document.getString("method");
+        this.message = document.getString("message");
+        this.status = document.getInteger("status");
+        this.contentType = document.getString("contentType");
+        this.byteSize = document.getString("byteSize");
+        this.duration = document.getLong("duration");
+        this.timestamp = document.getLong("timestamp");
+        this.collection = document.getString("collection");
+        this.record = document.getString("record");
+        this.redirectCount = document.getInteger("redirectCount");
+        this.expectedMimeType = document.getString("expectedMimeType");
+    }
+
 
     public String getUrl() {
         return url;
