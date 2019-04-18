@@ -30,16 +30,21 @@ import java.time.ZonedDateTime;
 
 public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter {
 
-    private final String VIENNA_ZONE = "Europe/Vienna";
+    //linkchecker is run in Vienna, thats why all timestamps in the database are Vienna based
+    private ZoneId VIENNA_ZONE = ZoneId.of("Europe/Vienna");
 
     private Range<Integer> status;
     private LocalDateTime before;
     private LocalDateTime after;
+    private ZoneId zone;
 
-    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after) {
+    //zoneId is the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+    //also before and after parameters should be instantiated with ZoneId.systemDefault() as well
+    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone ) {
         this.status = status;
         this.before = before;
         this.after = after;
+        this.zone = zone;
     }
 
     @Override
@@ -61,7 +66,11 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
 
         boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
 
-        LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), ZoneId.of(VIENNA_ZONE));
+
+        LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), VIENNA_ZONE);
+
+        //convert checked date from database to time zone of the caller
+        checkedDate = checkedDate.atZone(VIENNA_ZONE).withZoneSameInstant(zone).toLocalDateTime();
 
         boolean beforeMatches = before == null || before.isBefore(checkedDate);
         boolean afterMatches = after == null || after.isAfter(checkedDate);
@@ -84,8 +93,10 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
         }
 
 
+        //here vienna zone is used because the database timestamps are all in vienna zone
+
         if (before != null) {
-            ZonedDateTime beforeZdt = before.atZone(ZoneId.of(VIENNA_ZONE));
+            ZonedDateTime beforeZdt = before.atZone(VIENNA_ZONE);
             long beforeMillis = beforeZdt.toInstant().toEpochMilli();
 
             beforeFilter = Filters.gt("timestamp", beforeMillis);
@@ -95,7 +106,7 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
 
 
         if (after != null) {
-            ZonedDateTime afterZdt = after.atZone(ZoneId.of(VIENNA_ZONE));
+            ZonedDateTime afterZdt = after.atZone(VIENNA_ZONE);
             long afterMillis = afterZdt.toInstant().toEpochMilli();
 
             afterFilter = Filters.lt("timestamp", afterMillis);

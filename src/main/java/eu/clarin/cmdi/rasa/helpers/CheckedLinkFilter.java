@@ -24,8 +24,8 @@ import java.time.LocalDateTime;
 
 //all three fields are nullable
 public interface CheckedLinkFilter {
-    public Range<Integer> getStatus();
-    public LocalDateTime getCheckedBeforeDate();
-    public LocalDateTime getCheckedAfterDate();
+    Range<Integer> getStatus();
+    LocalDateTime getCheckedBeforeDate();
+    LocalDateTime getCheckedAfterDate();
 
 }

@@ -52,7 +52,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Map<URI, CheckedLink> get(Collection<URI> uriCollection, Optional<ACDHCheckedLinkFilter> filter) {
+    public Map<URI, CheckedLink> get(Collection<URI> uriCollection, Optional<CheckedLinkFilter> filter) {
         Map<URI, CheckedLink> uriMap = new HashMap<>();
 
         for (URI uri : uriCollection) {
@@ -77,16 +77,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Stream<CheckedLink> getHistory(URI uri, Order order, Optional<ACDHCheckedLinkFilter> filter) {
+    public Stream<CheckedLink> getHistory(URI uri, Order order, Optional<CheckedLinkFilter> filter) {
         List<CheckedLink> checkedLinks = new ArrayList<>();
 
         Bson sort;
 
-        if (order.equals(Order.ASC)) {
-            sort = Sorts.ascending("status");
-        } else {
-            sort = Sorts.descending("status");
-        }
+        sort = order.equals(Order.ASC)?Sorts.ascending("timestamp"):Sorts.descending("timestamp");
 
         MongoCursor<Document> cursor;
 

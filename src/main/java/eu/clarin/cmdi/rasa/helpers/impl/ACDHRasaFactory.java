@@ -27,12 +27,10 @@ import org.bson.Document;
 
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
-    private static MongoClient mongoClient;
     private static MongoDatabase database;
 
-    public ACDHRasaFactory(MongoClient mongoClient, String databaseName) {
-        this.mongoClient = mongoClient;
-        database = mongoClient.getDatabase(databaseName);
+    public ACDHRasaFactory(MongoDatabase database) {
+        this.database = database;
     }
 
     @Override

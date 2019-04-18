@@ -19,9 +19,10 @@
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import com.mongodb.client.MongoCollection;
+import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import org.bson.Document;
 
-public class ACDHLinkToBeCheckedResource implements eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource {
+public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     public ACDHLinkToBeCheckedResource(MongoCollection<Document> linksToBeChecked){
 

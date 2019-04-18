@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
@@ -32,6 +33,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +54,8 @@ public class RASATest {
     public static void setUp() throws Exception {
 
         mongoClient = MongoClients.create();
-        rasaFactory = new ACDHRasaFactory(mongoClient, "links");
+        MongoDatabase database = mongoClient.getDatabase("links");
+        rasaFactory = new ACDHRasaFactory(database);
         checkedLinkResource = rasaFactory.getCheckedLinkResource();
 
     }
@@ -94,7 +97,7 @@ public class RASATest {
 
 
         Range range = Range.between(300, 400);
-        checkedLinkMap = checkedLinkResource.get(uriCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null)));
+        checkedLinkMap = checkedLinkResource.get(uriCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null, ZoneId.systemDefault())));
         assertEquals(checkedLinkMap.size(), 1);
 
         checkedLink = checkedLinkMap.get(new URI(url1));
