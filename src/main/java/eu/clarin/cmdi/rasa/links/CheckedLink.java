@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.links;
 
 import org.bson.Document;
 
 public class CheckedLink {
+
     private String url;
     private String method;
     private String message;
@@ -34,7 +34,11 @@ public class CheckedLink {
     private String record;
     private String expectedMimeType;
 
-    public CheckedLink(Document document){
+    public CheckedLink() {
+
+    }
+
+    public CheckedLink(Document document) {
         this.url = document.getString("url");
         this.method = document.getString("method");
         this.message = document.getString("message");
@@ -48,7 +52,6 @@ public class CheckedLink {
         this.redirectCount = document.getInteger("redirectCount");
         this.expectedMimeType = document.getString("expectedMimeType");
     }
-
 
     public String getUrl() {
         return url;
