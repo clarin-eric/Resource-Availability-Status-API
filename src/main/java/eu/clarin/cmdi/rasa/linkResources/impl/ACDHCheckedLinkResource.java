@@ -58,19 +58,20 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         for (URI uri : uriCollection) {
             Document doc = linksChecked.find(eq("url", uri.toString())).first();
 
-            CheckedLink checkedLink = new CheckedLink(doc);
+            if (doc != null) {
+                CheckedLink checkedLink = new CheckedLink(doc);
 
-            if (filter.isPresent()) {
-                ACDHCheckedLinkFilter acdhCheckedLinkFilter = (ACDHCheckedLinkFilter) filter.get();
+                if (filter.isPresent()) {
+                    ACDHCheckedLinkFilter acdhCheckedLinkFilter = (ACDHCheckedLinkFilter) filter.get();
 
-                if (acdhCheckedLinkFilter.matches(checkedLink)) {
+                    if (acdhCheckedLinkFilter.matches(checkedLink)) {
+                        uriMap.put(uri, checkedLink);
+                    }
+
+                } else {
                     uriMap.put(uri, checkedLink);
                 }
-
-            } else {
-                uriMap.put(uri, checkedLink);
             }
-
         }
 
         return uriMap;
@@ -82,7 +83,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         Bson sort;
 
-        sort = order.equals(Order.ASC)?Sorts.ascending("timestamp"):Sorts.descending("timestamp");
+        sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
 
         MongoCursor<Document> cursor;
 
