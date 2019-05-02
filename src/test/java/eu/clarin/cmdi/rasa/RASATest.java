@@ -31,8 +31,6 @@ import org.apache.commons.lang3.Range;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Map;
@@ -61,10 +59,10 @@ public class RASATest {
     }
 
     @Test
-    public void basicURLTest() throws URISyntaxException {
+    public void basicURLTest() {
         String url = "http://www.aclweb.org/anthology/P84-1023";
 
-        CheckedLink checkedLink = checkedLinkResource.get(new URI(url));
+        CheckedLink checkedLink = checkedLinkResource.get(url);
         assertEquals(checkedLink.getUrl(), url);
         assertEquals(checkedLink.getMethod(), "HEAD");
         assertEquals(checkedLink.getTimestamp(), 1542213632877L);
@@ -73,48 +71,48 @@ public class RASATest {
 
 
     @Test
-    public void complexURLTest() throws URISyntaxException {
+    public void complexURLTest() {
         String url = "http://www.aclweb.org/anthology/P84-1023"; //status 200
         String url1 = "http://diglib.hab.de/drucke/drucke/374-5-quod-9s/start.htm"; //status 400
 
-        ArrayList<URI> uriCollection = new ArrayList<>();
-        uriCollection.add(new URI(url));
-        uriCollection.add(new URI(url1));
+        ArrayList<String> urlCollection = new ArrayList<>();
+        urlCollection.add(url);
+        urlCollection.add(url1);
 
 
-        Map<URI, CheckedLink> checkedLinkMap = checkedLinkResource.get(uriCollection, Optional.empty());
+        Map<String, CheckedLink> checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.empty());
 
-        CheckedLink checkedLink = checkedLinkMap.get(new URI(url));
+        CheckedLink checkedLink = checkedLinkMap.get(url);
         assertEquals(checkedLink.getUrl(), url);
         assertEquals(checkedLink.getMethod(), "HEAD");
         assertEquals(checkedLink.getTimestamp(), 1542213632877L);
 
 
-        checkedLink = checkedLinkMap.get(new URI(url1));
+        checkedLink = checkedLinkMap.get(url1);
         assertEquals(checkedLink.getUrl(), url1);
         assertEquals(checkedLink.getMethod(), "GET");
         assertEquals(checkedLink.getTimestamp(), 1542490978125L);
 
 
         Range range = Range.between(300, 400);
-        checkedLinkMap = checkedLinkResource.get(uriCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null, ZoneId.systemDefault())));
+        checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null, ZoneId.systemDefault())));
         assertEquals(checkedLinkMap.size(), 1);
 
-        checkedLink = checkedLinkMap.get(new URI(url1));
+        checkedLink = checkedLinkMap.get(url1);
         assertEquals(checkedLink.getUrl(), url1);
         assertEquals(checkedLink.getMethod(), "GET");
         assertEquals(checkedLink.getTimestamp(), 1542490978125L);
 
-        assertNull(checkedLinkMap.get(new URI(url)));
+        assertNull(checkedLinkMap.get(url));
 
 
     }
 
     @Test
-    public void complexURLHistoryTest() throws URISyntaxException {
+    public void complexURLHistoryTest() {
         String url = "www.google.com";
 
-        Stream<CheckedLink> checkedLinkStream = checkedLinkResource.getHistory(new URI(url), CheckedLinkResource.Order.ASC, Optional.empty());
+        Stream<CheckedLink> checkedLinkStream = checkedLinkResource.getHistory(url, CheckedLinkResource.Order.ASC, Optional.empty());
 
         long count = checkedLinkStream.peek(checkedLink ->
                 assertEquals(checkedLink.getUrl(), url)

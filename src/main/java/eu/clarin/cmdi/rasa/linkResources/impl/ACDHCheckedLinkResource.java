@@ -29,7 +29,6 @@ import eu.clarin.cmdi.rasa.links.CheckedLink;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import java.net.URI;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -46,17 +45,17 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public CheckedLink get(URI uri) {
-        Document doc = linksChecked.find(eq("url", uri.toString())).first();
+    public CheckedLink get(String url) {
+        Document doc = linksChecked.find(eq("url", url)).first();
         return new CheckedLink(doc);
     }
 
     @Override
-    public Map<URI, CheckedLink> get(Collection<URI> uriCollection, Optional<CheckedLinkFilter> filter) {
-        Map<URI, CheckedLink> uriMap = new HashMap<>();
+    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
+        Map<String, CheckedLink> urlMap = new HashMap<>();
 
-        for (URI uri : uriCollection) {
-            Document doc = linksChecked.find(eq("url", uri.toString())).first();
+        for (String url : urlCollection) {
+            Document doc = linksChecked.find(eq("url", url)).first();
 
             if (doc != null) {
                 CheckedLink checkedLink = new CheckedLink(doc);
@@ -65,20 +64,20 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                     ACDHCheckedLinkFilter acdhCheckedLinkFilter = (ACDHCheckedLinkFilter) filter.get();
 
                     if (acdhCheckedLinkFilter.matches(checkedLink)) {
-                        uriMap.put(uri, checkedLink);
+                        urlMap.put(url, checkedLink);
                     }
 
                 } else {
-                    uriMap.put(uri, checkedLink);
+                    urlMap.put(url, checkedLink);
                 }
             }
         }
 
-        return uriMap;
+        return urlMap;
     }
 
     @Override
-    public Stream<CheckedLink> getHistory(URI uri, Order order, Optional<CheckedLinkFilter> filter) {
+    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
         List<CheckedLink> checkedLinks = new ArrayList<>();
 
         Bson sort;
@@ -89,9 +88,9 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         if (filter.isPresent()) {
             Bson mongoFilter = ((ACDHCheckedLinkFilter) filter.get()).getMongoFilter();
-            cursor = linksCheckedHistory.find(Filters.and(eq("url", uri.toString()), mongoFilter)).sort(sort).iterator();
+            cursor = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).sort(sort).iterator();
         } else {
-            cursor = linksCheckedHistory.find(eq("url", uri.toString())).sort(sort).iterator();
+            cursor = linksCheckedHistory.find(eq("url", url)).sort(sort).iterator();
         }
 
         while (cursor.hasNext()) {
