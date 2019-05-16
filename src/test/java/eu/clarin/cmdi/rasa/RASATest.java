@@ -105,7 +105,6 @@ public class RASATest {
 
         assertNull(checkedLinkMap.get(url));
 
-
     }
 
     @Test

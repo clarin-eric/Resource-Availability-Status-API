@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
@@ -32,7 +33,7 @@ import org.bson.conversions.Bson;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
@@ -54,22 +55,18 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
         Map<String, CheckedLink> urlMap = new HashMap<>();
 
-        for (String url : urlCollection) {
-            Document doc = linksChecked.find(eq("url", url)).first();
+        if (filter.isPresent()) {
+            Bson mongoFilter = ((ACDHCheckedLinkFilter) filter.get()).getMongoFilter();
 
-            if (doc != null) {
-                CheckedLink checkedLink = new CheckedLink(doc);
 
-                if (filter.isPresent()) {
-                    ACDHCheckedLinkFilter acdhCheckedLinkFilter = (ACDHCheckedLinkFilter) filter.get();
-
-                    if (acdhCheckedLinkFilter.matches(checkedLink)) {
-                        urlMap.put(url, checkedLink);
-                    }
-
-                } else {
-                    urlMap.put(url, checkedLink);
-                }
+            FindIterable<Document> urls = linksChecked.find(and(in("url", urlCollection), mongoFilter));
+            for (Document doc : urls) {
+                urlMap.put(doc.getString("url"), new CheckedLink(doc));
+            }
+        }else{
+            FindIterable<Document> urls = linksChecked.find(in("url", urlCollection));
+            for (Document doc : urls) {
+                urlMap.put(doc.getString("url"), new CheckedLink(doc));
             }
         }
 

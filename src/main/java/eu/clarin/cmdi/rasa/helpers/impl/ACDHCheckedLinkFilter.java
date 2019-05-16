@@ -66,7 +66,6 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
 
         boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
 
-
         LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), VIENNA_ZONE);
 
         //convert checked date from database to time zone of the caller
