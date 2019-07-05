@@ -59,7 +59,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             Bson mongoFilter = ((ACDHCheckedLinkFilter) filter.get()).getMongoFilter();
 
 
-            FindIterable<Document> urls = linksChecked.find(and(in("url", urlCollection), mongoFilter));
+            FindIterable<Document> urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
             for (Document doc : urls) {
                 urlMap.put(doc.getString("url"), new CheckedLink(doc));
             }
@@ -85,9 +85,9 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         if (filter.isPresent()) {
             Bson mongoFilter = ((ACDHCheckedLinkFilter) filter.get()).getMongoFilter();
-            cursor = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).sort(sort).iterator();
+            cursor = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort).iterator();
         } else {
-            cursor = linksCheckedHistory.find(eq("url", url)).sort(sort).iterator();
+            cursor = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort).iterator();
         }
 
         while (cursor.hasNext()) {
