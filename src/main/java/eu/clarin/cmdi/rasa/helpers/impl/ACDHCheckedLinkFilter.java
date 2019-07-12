@@ -19,6 +19,7 @@
 package eu.clarin.cmdi.rasa.helpers.impl;
 
 import com.mongodb.client.model.Filters;
+import eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 import org.apache.commons.lang3.Range;
 import org.bson.conversions.Bson;
@@ -28,7 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter {
+public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     //linkchecker is run in Vienna, thats why all timestamps in the database are Vienna based
     private ZoneId VIENNA_ZONE = ZoneId.of("Europe/Vienna");

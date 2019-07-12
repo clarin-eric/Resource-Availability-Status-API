@@ -19,6 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import com.mongodb.MongoException;
+import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -61,7 +62,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter){
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) {
         List<CheckedLink> result = new ArrayList<>();
 
         MongoCursor<Document> cursor;
@@ -131,7 +132,13 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public List<String> getCollectionNames() {
-        return (List<String>) linksChecked.distinct("collection", String.class);
+        MongoCursor<String> cursor = linksChecked.distinct("collection", String.class).iterator();
+
+        List<String> collections = new ArrayList<>();
+        while (cursor.hasNext()) {
+            collections.add(cursor.next());
+        }
+        return collections;
     }
 
     @Override
