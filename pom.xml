@@ -6,7 +6,7 @@
 
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
     <build>
         <plugins>
             <plugin>
@@ -19,6 +19,10 @@
             </plugin>
         </plugins>
     </build>
+
+    <properties>
+        <slf4j.version>1.7.12</slf4j.version>
+    </properties>
 
     <repositories>
         <repository>
@@ -39,6 +43,18 @@
     </distributionManagement>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>

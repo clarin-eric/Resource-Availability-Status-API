@@ -37,14 +37,19 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
     private LocalDateTime before;
     private LocalDateTime after;
     private ZoneId zone;
+    private String collection;
 
     //zoneId is the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
     //also before and after parameters should be instantiated with ZoneId.systemDefault() as well
-    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone ) {
+    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone) {
         this.status = status;
         this.before = before;
         this.after = after;
         this.zone = zone;
+    }
+
+    public ACDHCheckedLinkFilter(String collection) {
+        this.collection = collection;
     }
 
     @Override
@@ -62,6 +67,7 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
         return after;
     }
 
+
     public boolean matches(CheckedLink checkedLink) {
 
         boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
@@ -74,16 +80,20 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
         boolean beforeMatches = before == null || before.isBefore(checkedDate);
         boolean afterMatches = after == null || after.isAfter(checkedDate);
 
-        return statusMatches && beforeMatches && afterMatches;
+        boolean collectionMatches = collection == null || collection.equals(checkedLink.getCollection());
+
+        return statusMatches && beforeMatches && afterMatches && collectionMatches;
 
     }
 
     //returns a mongo filter depending on the non null parameters
+    @Override
     public Bson getMongoFilter() {
 
         Bson statusFilter;
         Bson beforeFilter;
         Bson afterFilter;
+        Bson collectionFilter;
 
         if (status != null) {
             statusFilter = Filters.and(Filters.gte("status", status.getMinimum()), Filters.lte("status", status.getMaximum()));
@@ -91,11 +101,9 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
             statusFilter = Filters.where("1==1");
         }
 
-
         //here vienna zone is used because the database timestamps are all in vienna zone
-
         if (before != null) {
-            ZonedDateTime beforeZdt = before.atZone(VIENNA_ZONE);
+            ZonedDateTime beforeZdt = before.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long beforeMillis = beforeZdt.toInstant().toEpochMilli();
 
             beforeFilter = Filters.gt("timestamp", beforeMillis);
@@ -105,7 +113,7 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
 
 
         if (after != null) {
-            ZonedDateTime afterZdt = after.atZone(VIENNA_ZONE);
+            ZonedDateTime afterZdt = after.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long afterMillis = afterZdt.toInstant().toEpochMilli();
 
             afterFilter = Filters.lt("timestamp", afterMillis);
@@ -113,8 +121,14 @@ public class ACDHCheckedLinkFilter implements eu.clarin.cmdi.rasa.helpers.Checke
             afterFilter = Filters.where("1==1");
         }
 
+        if (collection != null) {
+            collectionFilter = Filters.eq("collection", collection);
+        } else {
+            collectionFilter = Filters.where("1==1");
+        }
 
-        return Filters.and(statusFilter, beforeFilter, afterFilter);
+
+        return Filters.and(statusFilter, beforeFilter, afterFilter, collectionFilter);
     }
 
 }

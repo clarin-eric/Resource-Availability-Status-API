@@ -23,7 +23,7 @@ import org.apache.commons.lang3.Range;
 import java.time.LocalDateTime;
 
 //all three fields are nullable
-public interface CheckedLinkFilter {
+public interface CheckedLinkFilter extends Filter {
     Range<Integer> getStatus();
     LocalDateTime getCheckedBeforeDate();
     LocalDateTime getCheckedAfterDate();

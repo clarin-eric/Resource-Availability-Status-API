@@ -38,6 +38,21 @@ public class CheckedLink {
 
     }
 
+    public CheckedLink(String url, String method, String message, int status, String contentType, String byteSize, long duration, long timestamp, String collection, int redirectCount, String record, String expectedMimeType) {
+        this.url = url;
+        this.method = method;
+        this.message = message;
+        this.status = status;
+        this.contentType = contentType;
+        this.byteSize = byteSize;
+        this.duration = duration;
+        this.timestamp = timestamp;
+        this.collection = collection;
+        this.redirectCount = redirectCount;
+        this.record = record;
+        this.expectedMimeType = expectedMimeType;
+    }
+
     public CheckedLink(Document document) {
         this.url = document.getString("url");
         this.method = document.getString("method");
@@ -51,6 +66,24 @@ public class CheckedLink {
         this.record = document.getString("record");
         this.redirectCount = document.getInteger("redirectCount");
         this.expectedMimeType = document.getString("expectedMimeType");
+    }
+
+    //    if you add a new parameter dont forget to add it to this method
+    public Document getMongoDocument() {
+        Document document = new Document("url", url)
+                .append("method", method)
+                .append("message", message)
+                .append("status", status)
+                .append("contentType", contentType)
+                .append("byteSize", byteSize)
+                .append("duration", duration)
+                .append("timestamp", timestamp)
+                .append("redirectCount", redirectCount)
+                .append("collection", collection)
+                .append("record", record)
+                .append("expectedMimeType", expectedMimeType);
+
+        return document;
     }
 
     public String getUrl() {

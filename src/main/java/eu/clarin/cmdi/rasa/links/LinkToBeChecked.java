@@ -18,11 +18,37 @@
 
 package eu.clarin.cmdi.rasa.links;
 
+import org.bson.Document;
+
 public class LinkToBeChecked {
     private String url;
     private String record;
     private String collection;
     private String expectedMimeType;
+
+    public LinkToBeChecked() {
+    }
+
+    public LinkToBeChecked(CheckedLink checkedLink) {
+        this.url = checkedLink.getUrl();
+        this.record = checkedLink.getRecord();
+        this.collection = checkedLink.getCollection();
+        this.expectedMimeType = checkedLink.getExpectedMimeType();
+    }
+
+    public LinkToBeChecked(Document document) {
+        this.url = document.getString("url");
+        this.collection = document.getString("collection");
+        this.record = document.getString("record");
+        this.expectedMimeType = document.getString("expectedMimeType");
+    }
+
+    public Document getMongoDocument() {
+        return new Document("url", url)
+                .append("record", record)
+                .append("collection", collection)
+                .append("expectedMimeType", expectedMimeType);
+    }
 
     public String getUrl() {
         return url;

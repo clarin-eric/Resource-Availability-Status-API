@@ -18,17 +18,29 @@
 
 package eu.clarin.cmdi.rasa.helpers.impl;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
-    private static MongoDatabase database;
+    private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
+
+    private MongoDatabase database;
+
+    public ACDHRasaFactory(String databaseName, String databaseURI) {
+
+        connectDatabase(databaseName, databaseURI);
+    }
 
     public ACDHRasaFactory(MongoDatabase database) {
+
         this.database = database;
     }
 
@@ -36,12 +48,31 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     public ACDHCheckedLinkResource getCheckedLinkResource() {
         MongoCollection<Document> linksChecked = database.getCollection("linksChecked");
         MongoCollection<Document> linksCheckedHistory = database.getCollection("linksCheckedHistory");
-        return new ACDHCheckedLinkResource(linksChecked, linksCheckedHistory);
+        MongoCollection<Document> linksToBeChecked = database.getCollection("linksToBeChecked");
+        return new ACDHCheckedLinkResource(linksChecked, linksCheckedHistory, linksToBeChecked);
     }
 
     @Override
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
         MongoCollection<Document> linksToBeChecked = database.getCollection("linksToBeChecked");
         return new ACDHLinkToBeCheckedResource(linksToBeChecked);
+    }
+
+    private void connectDatabase(String databaseName, String databaseURI) {
+        _logger.info("Connecting to database...");
+
+        MongoClient mongoClient;
+        if (databaseURI.isEmpty()) {//if it is empty, try localhost
+            mongoClient = MongoClients.create();
+        } else {
+            mongoClient = MongoClients.create(databaseURI);
+        }
+
+        MongoDatabase database = mongoClient.getDatabase(databaseName);
+
+        _logger.info("Connected to database.");
+
+        this.database = database;
+
     }
 }

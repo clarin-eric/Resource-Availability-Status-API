@@ -18,13 +18,60 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import eu.clarin.cmdi.rasa.helpers.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
 import org.bson.Document;
+import org.bson.conversions.Bson;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
-    public ACDHLinkToBeCheckedResource(MongoCollection<Document> linksToBeChecked){
+    private MongoCollection<Document> linksToBeChecked;
+
+    public ACDHLinkToBeCheckedResource(MongoCollection<Document> linksToBeChecked) {
+        this.linksToBeChecked = linksToBeChecked;
+    }
+
+    @Override
+    public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) {
+        List<LinkToBeChecked> result = new ArrayList<>();
+
+        MongoCursor<Document> cursor;
+
+        if (filter.isPresent()) {
+            Bson mongoFilter = filter.get().getMongoFilter();
+            cursor = linksToBeChecked.find(mongoFilter).noCursorTimeout(true).iterator();
+        } else {
+            cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
+        }
+
+        while (cursor.hasNext()) {
+            result.add(new LinkToBeChecked(cursor.next()));
+        }
+
+        cursor.close();
+
+        return result.stream();
+    }
+
+    @Override
+    public Boolean save(LinkToBeChecked linkToBeChecked){
+        try {
+            linksToBeChecked.insertOne(linkToBeChecked.getMongoDocument());
+            return true;
+        } catch (MongoException e) {
+            //duplicate key error
+            //url is already in the database, do nothing
+            return false;
+        }
 
     }
 }
