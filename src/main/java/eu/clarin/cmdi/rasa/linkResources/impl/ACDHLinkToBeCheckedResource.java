@@ -21,7 +21,7 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import eu.clarin.cmdi.rasa.helpers.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
 import org.bson.Document;

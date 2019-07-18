@@ -16,10 +16,10 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers.impl;
+package eu.clarin.cmdi.rasa.filters.impl;
 
 import com.mongodb.client.model.Filters;
-import eu.clarin.cmdi.rasa.helpers.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import org.bson.conversions.Bson;
 
 public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {

@@ -16,11 +16,13 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers;
+package eu.clarin.cmdi.rasa.filters;
 
-import org.bson.conversions.Bson;
+public interface StatisticsFilter extends Filter {
 
-public interface Filter {
+    boolean getBroken();
+    boolean getUndetermined();
+    String getCollection();
+    String getRecord();
 
-    Bson getMongoFilter();
 }

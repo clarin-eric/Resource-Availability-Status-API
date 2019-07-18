@@ -18,17 +18,22 @@
 
 package eu.clarin.cmdi.rasa.linkResources;
 
-import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
+import eu.clarin.cmdi.rasa.links.Statistics;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
-public interface LinkToBeCheckedResource {
+public interface StatisticsResource {
 
-    /* get all urls that match a filter */
-    Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter);
+    /* gets status statistics per collection. status statistics are
+    the following info per status code:
+    count,avg response time, max response time
+     */
+    List<Statistics> getStatusStatistics(String collection);
+    Statistics getOverallStatistics(String collection);
 
-    /* save a link to be checked into linksToBeChecked, if it already exists in the collection, it fails but is ignored */
-    Boolean save(LinkToBeChecked linkToBeChecked);
+    long countLinksChecked(Optional<ACDHStatisticsFilter> filter);
+    long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter);
+    int getDuplicateCount(String collection);
 }

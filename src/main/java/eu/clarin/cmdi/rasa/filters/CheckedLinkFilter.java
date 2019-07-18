@@ -16,16 +16,19 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers;
+package eu.clarin.cmdi.rasa.filters;
 
 import org.apache.commons.lang3.Range;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 //all three fields are nullable
 public interface CheckedLinkFilter extends Filter {
     Range<Integer> getStatus();
     LocalDateTime getCheckedBeforeDate();
     LocalDateTime getCheckedAfterDate();
+    String getCollection();
+    ZoneId getZone();
 
 }

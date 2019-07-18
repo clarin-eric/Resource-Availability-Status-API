@@ -29,6 +29,13 @@ public class LinkToBeChecked {
     public LinkToBeChecked() {
     }
 
+    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType) {
+        this.url = url;
+        this.record = record;
+        this.collection = collection;
+        this.expectedMimeType = expectedMimeType;
+    }
+
     public LinkToBeChecked(CheckedLink checkedLink) {
         this.url = checkedLink.getUrl();
         this.record = checkedLink.getRecord();

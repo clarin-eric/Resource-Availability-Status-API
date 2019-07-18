@@ -18,10 +18,8 @@
 
 package eu.clarin.cmdi.rasa.linkResources;
 
-import eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter;
-import eu.clarin.cmdi.rasa.helpers.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,8 +37,14 @@ public interface CheckedLinkResource {
     /* retrieve for single url */
     CheckedLink get(String url);
 
+    /* retrieve for single url from collection */
+    CheckedLink get(String url, String collection);
+
     /* get all urls that match a filter */
     Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter);
+
+    /* get all urls that match a filter but limiting from start to end */
+    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end);
 
     /* batch retrieval with url as key with optional filtering
        get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
@@ -55,5 +59,8 @@ public interface CheckedLinkResource {
 
     /* save a checked link into linkschecked, remove it from linksToBeChecked, move old result into history if exists */
     Boolean save(CheckedLink checkedLink);
+
+    /* Move from linksChecked to linkCheckedHistory. */
+//    Boolean moveToHistory(CheckedLink checkedLink);
 
 }

@@ -16,9 +16,11 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers;
+package eu.clarin.cmdi.rasa.filters;
 
-public interface LinkToBeCheckedFilter extends Filter{
+import org.bson.conversions.Bson;
 
-    String getCollection();
+public interface Filter {
+
+    Bson getMongoFilter();
 }

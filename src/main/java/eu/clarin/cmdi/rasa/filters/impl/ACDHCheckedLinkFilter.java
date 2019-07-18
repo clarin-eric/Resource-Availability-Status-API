@@ -16,18 +16,18 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.helpers.impl;
+package eu.clarin.cmdi.rasa.filters.impl;
 
 import com.mongodb.client.model.Filters;
-import eu.clarin.cmdi.rasa.helpers.CheckedLinkFilter;
-import eu.clarin.cmdi.rasa.links.CheckedLink;
+import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import org.apache.commons.lang3.Range;
 import org.bson.conversions.Bson;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
+import static com.mongodb.client.model.Filters.*;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
@@ -53,6 +53,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.collection = collection;
     }
 
+    public ACDHCheckedLinkFilter(String collection, int status) {
+        this.collection = collection;
+        this.status = Range.between(status,status);
+    }
+
     @Override
     public Range<Integer> getStatus() {
         return status;
@@ -68,38 +73,44 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return after;
     }
 
-
-    public boolean matches(CheckedLink checkedLink) {
-
-        boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
-
-        LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), VIENNA_ZONE);
-
-        //convert checked date from database to time zone of the caller
-        checkedDate = checkedDate.atZone(VIENNA_ZONE).withZoneSameInstant(zone).toLocalDateTime();
-
-        boolean beforeMatches = before == null || before.isBefore(checkedDate);
-        boolean afterMatches = after == null || after.isAfter(checkedDate);
-
-        boolean collectionMatches = collection == null || collection.equals(checkedLink.getCollection());
-
-        return statusMatches && beforeMatches && afterMatches && collectionMatches;
-
+    @Override
+    public String getCollection() {
+        return collection;
     }
+
+    @Override
+    public ZoneId getZone() {
+        return zone;
+    }
+
+//    public boolean matches(CheckedLink checkedLink) {
+//
+//        boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
+//
+//        LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), VIENNA_ZONE);
+//
+//        //convert checked date from database to time zone of the caller
+//        checkedDate = checkedDate.atZone(VIENNA_ZONE).withZoneSameInstant(zone).toLocalDateTime();
+//
+//        boolean beforeMatches = before == null || before.isBefore(checkedDate);
+//        boolean afterMatches = after == null || after.isAfter(checkedDate);
+//
+//        boolean collectionMatches = collection == null || collection.equals(checkedLink.getCollection());
+//
+//        return statusMatches && beforeMatches && afterMatches && collectionMatches;
+//
+//    }
 
     //returns a mongo filter depending on the non null parameters
     @Override
     public Bson getMongoFilter() {
 
-        Bson statusFilter;
-        Bson beforeFilter;
-        Bson afterFilter;
-        Bson collectionFilter;
+        Bson filter;
 
         if (status != null) {
-            statusFilter = Filters.and(Filters.gte("status", status.getMinimum()), Filters.lte("status", status.getMaximum()));
+            filter = Filters.and(gte("status", status.getMinimum()), lte("status", status.getMaximum()));
         } else {
-            statusFilter = Filters.where("1==1");
+            filter = Filters.where("1==1");
         }
 
         //here vienna zone is used because the database timestamps are all in vienna zone
@@ -107,9 +118,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             ZonedDateTime beforeZdt = before.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long beforeMillis = beforeZdt.toInstant().toEpochMilli();
 
-            beforeFilter = Filters.gt("timestamp", beforeMillis);
-        } else {
-            beforeFilter = Filters.where("1==1");
+            filter = Filters.and(filter, gt("timestamp", beforeMillis));
         }
 
 
@@ -117,19 +126,15 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             ZonedDateTime afterZdt = after.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long afterMillis = afterZdt.toInstant().toEpochMilli();
 
-            afterFilter = Filters.lt("timestamp", afterMillis);
-        } else {
-            afterFilter = Filters.where("1==1");
+            filter = Filters.and(filter, lt("timestamp", afterMillis));
         }
 
-        if (collection != null) {
-            collectionFilter = Filters.eq("collection", collection);
-        } else {
-            collectionFilter = Filters.where("1==1");
+        if (collection != null && !collection.equals("Overall")) {
+            filter = Filters.and(filter, eq("collection", collection));
         }
 
 
-        return Filters.and(statusFilter, beforeFilter, afterFilter, collectionFilter);
+        return filter;
     }
 
 }
