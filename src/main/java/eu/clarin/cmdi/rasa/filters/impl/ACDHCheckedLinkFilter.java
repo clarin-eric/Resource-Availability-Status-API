@@ -49,6 +49,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.zone = zone;
     }
 
+    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String collection) {
+        this.status = status;
+        this.before = before;
+        this.after = after;
+        this.zone = zone;
+        this.collection = collection;
+    }
+
     public ACDHCheckedLinkFilter(String collection) {
         this.collection = collection;
     }
@@ -83,24 +91,6 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
-//    public boolean matches(CheckedLink checkedLink) {
-//
-//        boolean statusMatches = status == null || (status.getMaximum() >= checkedLink.getStatus() && status.getMinimum() <= checkedLink.getStatus());
-//
-//        LocalDateTime checkedDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(checkedLink.getTimestamp()), VIENNA_ZONE);
-//
-//        //convert checked date from database to time zone of the caller
-//        checkedDate = checkedDate.atZone(VIENNA_ZONE).withZoneSameInstant(zone).toLocalDateTime();
-//
-//        boolean beforeMatches = before == null || before.isBefore(checkedDate);
-//        boolean afterMatches = after == null || after.isAfter(checkedDate);
-//
-//        boolean collectionMatches = collection == null || collection.equals(checkedLink.getCollection());
-//
-//        return statusMatches && beforeMatches && afterMatches && collectionMatches;
-//
-//    }
-
     //returns a mongo filter depending on the non null parameters
     @Override
     public Bson getMongoFilter() {
@@ -118,15 +108,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             ZonedDateTime beforeZdt = before.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long beforeMillis = beforeZdt.toInstant().toEpochMilli();
 
-            filter = Filters.and(filter, gt("timestamp", beforeMillis));
+            filter = Filters.and(filter, lt("timestamp", beforeMillis));
         }
-
 
         if (after != null) {
             ZonedDateTime afterZdt = after.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
             long afterMillis = afterZdt.toInstant().toEpochMilli();
 
-            filter = Filters.and(filter, lt("timestamp", afterMillis));
+            filter = Filters.and(filter, gt("timestamp", afterMillis));
         }
 
         if (collection != null && !collection.equals("Overall")) {

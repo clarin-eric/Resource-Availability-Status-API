@@ -39,10 +39,6 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         connectDatabase(databaseName, databaseURI);
     }
 
-    public ACDHRasaFactory(MongoDatabase database) {
-        this.database = database;
-    }
-
     @Override
     public ACDHCheckedLinkResource getCheckedLinkResource() {
         MongoCollection<Document> linksChecked = database.getCollection("linksChecked");

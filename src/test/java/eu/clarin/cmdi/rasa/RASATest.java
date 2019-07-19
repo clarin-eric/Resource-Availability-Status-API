@@ -18,17 +18,10 @@
 
 package eu.clarin.cmdi.rasa;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
-import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
-import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 import org.apache.commons.lang3.Range;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.ZoneId;
@@ -40,86 +33,72 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-//These tests are currently according to my own local database instance. They won't work anywhere else
-//todo create test database
-public class RASATest {
-
-    private static MongoClient mongoClient;
-    private static RasaFactory rasaFactory;
-    private static ACDHCheckedLinkResource checkedLinkResource;
-
-    @BeforeClass
-    public static void setUp() throws Exception {
-
-        mongoClient = MongoClients.create();
-        MongoDatabase database = mongoClient.getDatabase("links");
-        rasaFactory = new ACDHRasaFactory(database);
-        checkedLinkResource = rasaFactory.getCheckedLinkResource();
-
-    }
-
-    @Test
-    public void basicURLTest() {
-        String url = "http://www.aclweb.org/anthology/P84-1023";
-
-        CheckedLink checkedLink = checkedLinkResource.get(url);
-        assertEquals(checkedLink.getUrl(), url);
-        assertEquals(checkedLink.getMethod(), "HEAD");
-        assertEquals(checkedLink.getTimestamp(), 1542213632877L);
-
-    }
+public class RASATest extends TestConfig {
 
 
-    @Test
-    public void complexURLTest() {
-        String url = "http://www.aclweb.org/anthology/P84-1023"; //status 200
-        String url1 = "http://diglib.hab.de/drucke/drucke/374-5-quod-9s/start.htm"; //status 400
-
-        ArrayList<String> urlCollection = new ArrayList<>();
-        urlCollection.add(url);
-        urlCollection.add(url1);
-
-
-        Map<String, CheckedLink> checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.empty());
-
-        CheckedLink checkedLink = checkedLinkMap.get(url);
-        assertEquals(checkedLink.getUrl(), url);
-        assertEquals(checkedLink.getMethod(), "HEAD");
-        assertEquals(checkedLink.getTimestamp(), 1542213632877L);
-
-
-        checkedLink = checkedLinkMap.get(url1);
-        assertEquals(checkedLink.getUrl(), url1);
-        assertEquals(checkedLink.getMethod(), "GET");
-        assertEquals(checkedLink.getTimestamp(), 1542490978125L);
-
-
-        Range range = Range.between(300, 400);
-        checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null, ZoneId.systemDefault())));
-        assertEquals(checkedLinkMap.size(), 1);
-
-        checkedLink = checkedLinkMap.get(url1);
-        assertEquals(checkedLink.getUrl(), url1);
-        assertEquals(checkedLink.getMethod(), "GET");
-        assertEquals(checkedLink.getTimestamp(), 1542490978125L);
-
-        assertNull(checkedLinkMap.get(url));
-
-    }
-
-    @Test
-    public void complexURLHistoryTest() {
-        String url = "www.google.com";
-
-        Stream<CheckedLink> checkedLinkStream = checkedLinkResource.getHistory(url, CheckedLinkResource.Order.ASC, Optional.empty());
-
-        long count = checkedLinkStream.peek(checkedLink ->
-                assertEquals(checkedLink.getUrl(), url)
-        ).count();
-
-        assertEquals(count, 9);
-
-    }
+    //this class was the old tests, i leave it here for inspiration when writing the new tests
+//    @Test
+//    public void basicURLTest() {
+//        String url = "http://www.aclweb.org/anthology/P84-1023";
+//
+//        CheckedLink checkedLink = checkedLinkResource.get(url);
+//        assertEquals(checkedLink.getUrl(), url);
+//        assertEquals(checkedLink.getMethod(), "HEAD");
+//        assertEquals(checkedLink.getTimestamp(), 1542213632877L);
+//
+//    }
+//
+//
+//    @Test
+//    public void complexURLTest() {
+//        String url = "http://www.aclweb.org/anthology/P84-1023"; //status 200
+//        String url1 = "http://diglib.hab.de/drucke/drucke/374-5-quod-9s/start.htm"; //status 400
+//
+//        ArrayList<String> urlCollection = new ArrayList<>();
+//        urlCollection.add(url);
+//        urlCollection.add(url1);
+//
+//
+//        Map<String, CheckedLink> checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.empty());
+//
+//        CheckedLink checkedLink = checkedLinkMap.get(url);
+//        assertEquals(checkedLink.getUrl(), url);
+//        assertEquals(checkedLink.getMethod(), "HEAD");
+//        assertEquals(checkedLink.getTimestamp(), 1542213632877L);
+//
+//
+//        checkedLink = checkedLinkMap.get(url1);
+//        assertEquals(checkedLink.getUrl(), url1);
+//        assertEquals(checkedLink.getMethod(), "GET");
+//        assertEquals(checkedLink.getTimestamp(), 1542490978125L);
+//
+//
+//        Range range = Range.between(300, 400);
+//        checkedLinkMap = checkedLinkResource.get(urlCollection, Optional.of(new ACDHCheckedLinkFilter(range, null, null, ZoneId.systemDefault())));
+//        assertEquals(checkedLinkMap.size(), 1);
+//
+//        checkedLink = checkedLinkMap.get(url1);
+//        assertEquals(checkedLink.getUrl(), url1);
+//        assertEquals(checkedLink.getMethod(), "GET");
+//        assertEquals(checkedLink.getTimestamp(), 1542490978125L);
+//
+//        assertNull(checkedLinkMap.get(url));
+//
+//    }
+//
+//    @Test
+//    public void complexURLHistoryTest() {
+//        String url = "www.google.com";
+//
+//        Stream<CheckedLink> checkedLinkStream = checkedLinkResource.getHistory(url, CheckedLinkResource.Order.ASC, Optional.empty());
+//
+//        long count = checkedLinkStream.peek(checkedLink ->
+//                assertEquals(checkedLink.getUrl(), url)
+//        ).count();
+//
+//        assertEquals(9, count);
+//
+//    }
 
 
 }
