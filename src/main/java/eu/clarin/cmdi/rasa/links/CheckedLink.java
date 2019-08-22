@@ -19,6 +19,8 @@ package eu.clarin.cmdi.rasa.links;
 
 import org.bson.Document;
 
+import java.util.Objects;
+
 public class CheckedLink {
 
     private String url;
@@ -29,8 +31,9 @@ public class CheckedLink {
     private String byteSize;
     private long duration;
     private long timestamp;
-    private int redirectCount;
+
     private String collection;
+    private int redirectCount;
     private String record;
     private String expectedMimeType;
 
@@ -180,5 +183,45 @@ public class CheckedLink {
 
     public void setExpectedMimeType(String expectedMimeType) {
         this.expectedMimeType = expectedMimeType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CheckedLink that = (CheckedLink) o;
+        return status == that.status &&
+                duration == that.duration &&
+                timestamp == that.timestamp &&
+                redirectCount == that.redirectCount &&
+                url.equals(that.url) &&
+                Objects.equals(method, that.method) &&
+                Objects.equals(message, that.message) &&
+                Objects.equals(contentType, that.contentType) &&
+                Objects.equals(byteSize, that.byteSize) &&
+                Objects.equals(collection, that.collection) &&
+                Objects.equals(record, that.record) &&
+                Objects.equals(expectedMimeType, that.expectedMimeType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, method, message, status, contentType, byteSize, duration, timestamp, redirectCount, collection, record, expectedMimeType);
+    }
+
+    @Override
+    public String toString() {
+        return  url +
+                ", \"" + method +
+                "\", \"" + message +
+                "\", " + status +
+                ", \"" + contentType +
+                "\", " + byteSize +
+                ", " + duration +
+                ", " + timestamp +
+                ", \"" + collection +
+                "\", " + redirectCount +
+                ", \"" + record +
+                "\", \"" + expectedMimeType+"\"" ;
     }
 }

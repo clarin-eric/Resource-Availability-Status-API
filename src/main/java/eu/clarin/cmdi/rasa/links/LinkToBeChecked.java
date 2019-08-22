@@ -20,6 +20,8 @@ package eu.clarin.cmdi.rasa.links;
 
 import org.bson.Document;
 
+import java.util.Objects;
+
 public class LinkToBeChecked {
     private String url;
     private String record;
@@ -87,5 +89,21 @@ public class LinkToBeChecked {
 
     public void setExpectedMimeType(String expectedMimeType) {
         this.expectedMimeType = expectedMimeType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LinkToBeChecked that = (LinkToBeChecked) o;
+        return url.equals(that.url) &&
+                Objects.equals(record, that.record) &&
+                Objects.equals(collection, that.collection) &&
+                Objects.equals(expectedMimeType, that.expectedMimeType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, record, collection, expectedMimeType);
     }
 }
