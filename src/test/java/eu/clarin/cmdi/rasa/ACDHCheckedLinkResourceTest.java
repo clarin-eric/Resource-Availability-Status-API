@@ -51,16 +51,13 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
             CheckedLink link = httpLinkChecker.checkLink(url, 0, 0, url);
 
             linksChecked.insertOne(link.getMongoDocument());
-
         }
 
         for (String url : googleUrls) {
             CheckedLink link = httpLinkChecker.checkLink(url, 0, 0, url);
 
             link.setCollection("Google");
-
             linksChecked.insertOne(link.getMongoDocument());
-
         }
 
     }

@@ -63,6 +63,28 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
 
     @Override
+    public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) {
+        List<LinkToBeChecked> result = new ArrayList<>();
+
+        MongoCursor<Document> cursor;
+
+        if (filter.isPresent()) {
+            Bson mongoFilter = filter.get().getMongoFilter();
+            cursor = linksToBeChecked.find(mongoFilter).noCursorTimeout(true).iterator();
+        } else {
+            cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
+        }
+
+        while (cursor.hasNext()) {
+            result.add(new LinkToBeChecked(cursor.next()));
+        }
+
+        cursor.close();
+
+        return result;
+    }
+
+    @Override
     public Boolean save(LinkToBeChecked linkToBeChecked){
         try {
             linksToBeChecked.insertOne(linkToBeChecked.getMongoDocument());

@@ -21,6 +21,7 @@ package eu.clarin.cmdi.rasa.linkResources;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -28,6 +29,8 @@ public interface LinkToBeCheckedResource {
 
     /* get all urls that match a filter */
     Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter);
+
+    List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter);
 
     /* save a link to be checked into linksToBeChecked, if it already exists in the collection, it fails but is ignored */
     Boolean save(LinkToBeChecked linkToBeChecked);

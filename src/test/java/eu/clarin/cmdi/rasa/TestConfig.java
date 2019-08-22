@@ -18,6 +18,8 @@
 
 package eu.clarin.cmdi.rasa;
 
+import com.mongodb.MongoSocketOpenException;
+import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -30,15 +32,18 @@ import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
+import org.apache.log4j.LogManager;
 import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.net.ConnectException;
 import java.util.UUID;
 
-public abstract class TestConfig {
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
-    //TODO test database uri as input for tests
+public abstract class TestConfig {
 
     public static RasaFactory rasaFactory;
     public static ACDHCheckedLinkResource checkedLinkResource;
@@ -58,18 +63,31 @@ public abstract class TestConfig {
     @BeforeClass
     public static void setUp() {
 
-        mongoClient = MongoClients.create();
+        LogManager.getLogger("org.mongodb.driver.cluster").setLevel(org.apache.log4j.Level.OFF);
 
-        UUID uuid = UUID.randomUUID();
-        databaseName = uuid.toString();
 
-        createCollections();
+        try {
+            mongoClient = MongoClients.create();
 
-        rasaFactory = new ACDHRasaFactory(databaseName, null);//localhost
+            UUID uuid = UUID.randomUUID();
+            databaseName = uuid.toString();
 
-        checkedLinkResource = rasaFactory.getCheckedLinkResource();
-        linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
-        statisticsResource = rasaFactory.getStatisticsResource();
+            createCollections();
+
+            rasaFactory = new ACDHRasaFactory(databaseName, null);//localhost
+
+            checkedLinkResource = rasaFactory.getCheckedLinkResource();
+            linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
+            statisticsResource = rasaFactory.getStatisticsResource();
+        } catch (MongoTimeoutException e) {
+            System.err.println("RASA needs a running Mongo instance on localhost:27017 (default) for tests to work. \n" +
+                    "These are integration tests, that test the functionality of RASA with a working database. \n" +
+                    "Tests will be run on a created database with a randomly generated name on the mongo instance.\n" +
+                    "The database is deleted after the tests are run. \n\n" +
+                    "Please start a mongo database instance in the environment!");
+            fail();
+        }
+
 
     }
 
