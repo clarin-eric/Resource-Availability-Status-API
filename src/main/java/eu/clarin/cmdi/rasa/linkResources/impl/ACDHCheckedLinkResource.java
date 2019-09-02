@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import com.mongodb.MongoException;
@@ -77,11 +76,13 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             cursor = linksChecked.find().noCursorTimeout(true).iterator();
         }
 
-        while (cursor.hasNext()) {
-            result.add(new CheckedLink(cursor.next()));
+        try {
+            while (cursor.hasNext()) {
+                result.add(new CheckedLink(cursor.next()));
+            }
+        } finally {
+            cursor.close();
         }
-
-        cursor.close();
 
         return result.stream();
     }
@@ -99,11 +100,13 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             cursor = linksChecked.find().skip(start).limit(end).noCursorTimeout(true).iterator();
         }
 
-        while (cursor.hasNext()) {
-            result.add(new CheckedLink(cursor.next()));
+        try {
+            while (cursor.hasNext()) {
+                result.add(new CheckedLink(cursor.next()));
+            }
+        } finally {
+            cursor.close();
         }
-
-        cursor.close();
 
         return result.stream();
     }
@@ -146,11 +149,13 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             cursor = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort).iterator();
         }
 
-        while (cursor.hasNext()) {
-            checkedLinks.add(new CheckedLink(cursor.next()));
+        try {
+            while (cursor.hasNext()) {
+                checkedLinks.add(new CheckedLink(cursor.next()));
+            }
+        } finally {
+            cursor.close();
         }
-
-        cursor.close();
 
         return checkedLinks.stream();
     }
@@ -160,8 +165,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         MongoCursor<String> cursor = linksChecked.distinct("collection", String.class).iterator();
 
         List<String> collections = new ArrayList<>();
-        while (cursor.hasNext()) {
-            collections.add(cursor.next());
+        try {
+            while (cursor.hasNext()) {
+                collections.add(cursor.next());
+            }
+        } finally {
+            cursor.close();
         }
         return collections;
     }
@@ -170,7 +179,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     public Boolean save(CheckedLink checkedLink) {
 
         //separate mongo actions so that one of them doesn't disturb the other
-
         //save it to the history
         Bson filter = Filters.eq("url", checkedLink.getUrl());
         try {
@@ -209,7 +217,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             //do nothing so that the whole thread doesnt die because of one url, just skip it
             return false;
         }
-
 
     }
 

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import com.mongodb.MongoException;
@@ -53,11 +52,13 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
             cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
         }
 
-        while (cursor.hasNext()) {
-            result.add(new LinkToBeChecked(cursor.next()));
+        try {
+            while (cursor.hasNext()) {
+                result.add(new LinkToBeChecked(cursor.next()));
+            }
+        } finally {
+            cursor.close();
         }
-
-        cursor.close();
 
         return result.stream();
     }
@@ -75,17 +76,19 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
             cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
         }
 
-        while (cursor.hasNext()) {
-            result.add(new LinkToBeChecked(cursor.next()));
+        try {
+            while (cursor.hasNext()) {
+                result.add(new LinkToBeChecked(cursor.next()));
+            }
+        } finally {
+            cursor.close();
         }
-
-        cursor.close();
 
         return result;
     }
 
     @Override
-    public Boolean save(LinkToBeChecked linkToBeChecked){
+    public Boolean save(LinkToBeChecked linkToBeChecked) {
         try {
             linksToBeChecked.insertOne(linkToBeChecked.getMongoDocument());
             return true;
