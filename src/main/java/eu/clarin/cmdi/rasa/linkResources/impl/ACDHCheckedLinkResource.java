@@ -77,7 +77,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         }
 
         return StreamSupport.stream(documents.spliterator(), false)
-                .map((d) -> new CheckedLink(d));
+                .map(CheckedLink::new);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         }
 
         return StreamSupport.stream(documents.spliterator(), false)
-                .map((d) -> new CheckedLink(d));
+                .map(CheckedLink::new);
     }
 
     @Override
@@ -118,30 +118,19 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-        List<CheckedLink> checkedLinks = new ArrayList<>();
+        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
 
-        Bson sort;
-
-        sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort).iterator();
+            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
         } else {
-            cursor = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort).iterator();
+            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
         }
 
-        try {
-            while (cursor.hasNext()) {
-                checkedLinks.add(new CheckedLink(cursor.next()));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        return checkedLinks.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map(CheckedLink::new);
     }
 
     @Override
