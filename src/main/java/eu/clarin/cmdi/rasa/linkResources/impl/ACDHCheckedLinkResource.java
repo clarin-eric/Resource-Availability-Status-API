@@ -20,7 +20,6 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.Sorts;
@@ -97,23 +96,16 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
-        Map<String, CheckedLink> urlMap = new HashMap<>();
-
+        final FindIterable<Document> urls;
         if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-
-            FindIterable<Document> urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
-            for (Document doc : urls) {
-                urlMap.put(doc.getString("url"), new CheckedLink(doc));
-            }
+            final Bson mongoFilter = filter.get().getMongoFilter();
+            urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
         } else {
-            FindIterable<Document> urls = linksChecked.find(in("url", urlCollection));
-            for (Document doc : urls) {
-                urlMap.put(doc.getString("url"), new CheckedLink(doc));
-            }
+            urls = linksChecked.find(in("url", urlCollection));
         }
-
-        return urlMap;
+        
+        return StreamSupport.stream(urls.spliterator(), false)
+                .collect(Collectors.toMap(doc -> doc.getString("url"), CheckedLink::new));
     }
 
     @Override
