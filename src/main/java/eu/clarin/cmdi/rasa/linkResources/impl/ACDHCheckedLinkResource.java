@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
@@ -65,50 +67,32 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) {
-        List<CheckedLink> result = new ArrayList<>();
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksChecked.find(mongoFilter).noCursorTimeout(true).iterator();
+            documents = linksChecked.find(mongoFilter).noCursorTimeout(true);
         } else {
-            cursor = linksChecked.find().noCursorTimeout(true).iterator();
+            documents = linksChecked.find().noCursorTimeout(true);
         }
 
-        try {
-            while (cursor.hasNext()) {
-                result.add(new CheckedLink(cursor.next()));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        return result.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map((d) -> new CheckedLink(d));
     }
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
-        List<CheckedLink> result = new ArrayList<>();
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true).iterator();
+            documents = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true);
         } else {
-            cursor = linksChecked.find().skip(start).limit(end).noCursorTimeout(true).iterator();
+            documents = linksChecked.find().skip(start).limit(end).noCursorTimeout(true);
         }
 
-        try {
-            while (cursor.hasNext()) {
-                result.add(new CheckedLink(cursor.next()));
-            }
-        } finally {
-            cursor.close();
-        }
-
-        return result.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map((d) -> new CheckedLink(d));
     }
 
     @Override
@@ -162,17 +146,10 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public List<String> getCollectionNames() {
-        MongoCursor<String> cursor = linksChecked.distinct("collection", String.class).iterator();
+        Iterable<String> collections = linksChecked.distinct("collection", String.class);
 
-        List<String> collections = new ArrayList<>();
-        try {
-            while (cursor.hasNext()) {
-                collections.add(cursor.next());
-            }
-        } finally {
-            cursor.close();
-        }
-        return collections;
+        return StreamSupport.stream(collections.spliterator(), false)
+                .collect(Collectors.toList());
     }
 
     @Override
