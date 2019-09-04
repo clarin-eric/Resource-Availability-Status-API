@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.Sorts;
@@ -37,6 +35,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
@@ -66,111 +66,77 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) {
-        List<CheckedLink> result = new ArrayList<>();
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksChecked.find(mongoFilter).noCursorTimeout(true).iterator();
+            documents = linksChecked.find(mongoFilter).noCursorTimeout(true);
         } else {
-            cursor = linksChecked.find().noCursorTimeout(true).iterator();
+            documents = linksChecked.find().noCursorTimeout(true);
         }
 
-        while (cursor.hasNext()) {
-            result.add(new CheckedLink(cursor.next()));
-        }
-
-        cursor.close();
-
-        return result.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map(CheckedLink::new);
     }
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
-        List<CheckedLink> result = new ArrayList<>();
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true).iterator();
+            documents = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true);
         } else {
-            cursor = linksChecked.find().skip(start).limit(end).noCursorTimeout(true).iterator();
+            documents = linksChecked.find().skip(start).limit(end).noCursorTimeout(true);
         }
 
-        while (cursor.hasNext()) {
-            result.add(new CheckedLink(cursor.next()));
-        }
-
-        cursor.close();
-
-        return result.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map(CheckedLink::new);
     }
 
     @Override
     public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
-        Map<String, CheckedLink> urlMap = new HashMap<>();
-
+        final FindIterable<Document> urls;
         if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-
-            FindIterable<Document> urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
-            for (Document doc : urls) {
-                urlMap.put(doc.getString("url"), new CheckedLink(doc));
-            }
+            final Bson mongoFilter = filter.get().getMongoFilter();
+            urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
         } else {
-            FindIterable<Document> urls = linksChecked.find(in("url", urlCollection));
-            for (Document doc : urls) {
-                urlMap.put(doc.getString("url"), new CheckedLink(doc));
-            }
+            urls = linksChecked.find(in("url", urlCollection));
         }
-
-        return urlMap;
+        
+        return StreamSupport.stream(urls.spliterator(), false)
+                .collect(Collectors.toMap(doc -> doc.getString("url"), CheckedLink::new));
     }
 
     @Override
     public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-        List<CheckedLink> checkedLinks = new ArrayList<>();
+        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
 
-        Bson sort;
-
-        sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
-
-        MongoCursor<Document> cursor;
+        final Iterable<Document> documents;
 
         if (filter.isPresent()) {
             Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort).iterator();
+            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
         } else {
-            cursor = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort).iterator();
+            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
         }
 
-        while (cursor.hasNext()) {
-            checkedLinks.add(new CheckedLink(cursor.next()));
-        }
-
-        cursor.close();
-
-        return checkedLinks.stream();
+        return StreamSupport.stream(documents.spliterator(), false)
+                .map(CheckedLink::new);
     }
 
     @Override
     public List<String> getCollectionNames() {
-        MongoCursor<String> cursor = linksChecked.distinct("collection", String.class).iterator();
+        Iterable<String> collections = linksChecked.distinct("collection", String.class);
 
-        List<String> collections = new ArrayList<>();
-        while (cursor.hasNext()) {
-            collections.add(cursor.next());
-        }
-        return collections;
+        return StreamSupport.stream(collections.spliterator(), false)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Boolean save(CheckedLink checkedLink) {
 
         //separate mongo actions so that one of them doesn't disturb the other
-
         //save it to the history
         Bson filter = Filters.eq("url", checkedLink.getUrl());
         try {
@@ -209,7 +175,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             //do nothing so that the whole thread doesnt die because of one url, just skip it
             return false;
         }
-
 
     }
 
