@@ -19,6 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources;
 
 //import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 
 import java.sql.SQLException;
@@ -42,8 +43,8 @@ public interface CheckedLinkResource {
     CheckedLink get(String url, String collection) throws SQLException;
 
     /* get all urls that match a filter */
-//    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException;
-//
+    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException;
+
 //    /* get all urls that match a filter but limiting from start to end */
 //    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end);
 //

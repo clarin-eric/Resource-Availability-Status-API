@@ -20,6 +20,8 @@ package eu.clarin.cmdi.rasa;
 
 import ch.vorburger.exec.ManagedProcessException;
 import ch.vorburger.mariadb4j.DB;
+import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 
@@ -36,6 +38,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -67,19 +70,19 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         }
     }
 
-//    @Test
-//    public void collectionFilterShouldReturnCorrectResults() throws SQLException {
-//        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google");
-//        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-//        long count = links.count();
-//        assertEquals(3, count);
-//
-//        filter = new ACDHCheckedLinkFilter("noCollection");
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(0, count);
-//
-//    }
+    @Test
+    public void collectionFilterShouldReturnCorrectResults() throws SQLException {
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google");
+        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
+        long count = links.count();
+        assertEquals(3, count);
+
+        filter = new ACDHCheckedLinkFilter("noCollection");
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(0, count);
+
+    }
 
 //    @Test
 //    public void dateFiltersShouldReturnCorrectResults() {

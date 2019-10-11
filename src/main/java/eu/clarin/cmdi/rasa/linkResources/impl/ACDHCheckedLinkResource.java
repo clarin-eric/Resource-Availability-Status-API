@@ -18,6 +18,8 @@
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 //import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+
+import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 import org.jooq.DSLContext;
@@ -79,22 +81,24 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         return record == null ? null : new CheckedLink(record);
     }
 
-//    @Override
-//    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
-//
-//        String query = "SELECT * FROM statusView WHERE url=? AND collection=?";
-//        PreparedStatement statement = con.prepareStatement(query);
-////todo apply filter here
-//
-//
-//        ResultSet rs = statement.executeQuery();
-//
-//        try (Stream<Record> stream = DSL.using(con).fetchStream(rs)) {
-//            return stream.map(CheckedLink::new);
-//        }
-//
-//
-//    }
+    @Override
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
+
+        String defaultQuery = "SELECT * FROM statusView";
+
+        PreparedStatement statement;
+        if (!filter.isPresent()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            statement = filter.get().getStatement(con);
+        }
+
+        ResultSet rs = statement.executeQuery();
+
+        Stream<CheckedLink> result;
+
+        return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
+    }
 
     //todo delete all these
 //    @Override
