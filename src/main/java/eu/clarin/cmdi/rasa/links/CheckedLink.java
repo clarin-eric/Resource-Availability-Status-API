@@ -17,20 +17,21 @@
  */
 package eu.clarin.cmdi.rasa.links;
 
-import org.bson.Document;
+import org.jooq.Record;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Objects;
 
 public class CheckedLink {
 
     private String url;
     private String method;
-    private String message;
     private int status;
     private String contentType;
-    private String byteSize;
-    private long duration;
-    private long timestamp;
+    private int byteSize;
+    private int duration;
+    private Timestamp timestamp;
 
     private String collection;
     private int redirectCount;
@@ -38,13 +39,14 @@ public class CheckedLink {
     private String expectedMimeType;
 
     public CheckedLink() {
-
     }
 
-    public CheckedLink(String url, String method, String message, int status, String contentType, String byteSize, long duration, long timestamp, String collection, int redirectCount, String record, String expectedMimeType) {
+    public CheckedLink(String url, String method, int status,
+                       String contentType, int byteSize, int duration,
+                       Timestamp timestamp, String collection, int redirectCount,
+                       String record, String expectedMimeType) {
         this.url = url;
         this.method = method;
-        this.message = message;
         this.status = status;
         this.contentType = contentType;
         this.byteSize = byteSize;
@@ -56,37 +58,17 @@ public class CheckedLink {
         this.expectedMimeType = expectedMimeType;
     }
 
-    public CheckedLink(Document document) {
-        this.url = document.getString("url");
-        this.method = document.getString("method");
-        this.message = document.getString("message");
-        this.status = document.getInteger("status");
-        this.contentType = document.getString("contentType");
-        this.byteSize = document.getString("byteSize");
-        this.duration = document.getLong("duration");
-        this.timestamp = document.getLong("timestamp");
-        this.collection = document.getString("collection");
-        this.record = document.getString("record");
-        this.redirectCount = document.getInteger("redirectCount");
-        this.expectedMimeType = document.getString("expectedMimeType");
-    }
-
-    //    if you add a new parameter dont forget to add it to this method
-    public Document getMongoDocument() {
-        Document document = new Document("url", url)
-                .append("method", method)
-                .append("message", message)
-                .append("status", status)
-                .append("contentType", contentType)
-                .append("byteSize", byteSize)
-                .append("duration", duration)
-                .append("timestamp", timestamp)
-                .append("redirectCount", redirectCount)
-                .append("collection", collection)
-                .append("record", record)
-                .append("expectedMimeType", expectedMimeType);
-
-        return document;
+    public CheckedLink(Record record) {
+        this.url = (String) record.getValue("url");
+        this.status = (int) record.getValue("statusCode");
+        this.method = (String) record.getValue("method");
+        this.contentType = (String) record.getValue("contentType");
+        this.byteSize = (int) record.getValue("byteSize");
+        this.duration = (int) record.getValue("duration");
+        this.timestamp = (Timestamp) record.getValue("timestamp");
+        this.redirectCount = (int) record.getValue("redirectCount");
+        this.record = (String) record.getValue("record");
+        this.collection = (String) record.getValue("collection");
     }
 
     public String getUrl() {
@@ -105,14 +87,6 @@ public class CheckedLink {
         this.method = method;
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
     public int getStatus() {
         return status;
     }
@@ -129,27 +103,27 @@ public class CheckedLink {
         this.contentType = contentType;
     }
 
-    public String getByteSize() {
+    public int getByteSize() {
         return byteSize;
     }
 
-    public void setByteSize(String byteSize) {
+    public void setByteSize(int byteSize) {
         this.byteSize = byteSize;
     }
 
-    public long getDuration() {
+    public int getDuration() {
         return duration;
     }
 
-    public void setDuration(long duration) {
+    public void setDuration(int duration) {
         this.duration = duration;
     }
 
-    public long getTimestamp() {
+    public Timestamp getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -190,13 +164,13 @@ public class CheckedLink {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CheckedLink that = (CheckedLink) o;
+
         return status == that.status &&
                 duration == that.duration &&
-                timestamp == that.timestamp &&
+                timestamp.compareTo(that.timestamp) == 0 &&
                 redirectCount == that.redirectCount &&
                 url.equals(that.url) &&
                 Objects.equals(method, that.method) &&
-                Objects.equals(message, that.message) &&
                 Objects.equals(contentType, that.contentType) &&
                 Objects.equals(byteSize, that.byteSize) &&
                 Objects.equals(collection, that.collection) &&
@@ -206,14 +180,13 @@ public class CheckedLink {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, method, message, status, contentType, byteSize, duration, timestamp, redirectCount, collection, record, expectedMimeType);
+        return Objects.hash(url, method, status, contentType, byteSize, duration, timestamp, redirectCount, collection, record, expectedMimeType);
     }
 
     @Override
     public String toString() {
-        return  url +
+        return url +
                 ", \"" + method +
-                "\", \"" + message +
                 "\", " + status +
                 ", \"" + contentType +
                 "\", " + byteSize +
@@ -222,6 +195,6 @@ public class CheckedLink {
                 ", \"" + collection +
                 "\", " + redirectCount +
                 ", \"" + record +
-                "\", \"" + expectedMimeType+"\"" ;
+                "\", \"" + expectedMimeType + "\"";
     }
 }

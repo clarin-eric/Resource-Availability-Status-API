@@ -18,63 +18,76 @@
 
 package eu.clarin.cmdi.rasa.helpers.impl;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
-import org.bson.Document;
+//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
 
-    private MongoDatabase database;
+    private Connection con;
+    private HikariDataSource ds;
 
-    public ACDHRasaFactory(String databaseName, String databaseURI) {
-        connectDatabase(databaseName, databaseURI);
+    public ACDHRasaFactory(String databaseURI, String userName, String password) {
+
+        connectDatabase(databaseURI, userName, password);
     }
 
     @Override
     public ACDHCheckedLinkResource getCheckedLinkResource() {
-        MongoCollection<Document> linksChecked = database.getCollection("linksChecked");
-        MongoCollection<Document> linksCheckedHistory = database.getCollection("linksCheckedHistory");
-        MongoCollection<Document> linksToBeChecked = database.getCollection("linksToBeChecked");
-        return new ACDHCheckedLinkResource(linksChecked, linksCheckedHistory, linksToBeChecked);
+        return new ACDHCheckedLinkResource(con);
     }
 
-    @Override
-    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-        MongoCollection<Document> linksToBeChecked = database.getCollection("linksToBeChecked");
-        return new ACDHLinkToBeCheckedResource(linksToBeChecked);
-    }
+//    @Override
+//    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
+//        return new ACDHLinkToBeCheckedResource(con);
+//    }
+//
+//    @Override
+//    public ACDHStatisticsResource getStatisticsResource() {
+//        return new ACDHStatisticsResource(con);
+//    }
 
-    @Override
-    public ACDHStatisticsResource getStatisticsResource() {
-        MongoCollection<Document> linksChecked = database.getCollection("linksChecked");
-        MongoCollection<Document> linksToBeChecked = database.getCollection("linksToBeChecked");
-        return new ACDHStatisticsResource(linksChecked, linksToBeChecked);
-    }
-
-    private void connectDatabase(String databaseName, String databaseURI) {
+    private void connectDatabase(String databaseURI, String userName, String password) {
         _logger.info("Connecting to database...");
 
-        MongoClient mongoClient;
-        if (databaseURI==null || databaseURI.isEmpty()) {//if it is empty, try localhost
-            mongoClient = MongoClients.create();
-        } else {
-            mongoClient = MongoClients.create(databaseURI);
+        HikariConfig config = new HikariConfig();
+        //example: jdbc:mysql://localhost:3306/simpsons
+        config.setJdbcUrl(databaseURI);
+        config.setUsername(userName);
+        config.setPassword(password);
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        ds = new HikariDataSource(config);
+
+        try {
+            this.con = ds.getConnection();
+            _logger.info("Connected to database.");
+        } catch (SQLException e) {
+            _logger.error("There was a problem with SQL connection: ", e);
         }
 
-        MongoDatabase database = mongoClient.getDatabase(databaseName);
+    }
 
-        _logger.info("Connected to database.");
-
-        this.database = database;
+    @Override
+    public void tearDown(){
+        try{
+            this.ds.close();
+            this.con.close();
+        }catch (SQLException e){
+            //Already closed, or not even opened, do nothing
+        }
 
     }
 }
