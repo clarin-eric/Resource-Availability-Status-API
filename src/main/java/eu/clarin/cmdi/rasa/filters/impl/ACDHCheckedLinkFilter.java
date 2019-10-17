@@ -87,47 +87,62 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
-    //returns a mongo filter depending on the non null parameters
+    //returns a mysql statement filter depending on the non null parameters
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
 
         //if it's here, that means there is something in the where clause.
+        //because it is checked before if the filter variables are set
         String query = "SELECT * FROM statusView WHERE";
 
-
         boolean first = false;
-
         if (status != null) {
-            query += " statusCode>" + status.getMinimum() + " AND statusCode<" + status.getMaximum();
+            query += " statusCode>=? AND statusCode<=?";
             first = true;
         }
-
         if (before != null) {
             if (first) {
                 query += " AND";
             }
-            query += " timestamp<" + Timestamp.valueOf(before);
+            query += " timestamp<?";
             first = true;
         }
-
         if (after != null) {
             if (first) {
                 query += " AND";
             }
-            query += " timestamp>" + Timestamp.valueOf(after);
+            query += " timestamp>?";
             first = true;
         }
-
         if (collection != null && !collection.equals("Overall")) {
             if (first) {
                 query += " AND";
             }
-            query += " collection='" + collection+"'";
+            query += " collection=?";
         }
 
-
-        System.out.println("query: " + query);//TODO Delete
         PreparedStatement statement = con.prepareStatement(query);
+
+
+        //query setting done, now fill it
+        int i = 1;
+        if (status != null) {
+            statement.setInt(i, status.getMinimum());
+            statement.setInt(i + 1, status.getMaximum());
+            i += 2;
+        }
+        if (before != null) {
+            statement.setTimestamp(i, Timestamp.valueOf(before));
+            i++;
+        }
+        if (after != null) {
+            statement.setTimestamp(i, Timestamp.valueOf(after));
+            i++;
+        }
+        if (collection != null && !collection.equals("Overall")) {
+            statement.setString(i, collection);
+        }
+
         return statement;
     }
 

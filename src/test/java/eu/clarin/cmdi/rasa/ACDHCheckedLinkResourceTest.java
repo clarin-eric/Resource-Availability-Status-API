@@ -25,6 +25,7 @@ import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
 
+import org.apache.commons.lang3.Range;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,7 +46,8 @@ import static org.junit.Assert.assertEquals;
 public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     //2019-10-11 00:00:00, same as initDB
-    private static final Timestamp then = Timestamp.valueOf(LocalDateTime.of(2019, 10, 11, 0, 0, 0));
+    private static final LocalDateTime thenDateTime = LocalDateTime.of(2019, 10, 11, 0, 0, 0);
+    private static final Timestamp then = Timestamp.valueOf(thenDateTime);
 
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
@@ -84,55 +86,55 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     }
 
-//    @Test
-//    public void dateFiltersShouldReturnCorrectResults() {
-//        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, LocalDateTime.now().plusDays(1), LocalDateTime.now().minusDays(1), ZoneId.systemDefault());
-//        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-//        long count = links.count();
-//        assertEquals(22, count);
-//
-//        filter = new ACDHCheckedLinkFilter(null, LocalDateTime.now().plusDays(1), null, ZoneId.systemDefault());
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(22, count);
-//
-//        filter = new ACDHCheckedLinkFilter(null, null, LocalDateTime.now().minusDays(1), ZoneId.systemDefault());
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(22, count);
-//
-//        filter = new ACDHCheckedLinkFilter(null, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), ZoneId.systemDefault());
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(0, count);
-//    }
-//
-//    @Test
-//    public void statusCodeFilterShouldReturnCorrectResults() {
-//
-//        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google", 200);
-//        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-//        long count = links.count();
-//        assertEquals(3, count);
-//
-//        filter = new ACDHCheckedLinkFilter(Range.between(100, 600), null, null, ZoneId.systemDefault());
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(22, count);
-//
-//        filter = new ACDHCheckedLinkFilter(Range.between(1, 90), null, null, ZoneId.systemDefault());
-//        links = checkedLinkResource.get(Optional.of(filter));
-//        count = links.count();
-//        assertEquals(0, count);
-//
-//    }
-//
-//    @Test
-//    public void combinedFilterShouldReturnCorrectResults() {
-//        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(Range.between(100, 300), LocalDateTime.now().plusDays(1), LocalDateTime.now().minusDays(1), ZoneId.systemDefault(), "Google");
-//        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-//        long count = links.count();
-//        assertEquals(3, count);
-//    }
+    @Test
+    public void dateFiltersShouldReturnCorrectResults() throws SQLException {
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault());
+        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
+        long count = links.count();
+        assertEquals(22, count);
+
+        filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), null, ZoneId.systemDefault());
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(22, count);
+
+        filter = new ACDHCheckedLinkFilter(null, null, thenDateTime.minusDays(1), ZoneId.systemDefault());
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(22, count);
+
+        filter = new ACDHCheckedLinkFilter(null, thenDateTime.minusDays(1), thenDateTime.plusDays(1), ZoneId.systemDefault());
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(0, count);
+    }
+
+    @Test
+    public void statusCodeFilterShouldReturnCorrectResults() throws SQLException {
+
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google", 200);
+        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
+        long count = links.count();
+        assertEquals(3, count);
+
+        filter = new ACDHCheckedLinkFilter(Range.between(100, 600), null, null, ZoneId.systemDefault());
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(22, count);
+
+        filter = new ACDHCheckedLinkFilter(Range.between(1, 90), null, null, ZoneId.systemDefault());
+        links = checkedLinkResource.get(Optional.of(filter));
+        count = links.count();
+        assertEquals(0, count);
+
+    }
+
+    @Test
+    public void combinedFilterShouldReturnCorrectResults() throws SQLException {
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(Range.between(100, 300), thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault(), "Google");
+        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
+        long count = links.count();
+        assertEquals(3, count);
+    }
 
 }

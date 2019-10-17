@@ -93,28 +93,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             statement = filter.get().getStatement(con);
         }
 
+        System.out.println(statement);
+
         ResultSet rs = statement.executeQuery();
 
         Stream<CheckedLink> result;
 
         return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
     }
-
-    //todo delete all these
-//    @Override
-//    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
-//        return null;
-//    }
-//
-//    @Override
-//    public Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter) {
-//        return null;
-//    }
-//
-//    @Override
-//    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-//        return null;
-//    }
 
     @Override
     public List<String> getCollectionNames() {
