@@ -24,6 +24,7 @@ import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,11 +52,11 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
         return new ACDHLinkToBeCheckedResource(con);
     }
-//
-//    @Override
-//    public ACDHStatisticsResource getStatisticsResource() {
-//        return new ACDHStatisticsResource(con);
-//    }
+
+    @Override
+    public ACDHStatisticsResource getStatisticsResource() {
+        return new ACDHStatisticsResource(con);
+    }
 
     private void connectDatabase(String databaseURI, String userName, String password) {
         _logger.info("Connecting to database...");

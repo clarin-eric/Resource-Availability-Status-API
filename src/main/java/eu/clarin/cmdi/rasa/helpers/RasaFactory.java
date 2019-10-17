@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.helpers;
 
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 
@@ -27,6 +28,6 @@ public interface RasaFactory {
 
     public ACDHCheckedLinkResource getCheckedLinkResource();
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource();
-//    public ACDHStatisticsResource getStatisticsResource();
+    public ACDHStatisticsResource getStatisticsResource();
     public void tearDown();
 }
