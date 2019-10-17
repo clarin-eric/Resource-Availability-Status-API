@@ -23,6 +23,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 //import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +47,10 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         return new ACDHCheckedLinkResource(con);
     }
 
-//    @Override
-//    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-//        return new ACDHLinkToBeCheckedResource(con);
-//    }
+    @Override
+    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
+        return new ACDHLinkToBeCheckedResource(con);
+    }
 //
 //    @Override
 //    public ACDHStatisticsResource getStatisticsResource() {

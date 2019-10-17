@@ -45,15 +45,15 @@ public interface CheckedLinkResource {
     /* get all urls that match a filter */
     Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException;
 
-//    /* get all urls that match a filter but limiting from start to end */
-//    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end);
-//
-//    /* batch retrieval with url as key with optional filtering
-//       get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
-//    */
-//    Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter);
-//
-//    /* retrieval of history for one URl as key with optional filtering, Order is timestamp based. */
+    /* get all urls that match a filter but limiting from start to end */
+    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end);
+
+    /* batch retrieval with url as key with optional filtering
+       get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
+    */
+    Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter);
+
+    /* retrieval of history for one URl as key with optional filtering, Order is timestamp based. */
 //    Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter);
 
     /* retrieval of the names of all collections that are in linksChecked */

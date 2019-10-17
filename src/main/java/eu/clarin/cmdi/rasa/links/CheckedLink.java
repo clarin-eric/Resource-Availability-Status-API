@@ -69,6 +69,7 @@ public class CheckedLink {
         this.redirectCount = (int) record.getValue("redirectCount");
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
+        this.expectedMimeType = (String) record.getValue("expectedMimeType");
     }
 
     public String getUrl() {

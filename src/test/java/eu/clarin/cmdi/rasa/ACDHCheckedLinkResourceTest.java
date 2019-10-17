@@ -18,27 +18,17 @@
 
 package eu.clarin.cmdi.rasa;
 
-import ch.vorburger.exec.ManagedProcessException;
-import ch.vorburger.mariadb4j.DB;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
-import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
-
 import org.apache.commons.lang3.Range;
-import org.apache.ibatis.jdbc.ScriptRunner;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
@@ -52,7 +42,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
-        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, null, 0, null, null);
+        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "NotGoogle", 0, "record", null);
         CheckedLink actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
         assertEquals(expected, actual);
 

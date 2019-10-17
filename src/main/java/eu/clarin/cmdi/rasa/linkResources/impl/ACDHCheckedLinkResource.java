@@ -22,7 +22,6 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.links.CheckedLink;
-import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
@@ -36,9 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
@@ -46,7 +43,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
     private Connection con;
-
 
     public ACDHCheckedLinkResource(Connection con) {
         this.con = con;
@@ -93,27 +89,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             statement = filter.get().getStatement(con);
         }
 
-        System.out.println(statement);
-
         ResultSet rs = statement.executeQuery();
-
-        Stream<CheckedLink> result;
 
         return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
     }
 
     @Override
-    public List<String> getCollectionNames() {
-        return null;
-    }
-
-    @Override
-    public Boolean save(CheckedLink checkedLink) {
-        return null;
-    }
-
-//    @Override
-//    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
+        //todo
 //        final Iterable<Document> documents;
 //
 //        if (filter.isPresent()) {
@@ -125,10 +108,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 //
 //        return StreamSupport.stream(documents.spliterator(), false)
 //                .map(CheckedLink::new);
-//    }
-//
-//    @Override
-//    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
+        return null;
+    }
+
+    @Override
+    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
+        //todo
 //        final FindIterable<Document> urls;
 //        if (filter.isPresent()) {
 //            final Bson mongoFilter = filter.get().getMongoFilter();
@@ -139,8 +124,10 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 //
 //        return StreamSupport.stream(urls.spliterator(), false)
 //                .collect(Collectors.toMap(doc -> doc.getString("url"), CheckedLink::new));
-//    }
-//
+        return null;
+    }
+
+    //
 //    @Override
 //    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
 //        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
@@ -158,17 +145,21 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 //                .map(CheckedLink::new);
 //    }
 //
-//    @Override
-//    public List<String> getCollectionNames() {
-//        Iterable<String> collections = linksChecked.distinct("collection", String.class);
+    @Override
+    public List<String> getCollectionNames() {
+//todo
+        //        Iterable<String> collections = linksChecked.distinct("collection", String.class);
 //
 //        return StreamSupport.stream(collections.spliterator(), false)
 //                .collect(Collectors.toList());
-//    }
-//
-//    @Override
-//    public Boolean save(CheckedLink checkedLink) {
-//
+        return null;
+    }
+
+
+    @Override
+    public Boolean save(CheckedLink checkedLink) {
+//todo
+
 //        //separate mongo actions so that one of them doesn't disturb the other
 //        //save it to the history
 //        Bson filter = Filters.eq("url", checkedLink.getUrl());
@@ -208,8 +199,9 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 //            //do nothing so that the whole thread doesnt die because of one url, just skip it
 //            return false;
 //        }
-//
-//    }
+        return false;
+
+    }
 
 //    @Override
 //    public Boolean moveToHistory(CheckedLink checkedLink) {
