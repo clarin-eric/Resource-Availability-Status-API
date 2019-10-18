@@ -46,21 +46,24 @@ public interface CheckedLinkResource {
     Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException;
 
     /* get all urls that match a filter but limiting from start to end */
-    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end);
+    Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) throws SQLException;
 
     /* batch retrieval with url as key with optional filtering
        get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
     */
     Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter);
 
-    /* retrieval of history for one URl as key with optional filtering, Order is timestamp based. */
-//    Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter);
-
     /* retrieval of the names of all collections that are in linksChecked */
     List<String> getCollectionNames();
 
     /* save a checked link into linkschecked, remove it from linksToBeChecked, move old result into history if exists */
     Boolean save(CheckedLink checkedLink) throws SQLException;
+
+    /* Delete a url from status */
+    Boolean delete(String url) throws SQLException;
+
+    /* retrieval of history for one URl as key with optional filtering, Order is timestamp based. */
+//    Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter);
 
     /* Move from linksChecked to linkCheckedHistory. */
 //    Boolean moveToHistory(CheckedLink checkedLink);

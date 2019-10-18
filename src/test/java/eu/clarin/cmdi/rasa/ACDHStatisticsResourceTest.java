@@ -23,7 +23,10 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
+import org.junit.AfterClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -32,14 +35,15 @@ import java.util.List;
 import java.util.Optional;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ACDHStatisticsResourceTest extends TestConfig {
 
+    private static final String testURL = "www.facebook.com";
 
     @Test
-    public void basicStatusStatisticsTestShouldReturnCorrectResults() throws SQLException {
+    public void AbasicStatusStatisticsTestShouldReturnCorrectResults() throws SQLException {
         StatusStatistics googleStatistics = new StatusStatistics(200, 3L, 358.3333, 440L);
         StatusStatistics statistics200 = new StatusStatistics(200, 16L, 355.625, 613L);
         StatusStatistics statistics400 = new StatusStatistics(400, 6L, 48.3333, 56L);
@@ -58,7 +62,7 @@ public class ACDHStatisticsResourceTest extends TestConfig {
     }
 
     @Test
-    public void basicOverallStatisticsTestShouldReturnCorrectResults() throws SQLException {
+    public void BbasicOverallStatisticsTestShouldReturnCorrectResults() throws SQLException {
         Statistics googleStatistics = new Statistics(3L, 358.3333, 440L);
         Statistics overallStatistics = new Statistics(22L, 271.8182, 613L);
 
@@ -73,7 +77,7 @@ public class ACDHStatisticsResourceTest extends TestConfig {
     }
 
     @Test
-    public void basicCountTestShouldReturnCorrectResults() throws SQLException {
+    public void CbasicCountTestShouldReturnCorrectResults() throws SQLException {
         ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, null);//count everything
         assertEquals(22, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
         assertEquals(22, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
@@ -94,8 +98,8 @@ public class ACDHStatisticsResourceTest extends TestConfig {
         assertEquals(19, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
         assertEquals(19, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
 
-        linkToBeCheckedResource.save(new LinkToBeChecked("http://facebook.com", "FacebookRecord", "Facebook", null));
-        checkedLinkResource.save(new CheckedLink("http://facebook.com", "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Facebook", 0, "FacebookRecord", null));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null));
+        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Facebook", 0, "FacebookRecord", null));
 
         acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, null);//count everything
         assertEquals(23, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
@@ -111,4 +115,13 @@ public class ACDHStatisticsResourceTest extends TestConfig {
         assertEquals(3, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
     }
 
+    @AfterClass
+    public static void tearDownClass() {
+        try {
+            //it is deleted from status via cascade automatically when deleted from urls
+            linkToBeCheckedResource.delete(testURL);
+        } catch (SQLException e) {
+            fail();
+        }
+    }
 }

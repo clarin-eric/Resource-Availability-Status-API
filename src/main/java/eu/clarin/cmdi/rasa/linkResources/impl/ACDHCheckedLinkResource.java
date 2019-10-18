@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 //import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import org.jooq.Record;
@@ -95,20 +96,28 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
-        //todo
-//        final Iterable<Document> documents;
-//
-//        if (filter.isPresent()) {
-//            Bson mongoFilter = filter.get().getMongoFilter();
-//            documents = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true);
-//        } else {
-//            documents = linksChecked.find().skip(start).limit(end).noCursorTimeout(true);
-//        }
-//
-//        return StreamSupport.stream(documents.spliterator(), false)
-//                .map(CheckedLink::new);
-        return null;
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filterOptional, int start, int end) throws SQLException {
+        if (start > end) {
+            throw new IllegalArgumentException("start can't be greater than end.");
+        }
+
+        if (start <= 0 && end <= 0) {
+            throw new IllegalArgumentException("start and end can't less than or equal to 0 at the same time.");
+        }
+
+        CheckedLinkFilter filter;
+        if (filterOptional.isPresent()) {
+            filter = filterOptional.get();
+            filter.setStart(start);
+            filter.setEnd(end);
+        } else {
+            filter = new ACDHCheckedLinkFilter(start, end);
+        }
+
+        PreparedStatement statement = filter.getStatement(con);
+        ResultSet rs = statement.executeQuery();
+
+        return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
     }
 
     @Override
@@ -127,24 +136,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         return null;
     }
 
-    //
-//    @Override
-//    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-//        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
-//
-//        final Iterable<Document> documents;
-//
-//        if (filter.isPresent()) {
-//            Bson mongoFilter = filter.get().getMongoFilter();
-//            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
-//        } else {
-//            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
-//        }
-//
-//        return StreamSupport.stream(documents.spliterator(), false)
-//                .map(CheckedLink::new);
-//    }
-//
+
     @Override
     public List<String> getCollectionNames() {
 //todo
@@ -175,6 +167,39 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         return row == 1;
     }
+
+    @Override
+    public Boolean delete(String url) throws SQLException {
+        String deleteQuery = "DELETE FROM status WHERE url=?";
+        PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
+        preparedStatement.setString(1,url);
+
+        //affected rows
+        int row = preparedStatement.executeUpdate();
+
+        return row == 1;
+    }
+
+    //todo later history
+
+    //    @Override
+//    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
+//        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
+//
+//        final Iterable<Document> documents;
+//
+//        if (filter.isPresent()) {
+//            Bson mongoFilter = filter.get().getMongoFilter();
+//            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
+//        } else {
+//            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
+//        }
+//
+//        return StreamSupport.stream(documents.spliterator(), false)
+//                .map(CheckedLink::new);
+//    }
+//
+
 
 //    @Override
 //    public Boolean moveToHistory(CheckedLink checkedLink) {

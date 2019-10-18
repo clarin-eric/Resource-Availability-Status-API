@@ -46,22 +46,24 @@ public abstract class TestConfig {
 
     private static RasaFactory rasaFactory;
 
-    public static ACDHCheckedLinkResource checkedLinkResource;
-    public static LinkToBeCheckedResource linkToBeCheckedResource;
-    public static StatisticsResource statisticsResource;
+    static ACDHCheckedLinkResource checkedLinkResource;
+    static LinkToBeCheckedResource linkToBeCheckedResource;
+    static StatisticsResource statisticsResource;
 
     //same urls as in initDB.sql
     static List<String> urls = Arrays.asList("http://www.ailla.org/waiting.html", "http://www.ailla.org/audio_files/EMP1M1B1.mp3", "http://www.ailla.org/audio_files/WBA1M3A2.mp3", "http://www.ailla.org/text_files/WBA1M1A2a.mp3", "http://www.ailla.org/audio_files/KUA2M1A1.mp3", "http://www.ailla.org/text_files/KUA2M1.pdf", "http://www.ailla.org/audio_files/sarixojani.mp3", "http://www.ailla.org/audio_files/TEH11M7A1sa.mp3", "http://www.ailla.org/text_files/TEH11M7.pdf", "http://dspin.dwds.de:8088/ddc-sru/dta/", "http://dspin.dwds.de:8088/ddc-sru/grenzboten/", "http://dspin.dwds.de:8088/ddc-sru/rem/", "http://www.deutschestextarchiv.de/rem/?d=M084E-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M220P-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M119-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M171-G1.xml", "http://www.deutschestextarchiv.de/rem/?d=M185-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M048P-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M112-G1.xml");
     static List<String> googleUrls = Arrays.asList("https://www.google.com", "https://maps.google.com", "https://drive.google.com");
 
+    private static DB database;
 
     @BeforeClass
     public static void setUp() throws SQLException, IOException, ManagedProcessException {
 
-        DB database = DB.newEmbeddedDB(3308);
+        database = DB.newEmbeddedDB(3308);
 
         database.start();
         database.createDB("stormcrawler");
+
 
         //create database and fill it with initDB.sql
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/stormcrawler?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
@@ -79,7 +81,8 @@ public abstract class TestConfig {
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void tearDown() throws ManagedProcessException {
+        database.stop();
         rasaFactory.tearDown();
     }
 

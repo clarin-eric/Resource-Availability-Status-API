@@ -36,6 +36,9 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     private ZoneId zone;
     private String collection;
 
+    private int start = -1;
+    private int end = -1;
+
     //zoneId is the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
     //also before and after parameters should be instantiated with ZoneId.systemDefault() as well
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone) {
@@ -60,6 +63,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     public ACDHCheckedLinkFilter(String collection, int status) {
         this.collection = collection;
         this.status = Range.between(status, status);
+    }
+
+    public ACDHCheckedLinkFilter(int start, int end) {
+        this.start = start;
+        this.end = end;
     }
 
     @Override
@@ -87,42 +95,63 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
+    public void setEnd(int limitEnd) {
+        this.end = limitEnd;
+    }
+
+    public void setStart(int start) {
+        this.start = start;
+    }
+
     //returns a mysql statement filter depending on the non null parameters
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
 
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        String query = "SELECT * FROM statusView WHERE";
+        String query = "SELECT * FROM statusView";
 
-        boolean first = false;
+        boolean firstAlready = false;
         if (status != null) {
-            query += " statusCode>=? AND statusCode<=?";
-            first = true;
+            query += " WHERE statusCode>=? AND statusCode<=?";
+            firstAlready = true;
         }
         if (before != null) {
-            if (first) {
+            if (firstAlready) {
                 query += " AND";
+            }else{
+                query += " WHERE";
             }
             query += " timestamp<?";
-            first = true;
+            firstAlready = true;
         }
         if (after != null) {
-            if (first) {
+            if (firstAlready) {
                 query += " AND";
+            }else{
+                query += " WHERE";
             }
             query += " timestamp>?";
-            first = true;
+            firstAlready = true;
         }
         if (collection != null && !collection.equals("Overall")) {
-            if (first) {
+            if (firstAlready) {
                 query += " AND";
+            }else{
+                query += " WHERE";
             }
             query += " collection=?";
         }
 
-        PreparedStatement statement = con.prepareStatement(query);
+        if (start > 0 && end > 0) {
+            query += " LIMIT ? OFFSET ?";
+        } else if (start > 0) {
+            query += " LIMIT 18446744073709551615 OFFSET ?";
+        } else if (end > 0) {
+            query += " LIMIT ?";
+        }
 
+        PreparedStatement statement = con.prepareStatement(query);
 
         //query setting done, now fill it
         int i = 1;
@@ -141,9 +170,23 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         }
         if (collection != null && !collection.equals("Overall")) {
             statement.setString(i, collection);
+            i++;
+        }
+
+        if (start > 0 && end > 0) {
+//            query += "LIMIT ? OFFSET ?";
+            statement.setInt(i, end - start + 1);
+            statement.setInt(i + 1, start - 1);//start 1 would need offset 0
+        } else if (start > 0) {
+//            query += " LIMIT 18446744073709551615 OFFSET ?";
+            statement.setInt(i, start - 1);//start 1 would need offset 0
+        } else if (end > 0) {
+//            query += " LIMIT ?";
+            statement.setInt(i, end);
         }
 
         return statement;
     }
+
 
 }

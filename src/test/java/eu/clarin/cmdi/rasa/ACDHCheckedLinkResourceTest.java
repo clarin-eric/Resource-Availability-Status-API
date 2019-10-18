@@ -18,22 +18,35 @@
 
 package eu.clarin.cmdi.rasa;
 
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.DAO.CheckedLink;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import org.apache.commons.lang3.Range;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ACDHCheckedLinkResourceTest extends TestConfig {
+
+    private String testURL = "https://mail.google.com";
 
     //2019-10-11 00:00:00, same as initDB
     private static final LocalDateTime thenDateTime = LocalDateTime.of(2019, 10, 11, 0, 0, 0);
@@ -128,13 +141,58 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     }
 
     @Test
-    public void basicSaveTestShouldSaveCorrectly() {
-
+    public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
+        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, 0, null, null)));
     }
 
     @Test
-    public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
-        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, 0, null, null)));
+    public void filterWithStartAndEndTestShouldReturnCorrectResults() throws SQLException {
+        Stream<CheckedLink> linksStream = checkedLinkResource.get(Optional.empty(), 1, 10);
+        List<CheckedLink> links = linksStream.collect(Collectors.toList());
+        assertEquals(10, links.size());
+
+        Stream<CheckedLink> linksOneOffsetStream = checkedLinkResource.get(Optional.empty(), 2, 10);
+        List<CheckedLink> linksOneOffset = linksOneOffsetStream.collect(Collectors.toList());
+        assertEquals(9, linksOneOffset.size());
+
+        links.remove(0);
+        assertEquals(links, linksOneOffset);
+    }
+
+    //the next two methods should be run in order
+    @Test
+    public void ZZ1saveTestShouldSaveCorrectly() throws SQLException {
+        //before saving only 3 google urls
+        Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertEquals(3, googleStream.count());
+
+        //save(first urls then status)
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL,"GoogleRecord","Google","mimeType"));
+        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Google", 0, "GoogleRecord", "mimeType");
+        checkedLinkResource.save(checkedLink);
+
+        //after saving should be 4
+        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertEquals(4, googleStream.count());
+
+        //and should contain
+        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertTrue(googleStream.anyMatch(x -> Objects.equals(x, checkedLink)));
+    }
+
+    @Test
+    public void ZZ2deleteTestShouldSaveCorrectly() throws SQLException {
+        //first status then url
+        checkedLinkResource.delete(testURL);
+        linkToBeCheckedResource.delete(testURL);
+
+        //after deleting only 3 google urls
+        Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertEquals(3, googleStream.count());
+
+        //and shouldn't contain
+        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertFalse(googleStream.anyMatch(x -> x.getUrl().equals(testURL)));
     }
 
 }

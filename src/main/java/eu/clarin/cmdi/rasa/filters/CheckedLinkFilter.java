@@ -31,4 +31,7 @@ public interface CheckedLinkFilter extends Filter {
     String getCollection();
     ZoneId getZone();
 
+    void setStart(int start);
+    void setEnd(int end);
+
 }
