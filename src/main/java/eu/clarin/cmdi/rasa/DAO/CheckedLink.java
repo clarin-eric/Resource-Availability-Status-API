@@ -15,11 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package eu.clarin.cmdi.rasa.links;
+package eu.clarin.cmdi.rasa.DAO;
 
 import org.jooq.Record;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Objects;
 

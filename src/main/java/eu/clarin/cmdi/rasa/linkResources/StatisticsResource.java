@@ -18,9 +18,11 @@
 
 package eu.clarin.cmdi.rasa.linkResources;
 
+import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
-import eu.clarin.cmdi.rasa.links.Statistics;
+import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,9 +31,17 @@ public interface StatisticsResource {
     /* gets status statistics per collection. status statistics are
     the following info per status code:
     count,avg response time, max response time
+    for a given collection or for all collections(either "Overall" or null).
+    will return empty list if given collection doesn't exist
      */
-    List<Statistics> getStatusStatistics(String collection);
-    Statistics getOverallStatistics(String collection);
+    List<StatusStatistics> getStatusStatistics(String collection) throws SQLException;
+
+    /*get overall statistics without grouping by status
+    so get overall count, avg response time and max response time
+    for a given collection or for all collections(either "Overall" or null).
+    will return null if given collection doesn't exist
+    * */
+    Statistics getOverallStatistics(String collection) throws SQLException;
 
     long countLinksChecked(Optional<ACDHStatisticsFilter> filter);
     long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter);

@@ -19,7 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
 import java.sql.SQLException;
 import java.util.List;

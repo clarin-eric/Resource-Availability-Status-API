@@ -18,15 +18,22 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
-import eu.clarin.cmdi.rasa.links.Statistics;
+import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
+import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ACDHStatisticsResource implements StatisticsResource {
 
@@ -38,90 +45,41 @@ public class ACDHStatisticsResource implements StatisticsResource {
         this.con = con;
     }
 
+    //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
-    public List<Statistics> getStatusStatistics(String collection) {
-//todo
-        return null;
-//        AggregateIterable<Document> iterable;
-//        if (collection == null || collection.equals("Overall")) {
-//            iterable = linksChecked.aggregate(Arrays.asList(
-//                    Aggregates.group("$status",
-//                            Accumulators.sum("count", 1),
-//                            Accumulators.avg("avg_resp", "$duration"),
-//                            Accumulators.max("max_resp", "$duration")
-//                    ),
-//                    Aggregates.sort(orderBy(ascending("_id")))
-//            ));
-//        } else {
-//            iterable = linksChecked.aggregate(Arrays.asList(
-//                    Aggregates.match(eq("collection", collection)),
-//                    Aggregates.group("$status",
-//                            Accumulators.sum("count", 1),
-//                            Accumulators.avg("avg_resp", "$duration"),
-//                            Accumulators.max("max_resp", "$duration")
-//                    ),
-//                    Aggregates.sort(orderBy(ascending("_id")))
-//            ));
-//        }
-//
-//
-//        List<Statistics> stats = new ArrayList<>();
-//
-//        for (Document doc : iterable) {
-//            Statistics statistics = new Statistics();
-//            statistics.setAvgRespTime(doc.getDouble("avg_resp"));
-//            statistics.setMaxRespTime(doc.getLong("max_resp"));
-//            int statusCode = doc.getInteger("_id");
-//            statistics.setStatus(statusCode);
-//            if (statusCode == 200) {
-//                statistics.setCategory("Ok");
-//            } else if (statusCode == 401 || statusCode == 405 || statusCode == 429) {
-//                statistics.setCategory("Undetermined");
-//            } else {
-//                statistics.setCategory("Broken");
-//            }
-//            statistics.setCount(doc.getInteger("count"));
-//            stats.add(statistics);
-//        }
-//
-//        return stats;
+    public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
+        String query;
+        PreparedStatement statement;
+        if (collection == null || collection.equals("Overall")) {
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView GROUP BY statusCode";
+            statement = con.prepareStatement(query);
+        } else {
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView WHERE collection=? GROUP BY statusCode";
+            statement = con.prepareStatement(query);
+            statement.setString(1, collection);
+        }
+
+        ResultSet rs = statement.executeQuery();
+        return DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
     }
 
     @Override
-    public Statistics getOverallStatistics(String collection) {
-        //todo
-        return null;
-//        AggregateIterable<Document> aggregate;
-//
-//        if (collection == null || collection.equals("Overall")) {
-//            aggregate = linksChecked.aggregate(
-//                    Arrays.asList(
-//                            Aggregates.group(null,
-//                                    Accumulators.sum("count", 1),
-//                                    Accumulators.avg("avg_resp", "$duration"),
-//                                    Accumulators.max("max_resp", "$duration")
-//                            )));
-//        } else {
-//            aggregate = linksChecked.aggregate(
-//                    Arrays.asList(
-//                            Aggregates.match(eq("collection", collection)),
-//                            Aggregates.group(null,
-//                                    Accumulators.sum("count", 1),
-//                                    Accumulators.avg("avg_resp", "$duration"),
-//                                    Accumulators.max("max_resp", "$duration")
-//                            )));
-//        }
-//
-//        Document result = aggregate.first();
-//
-//        Statistics statistics = new Statistics();
-//        if (result != null) {
-//            statistics.setAvgRespTime(result.getDouble("avg_resp"));
-//            statistics.setMaxRespTime(result.getLong("max_resp"));
-//            statistics.setCount(result.getInteger("count"));
-//        }
-//
-//        return statistics;
+    public Statistics getOverallStatistics(String collection) throws SQLException {
+        String query;
+        PreparedStatement statement;
+        if (collection == null || collection.equals("Overall")) {
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView";
+            statement = con.prepareStatement(query);
+        } else {
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView WHERE collection=?";
+            statement = con.prepareStatement(query);
+            statement.setString(1, collection);
+        }
+
+        ResultSet rs = statement.executeQuery();
+        Record record = DSL.using(con).fetchOne(rs);
+        //return null if count is 0, ie. collection not found in database
+        return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
     }
 
     @Override

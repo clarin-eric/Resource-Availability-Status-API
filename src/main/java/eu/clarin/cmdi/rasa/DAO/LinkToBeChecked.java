@@ -16,7 +16,7 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.links;
+package eu.clarin.cmdi.rasa.DAO;
 
 import org.jooq.Record;
 

@@ -18,23 +18,14 @@
 
 package eu.clarin.cmdi.rasa;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHLinkToBeCheckedFilter;
-import eu.clarin.cmdi.rasa.links.CheckedLink;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.junit.BeforeClass;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -102,7 +93,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
     public void CsaveTestShouldSaveCorrectly() throws SQLException {
         //before saving only 3 google urls
         Stream<LinkToBeChecked> googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")));
-        assertEquals(3,googleStream.count());
+        assertEquals(3, googleStream.count());
 
         //save
         LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType");
@@ -110,11 +101,11 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
         //after saving should be 4
         googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")));
-        assertEquals(4,googleStream.count());
+        assertEquals(4, googleStream.count());
 
         //and should contain
         googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")));
-        assertTrue(googleStream.anyMatch(x -> Objects.equals(x,linkToBeChecked)));
+        assertTrue(googleStream.anyMatch(x -> Objects.equals(x, linkToBeChecked)));
     }
 
     @Test
@@ -123,7 +114,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
         //after deleting only 3 google urls
         Stream<LinkToBeChecked> googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")));
-        assertEquals(3,googleStream.count());
+        assertEquals(3, googleStream.count());
 
         //and shouldn't contain
         googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")));

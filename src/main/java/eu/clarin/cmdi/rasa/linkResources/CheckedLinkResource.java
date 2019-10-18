@@ -20,7 +20,7 @@ package eu.clarin.cmdi.rasa.linkResources;
 
 //import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
-import eu.clarin.cmdi.rasa.links.CheckedLink;
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 
 import java.sql.SQLException;
 import java.util.Collection;

@@ -20,7 +20,7 @@ package eu.clarin.cmdi.rasa;
 
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
-import eu.clarin.cmdi.rasa.links.CheckedLink;
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import org.apache.commons.lang3.Range;
 import org.junit.Test;
 
