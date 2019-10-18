@@ -103,23 +103,21 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.start = start;
     }
 
-    //returns a mysql statement filter depending on the non null parameters
-    @Override
-    public PreparedStatement getStatement(Connection con) throws SQLException {
-
+    public String prepareQuery(String inList) {
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
         String query = "SELECT * FROM statusView";
 
         boolean firstAlready = false;
         if (status != null) {
-            query += " WHERE statusCode>=? AND statusCode<=?";
+            query += " WHERE";
+            query += " statusCode>=? AND statusCode<=?";
             firstAlready = true;
         }
         if (before != null) {
             if (firstAlready) {
                 query += " AND";
-            }else{
+            } else {
                 query += " WHERE";
             }
             query += " timestamp<?";
@@ -128,7 +126,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         if (after != null) {
             if (firstAlready) {
                 query += " AND";
-            }else{
+            } else {
                 query += " WHERE";
             }
             query += " timestamp>?";
@@ -137,10 +135,20 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         if (collection != null && !collection.equals("Overall")) {
             if (firstAlready) {
                 query += " AND";
-            }else{
+            } else {
                 query += " WHERE";
             }
             query += " collection=?";
+            firstAlready = true;
+        }
+
+        if (inList != null) {
+            if (firstAlready) {
+                query += " AND";
+            } else {
+                query += " WHERE";
+            }
+            query += inList;
         }
 
         if (start > 0 && end > 0) {
@@ -150,7 +158,10 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         } else if (end > 0) {
             query += " LIMIT ?";
         }
+        return query;
+    }
 
+    private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
 
         //query setting done, now fill it
@@ -186,6 +197,21 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         }
 
         return statement;
+    }
+
+    //returns a mysql statement filter depending on the non null parameters
+    @Override
+    public PreparedStatement getStatement(Connection con) throws SQLException {
+
+        String query = prepareQuery(null);
+        System.out.println(query);
+        return prepareStatement(con, query);
+    }
+
+    @Override
+    public PreparedStatement getStatement(Connection con, String inList) throws SQLException {
+        String query = prepareQuery(inList);
+        return prepareStatement(con, query);
     }
 
 

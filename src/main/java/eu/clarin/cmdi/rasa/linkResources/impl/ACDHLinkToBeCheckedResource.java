@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -87,6 +88,20 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
         int row = preparedStatement.executeUpdate();
 
         return row == 1;
+    }
+
+    @Override
+    public List<String> getCollectionNames() throws SQLException {
+
+        String query = "SELECT DISTINCT collection from urls";
+        PreparedStatement statement = con.prepareStatement(query);
+        ResultSet rs = statement.executeQuery();
+
+        List<String> collectionNames = new ArrayList<>();
+        while (rs.next()) {
+            collectionNames.add(rs.getString("collection"));
+        }
+        return collectionNames;
     }
 
     //todo maybe insert and delete in batch method, see curation module to check if it is needed

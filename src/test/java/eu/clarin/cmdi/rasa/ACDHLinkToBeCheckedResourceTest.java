@@ -121,4 +121,12 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         assertFalse(googleStream.anyMatch(x -> x.getUrl().equals(testURL)));
     }
 
+    @Test
+    public void EgetCollectionNamesTestShouldReturnCorrectNames() throws SQLException {
+        List<String> collectionNames = linkToBeCheckedResource.getCollectionNames();
+        assertEquals(2, collectionNames.size());
+        assertTrue(collectionNames.contains("Google"));
+        assertTrue(collectionNames.contains("NotGoogle"));
+    }
+
 }

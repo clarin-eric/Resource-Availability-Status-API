@@ -38,4 +38,7 @@ public interface LinkToBeCheckedResource {
 
     /* Delete a url from urls */
     Boolean delete(String url) throws SQLException;
+
+    /* retrieval of the names of all collections that are in urls */
+    List<String> getCollectionNames() throws SQLException;
 }

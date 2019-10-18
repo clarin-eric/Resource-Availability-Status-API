@@ -51,10 +51,7 @@ public interface CheckedLinkResource {
     /* batch retrieval with url as key with optional filtering
        get(“http://clarin.eu”, new FilterImpl(404, 2019-01-01, 2019-02-01)
     */
-    Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter);
-
-    /* retrieval of the names of all collections that are in linksChecked */
-    List<String> getCollectionNames();
+    Map<String, CheckedLink> get(Collection<String> url, Optional<CheckedLinkFilter> filter) throws SQLException;
 
     /* save a checked link into linkschecked, remove it from linksToBeChecked, move old result into history if exists */
     Boolean save(CheckedLink checkedLink) throws SQLException;

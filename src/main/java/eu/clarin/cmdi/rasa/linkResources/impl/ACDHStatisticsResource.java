@@ -60,6 +60,7 @@ public class ACDHStatisticsResource implements StatisticsResource {
         }
 
         ResultSet rs = statement.executeQuery();
+
         return DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
     }
 

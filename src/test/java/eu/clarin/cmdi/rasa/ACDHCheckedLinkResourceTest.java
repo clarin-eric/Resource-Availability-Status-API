@@ -34,9 +34,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -141,6 +139,26 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     }
 
     @Test
+    public void getWithListTestShouldReturnCorrectResults() throws SQLException {
+        List<String> someURLs = Arrays.asList("http://www.ailla.org/waiting.html", "http://www.ailla.org/audio_files/EMP1M1B1.mp3");
+
+        Map<String, CheckedLink> links = checkedLinkResource.get(someURLs, Optional.empty());
+        assertEquals(2, links.size());
+
+        assertEquals(someURLs.get(0), links.get(someURLs.get(0)).getUrl());
+        assertEquals(someURLs.get(1), links.get(someURLs.get(1)).getUrl());
+
+        List<String> googleURLs = Arrays.asList("https://www.google.com", "https://maps.google.com");
+        links = checkedLinkResource.get(googleURLs, Optional.of(new ACDHCheckedLinkFilter("Google")));
+        assertEquals(2, links.size());
+
+        assertEquals(googleURLs.get(0), links.get(googleURLs.get(0)).getUrl());
+        assertEquals(googleURLs.get(1), links.get(googleURLs.get(1)).getUrl());
+        //shouldnt be in there
+        assertNull(links.get("https://drive.google.com"));
+    }
+
+    @Test
     public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
         assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, 0, null, null)));
     }
@@ -167,7 +185,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         assertEquals(3, googleStream.count());
 
         //save(first urls then status)
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL,"GoogleRecord","Google","mimeType"));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType"));
         CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Google", 0, "GoogleRecord", "mimeType");
         checkedLinkResource.save(checkedLink);
 

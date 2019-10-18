@@ -20,6 +20,9 @@ package eu.clarin.cmdi.rasa.filters;
 
 import org.apache.commons.lang3.Range;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -33,5 +36,7 @@ public interface CheckedLinkFilter extends Filter {
 
     void setStart(int start);
     void setEnd(int end);
+
+    PreparedStatement getStatement(Connection con, String inList) throws SQLException;
 
 }

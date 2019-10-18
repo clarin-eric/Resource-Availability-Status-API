@@ -32,10 +32,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -59,6 +58,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         ResultSet rs = statement.executeQuery();
 
         Record record = DSL.using(con).fetchOne(rs);
+
         //only one element
         return record == null ? null : new CheckedLink(record);
     }
@@ -121,30 +121,26 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
-        //todo
-//        final FindIterable<Document> urls;
-//        if (filter.isPresent()) {
-//            final Bson mongoFilter = filter.get().getMongoFilter();
-//            urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
-//        } else {
-//            urls = linksChecked.find(in("url", urlCollection));
-//        }
-//
-//        return StreamSupport.stream(urls.spliterator(), false)
-//                .collect(Collectors.toMap(doc -> doc.getString("url"), CheckedLink::new));
-        return null;
-    }
+    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) throws SQLException {
+        //todo maybe find a better solution for this in list
+        String inList = " url IN (";
+        for (String url : urlCollection) {
+            inList += "'" + url + "',";
+        }
+        inList = inList.substring(0, inList.length() - 1);
+        inList += ")";
 
+        String defaultQuery = "SELECT * FROM statusView WHERE" + inList;
+        PreparedStatement statement;
+        if (!filter.isPresent()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            statement = filter.get().getStatement(con, inList);
+        }
 
-    @Override
-    public List<String> getCollectionNames() {
-//todo
-        //        Iterable<String> collections = linksChecked.distinct("collection", String.class);
-//
-//        return StreamSupport.stream(collections.spliterator(), false)
-//                .collect(Collectors.toList());
-        return null;
+        ResultSet rs = statement.executeQuery();
+
+        return DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
     }
 
 
@@ -172,7 +168,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     public Boolean delete(String url) throws SQLException {
         String deleteQuery = "DELETE FROM status WHERE url=?";
         PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
-        preparedStatement.setString(1,url);
+        preparedStatement.setString(1, url);
 
         //affected rows
         int row = preparedStatement.executeUpdate();
