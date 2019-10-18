@@ -20,8 +20,6 @@ package eu.clarin.cmdi.rasa.filters;
 
 public interface StatisticsFilter extends Filter {
 
-    boolean getBroken();
-    boolean getUndetermined();
     String getCollection();
     String getRecord();
 

@@ -18,12 +18,18 @@
 
 package eu.clarin.cmdi.rasa;
 
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -53,16 +59,56 @@ public class ACDHStatisticsResourceTest extends TestConfig {
 
     @Test
     public void basicOverallStatisticsTestShouldReturnCorrectResults() throws SQLException {
-//        Statistics googleStatistics = new Statistics(3L, 358.3333, 440L);
-//        Statistics overallStatistics = new Statistics(22L, 271.8182, 613L);
-//
-//        Statistics googleStatisticsActual = statisticsResource.getOverallStatistics("Google");
-//        assertEquals(googleStatistics, googleStatisticsActual);
-//
-//        Statistics overallStatisticsActual = statisticsResource.getOverallStatistics(null);
-//        assertEquals(overallStatistics, overallStatisticsActual);
-//
-//        assertEquals(statisticsResource.getOverallStatistics(null), statisticsResource.getOverallStatistics("Overall"));
+        Statistics googleStatistics = new Statistics(3L, 358.3333, 440L);
+        Statistics overallStatistics = new Statistics(22L, 271.8182, 613L);
+
+        Statistics googleStatisticsActual = statisticsResource.getOverallStatistics("Google");
+        assertEquals(googleStatistics, googleStatisticsActual);
+
+        Statistics overallStatisticsActual = statisticsResource.getOverallStatistics(null);
+        assertEquals(overallStatistics, overallStatisticsActual);
+
+        assertEquals(statisticsResource.getOverallStatistics(null), statisticsResource.getOverallStatistics("Overall"));
         assertNotEquals(statisticsResource.getOverallStatistics("Something"), statisticsResource.getOverallStatistics("Overall"));
     }
+
+    @Test
+    public void basicCountTestShouldReturnCorrectResults() throws SQLException {
+        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, null);//count everything
+        assertEquals(22, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(22, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null);//count everything
+        assertEquals(3, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(3, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord");//count everything
+        assertEquals(3, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(3, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord");//count everything
+        assertEquals(3, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(3, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null);//count everything
+        assertEquals(19, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(19, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        linkToBeCheckedResource.save(new LinkToBeChecked("http://facebook.com", "FacebookRecord", "Facebook", null));
+        checkedLinkResource.save(new CheckedLink("http://facebook.com", "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Facebook", 0, "FacebookRecord", null));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, null);//count everything
+        assertEquals(23, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(23, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null);//count everything
+        assertEquals(1, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(1, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+
+        //this shouldn't have changed
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null);//count everything
+        assertEquals(3, statisticsResource.countStatusView(Optional.of(acdhStatisticsFilter)));
+        assertEquals(3, statisticsResource.countUrlsTable(Optional.of(acdhStatisticsFilter)));
+    }
+
 }

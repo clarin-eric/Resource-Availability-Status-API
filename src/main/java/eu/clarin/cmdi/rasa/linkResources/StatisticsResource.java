@@ -19,7 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
-import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 
 import java.sql.SQLException;
@@ -43,7 +43,6 @@ public interface StatisticsResource {
     * */
     Statistics getOverallStatistics(String collection) throws SQLException;
 
-    long countLinksChecked(Optional<ACDHStatisticsFilter> filter);
-    long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter);
-    int getDuplicateCount(String collection);
+    long countStatusView(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
+    long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
 }

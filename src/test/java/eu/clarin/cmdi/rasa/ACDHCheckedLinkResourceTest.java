@@ -31,7 +31,7 @@ import java.time.ZoneId;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class ACDHCheckedLinkResourceTest extends TestConfig {
 
@@ -125,6 +125,16 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
         long count = links.count();
         assertEquals(3, count);
+    }
+
+    @Test
+    public void basicSaveTestShouldSaveCorrectly() {
+
+    }
+
+    @Test
+    public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
+        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, 0, null, null)));
     }
 
 }

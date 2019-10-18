@@ -60,7 +60,7 @@ public interface CheckedLinkResource {
     List<String> getCollectionNames();
 
     /* save a checked link into linkschecked, remove it from linksToBeChecked, move old result into history if exists */
-    Boolean save(CheckedLink checkedLink);
+    Boolean save(CheckedLink checkedLink) throws SQLException;
 
     /* Move from linksChecked to linkCheckedHistory. */
 //    Boolean moveToHistory(CheckedLink checkedLink);

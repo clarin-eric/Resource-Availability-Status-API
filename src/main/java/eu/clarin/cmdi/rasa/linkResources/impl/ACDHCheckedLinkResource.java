@@ -157,50 +157,23 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
 
     @Override
-    public Boolean save(CheckedLink checkedLink) {
-//todo
+    public Boolean save(CheckedLink checkedLink) throws SQLException {
+        String insertQuery = "INSERT IGNORE INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount) VALUES (?,?,?,?,?,?,?,?)";
 
-//        //separate mongo actions so that one of them doesn't disturb the other
-//        //save it to the history
-//        Bson filter = Filters.eq("url", checkedLink.getUrl());
-//        try {
-//            Document oldElementDoc = linksChecked.find(filter).first();
-//            if (oldElementDoc != null) {
-//                oldElementDoc.remove("_id");//remove id so that it generates a new one.
-//                linksCheckedHistory.insertOne(oldElementDoc);
-//            }
-//
-//        } catch (MongoException e) {
-//            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-//            //do nothing so that the whole thread doesnt die because of one url, just skip it
-//            return false;
-//        }
-//
-//        try {
-//            //replace if the url is in linksChecked already
-//            //if not add new
-//            FindOneAndReplaceOptions findOneAndReplaceOptions = new FindOneAndReplaceOptions();
-//            linksChecked.findOneAndReplace(filter, checkedLink.getMongoDocument(), findOneAndReplaceOptions.upsert(true));
-//
-//        } catch (MongoException e) {
-//            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-//            //do nothing so that the whole thread doesnt die because of one url, just skip it
-//            return false;
-//        }
-//
-//        try {
-//
-//            //delete from linksToBeChecked(whether successful or there was an error, ist wuascht)
-//            linksToBeChecked.deleteOne(filter);
-//
-//            return true;
-//        } catch (MongoException e) {
-//            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-//            //do nothing so that the whole thread doesnt die because of one url, just skip it
-//            return false;
-//        }
-        return false;
+        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+        preparedStatement.setString(1, checkedLink.getUrl());
+        preparedStatement.setInt(2, checkedLink.getStatus());
+        preparedStatement.setString(3, checkedLink.getMethod());
+        preparedStatement.setString(4, checkedLink.getContentType());
+        preparedStatement.setInt(5, checkedLink.getByteSize());
+        preparedStatement.setInt(6, checkedLink.getDuration());
+        preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
+        preparedStatement.setInt(8, checkedLink.getRedirectCount());
 
+        //affected rows
+        int row = preparedStatement.executeUpdate();
+
+        return row == 1;
     }
 
 //    @Override

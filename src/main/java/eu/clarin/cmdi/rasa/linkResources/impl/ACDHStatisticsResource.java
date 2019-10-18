@@ -19,7 +19,7 @@
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
-import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import org.jooq.Record;
@@ -83,48 +83,28 @@ public class ACDHStatisticsResource implements StatisticsResource {
     }
 
     @Override
-    public long countLinksChecked(Optional<ACDHStatisticsFilter> filter) {
-
-        //todo
-        return 0L;
-
-//        if (filter.isPresent()) {
-//            return linksChecked.countDocuments(filter.get().getMongoFilter());
-//        } else {
-//            return linksChecked.countDocuments();
-//        }
-
+    public long countStatusView(Optional<ACDHStatisticsCountFilter> filter) throws SQLException {
+        return count(filter, "statusView");
     }
 
     @Override
-    public long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter) {
-//todo
-        return 0L;
-
-        //        if (filter.isPresent()) {
-//            return linksToBeChecked.countDocuments(filter.get().getMongoFilter());
-//        } else {
-//            return linksToBeChecked.countDocuments();
-//        }
+    public long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException {
+        return count(filter, "urls");
     }
 
-    //todo test this method along all other methods
-    @Override
-    public int getDuplicateCount(String collection) {
-        //todo
-        return 0;
-
-//        AggregateIterable<Document> iterable = linksToBeChecked.aggregate(Arrays.asList(
-//                Aggregates.match(eq("collection", collection)),
-//                Aggregates.lookup("linksChecked", "url", "url", "checked")
-//        ));
-//        int duplicates = 0;
-//        for (Document doc : iterable) {
-//            if (!((List<?>) doc.get("checked")).isEmpty()) {
-//                duplicates++;
-//            }
-//        }
-//
-//        return duplicates;
+    private long count(Optional<ACDHStatisticsCountFilter> filterOptional, String tableName) throws SQLException {
+        String defaultQuery = "SELECT COUNT(*) as count FROM " + tableName;
+        PreparedStatement statement;
+        if (!filterOptional.isPresent()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            ACDHStatisticsCountFilter filter = filterOptional.get();
+            filter.setTableName(tableName);
+            statement = filter.getStatement(con);
+        }
+        ResultSet rs = statement.executeQuery();
+        Record record = DSL.using(con).fetchOne(rs);
+        return (Long) record.getValue("count");
     }
+
 }
