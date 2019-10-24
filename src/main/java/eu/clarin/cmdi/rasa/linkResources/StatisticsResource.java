@@ -45,4 +45,5 @@ public interface StatisticsResource {
 
     long countStatusView(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
     long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
+    long countStatusTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
 }

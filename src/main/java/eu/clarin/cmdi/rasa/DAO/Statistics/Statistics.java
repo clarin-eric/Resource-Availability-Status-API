@@ -21,7 +21,6 @@ package eu.clarin.cmdi.rasa.DAO.Statistics;
 import org.jooq.Record;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.util.Objects;
 
 public class Statistics {

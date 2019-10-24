@@ -127,6 +127,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         for (String url : urlCollection) {
             inList += "'" + url + "',";
         }
+        //delete the last comma
         inList = inList.substring(0, inList.length() - 1);
         inList += ")";
 

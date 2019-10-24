@@ -88,9 +88,15 @@ public class ACDHStatisticsResource implements StatisticsResource {
         return count(filter, "statusView");
     }
 
+    //Important, dont use status codes in this filter, so dont use broken and undetermined, or exception will be thrown
     @Override
     public long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException {
         return count(filter, "urls");
+    }
+
+    @Override
+    public long countStatusTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException {
+        return count(filter, "status");
     }
 
     private long count(Optional<ACDHStatisticsCountFilter> filterOptional, String tableName) throws SQLException {

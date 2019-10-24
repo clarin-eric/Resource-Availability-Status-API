@@ -202,9 +202,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     //returns a mysql statement filter depending on the non null parameters
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
-
         String query = prepareQuery(null);
-        System.out.println(query);
         return prepareStatement(con, query);
     }
 

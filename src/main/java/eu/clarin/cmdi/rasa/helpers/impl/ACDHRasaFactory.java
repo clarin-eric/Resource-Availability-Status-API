@@ -21,8 +21,6 @@ package eu.clarin.cmdi.rasa.helpers.impl;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
-//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
-//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import org.slf4j.Logger;

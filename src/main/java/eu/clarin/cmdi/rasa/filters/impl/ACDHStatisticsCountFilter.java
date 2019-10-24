@@ -19,25 +19,51 @@
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import eu.clarin.cmdi.rasa.filters.StatisticsFilter;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.StatusCodeMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 
 public class ACDHStatisticsCountFilter implements StatisticsFilter {
 
     private String collection;
     private String record;
     private String tableName;
+    private Boolean broken;
+    private Boolean undetermined;
 
-    //if you have broken and undetermined true at the same time, it might cause problems...
+    public ACDHStatisticsCountFilter(String collection, String record, boolean broken, boolean undetermined) {
+        this.collection = collection;
+        this.record = record;
+        this.broken = broken;
+        this.undetermined = undetermined;
+    }
+
+    public ACDHStatisticsCountFilter(boolean broken, boolean undetermined) {
+        this.broken = broken;
+        this.undetermined = undetermined;
+    }
+
     public ACDHStatisticsCountFilter(String collection, String record) {
         this.collection = collection;
         this.record = record;
     }
 
     //this method is called from within rasa depending on the method
-    public void setTableName(String tableName) {
+    public void setTableName(String tableName) throws SQLException {
+        if (broken != null || undetermined != null) {
+            if (tableName.equals("urls")) {
+                throw new SQLException("Undetermined or broken filter can not be used on the urls table. Use status view instead.");
+            }
+        }
+
+        if(collection!=null || record!=null){
+            if (tableName.equals("status")) {
+                throw new SQLException("Collection or record filter can not be used on the status table. Use status view instead.");
+            }
+        }
         this.tableName = tableName;
     }
 
@@ -57,26 +83,83 @@ public class ACDHStatisticsCountFilter implements StatisticsFilter {
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
         String query = "SELECT COUNT(*) as count FROM " + tableName;
-        PreparedStatement statement;
-        if (collection != null && record != null) {
-            query += " WHERE collection=? AND record=?";
-            statement = con.prepareStatement(query);
-            statement.setString(1, collection);
-            statement.setString(2, record);
-            return statement;
-        } else if (collection != null) {
+
+        boolean firstAlready = false;
+        if (collection != null) {
             query += " WHERE collection=?";
-            statement = con.prepareStatement(query);
-            statement.setString(1, collection);
-            return statement;
-        } else if (record != null) {
-            query += " WHERE record=?";
-            statement = con.prepareStatement(query);
-            statement.setString(1, record);
-            return statement;
-        } else {
-            //shouldn't come here but as a safety
-            return con.prepareStatement(query);
+            firstAlready = true;
         }
+        if (record != null) {
+            if (firstAlready) {
+                query += " AND";
+            } else {
+                query += " WHERE";
+            }
+            query += "  record=?";
+            firstAlready = true;
+        }
+        if (broken != null && broken) {
+            if (firstAlready) {
+                query += " AND";
+            } else {
+                query += " WHERE";
+            }
+            query += "  statusCode NOT IN (";
+
+            List<Integer> statuses = StatusCodeMapper.getOkStatuses();
+            statuses.addAll(StatusCodeMapper.getUndeterminedStatuses());
+            for (int status : statuses) {
+                query += status + ",";
+            }
+            //delete the last comma
+            query = query.substring(0, query.length() - 1);
+            query += ")";
+
+
+            firstAlready = true;
+        }
+        if (undetermined != null && undetermined) {
+            if (firstAlready) {
+                query += " AND";
+            } else {
+                query += " WHERE";
+            }
+            query += "  statusCode IN (";
+
+            for (int status : StatusCodeMapper.getUndeterminedStatuses()) {
+                query += status + ",";
+            }
+            //delete the last comma
+            query = query.substring(0, query.length() - 1);
+            query += ")";
+        }
+
+        PreparedStatement statement = con.prepareStatement(query);
+        int i = 1;
+        if (collection != null) {
+            statement.setString(i, collection);
+            i++;
+        }
+        if (record != null) {
+            statement.setString(i, record);
+        }
+
+        return statement;
+    }
+
+    public boolean isUndetermined() {
+        return undetermined;
+    }
+
+    public void setUndetermined(boolean undetermined) {
+        this.undetermined = undetermined;
+    }
+
+    public boolean isBroken() {
+        return broken;
+    }
+
+    public void setBroken(boolean broken) {
+        this.broken = broken;
     }
 }
