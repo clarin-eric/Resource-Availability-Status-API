@@ -161,7 +161,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         return insertCheckedLink(checkedLink, "status");
     }
 
-    public Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
+    private Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
         try {
             String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
 

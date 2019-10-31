@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
+import org.jooq.Record;
 import org.jooq.impl.DSL;
 
 import java.sql.Connection;
@@ -38,6 +39,21 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     public ACDHLinkToBeCheckedResource(Connection con) {
         this.con = con;
+    }
+
+    @Override
+    public LinkToBeChecked get(String url) throws SQLException {
+        String query = "SELECT * FROM url WHERE url=?";
+
+        PreparedStatement statement = con.prepareStatement(query);
+        statement.setString(1, url);
+
+        ResultSet rs = statement.executeQuery();
+
+        Record record = DSL.using(con).fetchOne(rs);
+
+        //only one element
+        return record == null ? null : new LinkToBeChecked(record);
     }
 
     @Override

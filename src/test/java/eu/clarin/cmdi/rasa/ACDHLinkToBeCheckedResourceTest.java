@@ -39,6 +39,8 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
     private String testURL = "https://mail.google.com";
 
+    //todo basic basic get test
+
     @Test
     public void AbasicGETTestShouldReturnCorrectResults() throws SQLException {
 

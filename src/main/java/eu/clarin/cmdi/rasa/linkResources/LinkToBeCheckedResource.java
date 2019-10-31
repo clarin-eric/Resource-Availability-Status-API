@@ -28,6 +28,9 @@ import java.util.stream.Stream;
 
 public interface LinkToBeCheckedResource {
 
+    /* retrieve for single url */
+    LinkToBeChecked get(String url) throws SQLException;
+
     /* get all urls that match a filter */
     Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
 
