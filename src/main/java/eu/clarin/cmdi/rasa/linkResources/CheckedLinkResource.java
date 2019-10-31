@@ -63,6 +63,6 @@ public interface CheckedLinkResource {
 //    Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter);
 
     /* Move from linksChecked to linkCheckedHistory. */
-//    Boolean moveToHistory(CheckedLink checkedLink);
+    Boolean saveToHistory(CheckedLink checkedLink) throws SQLException;
 
 }

@@ -62,18 +62,18 @@ public abstract class TestConfig {
         database = DB.newEmbeddedDB(3308);
 
         database.start();
-        database.createDB("stormcrawler");
+        database.createDB("stormychecker");
 
 
         //create database and fill it with initDB.sql
-        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/stormcrawler?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         ScriptRunner runner = new ScriptRunner(con);
         InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/initDB.sql"));
         runner.runScript(reader);
         reader.close();
         con.close();
 
-        rasaFactory = new ACDHRasaFactory("jdbc:mysql://localhost:3308/stormcrawler?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        rasaFactory = new ACDHRasaFactory("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         checkedLinkResource = rasaFactory.getCheckedLinkResource();
         linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
         statisticsResource = rasaFactory.getStatisticsResource();

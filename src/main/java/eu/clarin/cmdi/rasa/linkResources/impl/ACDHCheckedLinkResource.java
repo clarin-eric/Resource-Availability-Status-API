@@ -17,8 +17,6 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-//import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
-
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
@@ -50,7 +48,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public CheckedLink get(String url) throws SQLException {
-        String query = "SELECT * FROM statusView WHERE url=?";
+        String query = "SELECT * FROM status WHERE url=?";
 
         PreparedStatement statement = con.prepareStatement(query);
         statement.setString(1, url);
@@ -65,7 +63,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public CheckedLink get(String url, String collection) throws SQLException {
-        String query = "SELECT * FROM statusView WHERE url=? AND collection=?";
+        String query = "SELECT * FROM status WHERE url=? AND collection=?";
 
         PreparedStatement statement = con.prepareStatement(query);
         statement.setString(1, url);
@@ -81,7 +79,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
 
-        String defaultQuery = "SELECT * FROM statusView";
+        String defaultQuery = "SELECT * FROM status";
 
         PreparedStatement statement;
         if (!filter.isPresent()) {
@@ -131,7 +129,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         inList = inList.substring(0, inList.length() - 1);
         inList += ")";
 
-        String defaultQuery = "SELECT * FROM statusView WHERE" + inList;
+        String defaultQuery = "SELECT * FROM status WHERE" + inList;
         PreparedStatement statement;
         if (!filter.isPresent()) {
             statement = con.prepareStatement(defaultQuery);
@@ -147,22 +145,52 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Boolean save(CheckedLink checkedLink) throws SQLException {
-        String insertQuery = "INSERT IGNORE INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount) VALUES (?,?,?,?,?,?,?,?)";
 
-        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
-        preparedStatement.setString(1, checkedLink.getUrl());
-        preparedStatement.setInt(2, checkedLink.getStatus());
-        preparedStatement.setString(3, checkedLink.getMethod());
-        preparedStatement.setString(4, checkedLink.getContentType());
-        preparedStatement.setInt(5, checkedLink.getByteSize());
-        preparedStatement.setInt(6, checkedLink.getDuration());
-        preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
-        preparedStatement.setInt(8, checkedLink.getRedirectCount());
+        //get old checked link
+        CheckedLink oldCheckedLink = get(checkedLink.getUrl());
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
+        if (oldCheckedLink != null) {
+            //save to history
+            saveToHistory(oldCheckedLink);
 
-        return row == 1;
+            //delete it
+            delete(checkedLink.getUrl());
+        }
+
+        //save new one
+        return insertCheckedLink(checkedLink, "status");
+    }
+
+    public Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
+        try {
+            String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+
+            PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+            preparedStatement.setString(1, checkedLink.getUrl());
+            preparedStatement.setInt(2, checkedLink.getStatus());
+            preparedStatement.setString(3, checkedLink.getMethod());
+            preparedStatement.setString(4, checkedLink.getContentType());
+            preparedStatement.setInt(5, checkedLink.getByteSize());
+            preparedStatement.setInt(6, checkedLink.getDuration());
+            preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
+            preparedStatement.setInt(8, checkedLink.getRedirectCount());
+            preparedStatement.setString(9, checkedLink.getCollection());
+            preparedStatement.setString(10, checkedLink.getRecord());
+            preparedStatement.setString(11, checkedLink.getExpectedMimeType());
+
+            //affected rows
+            int row = preparedStatement.executeUpdate();
+
+            return row == 1;
+        } catch (SQLException e) {
+            _logger.error("SQL Exception while saving " + checkedLink.getUrl() + " into " + tableName + ":" + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean saveToHistory(CheckedLink checkedLink) throws SQLException {
+        return insertCheckedLink(checkedLink, "history");
     }
 
     @Override
@@ -176,46 +204,4 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         return row == 1;
     }
-
-    //todo later history
-
-    //    @Override
-//    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-//        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
-//
-//        final Iterable<Document> documents;
-//
-//        if (filter.isPresent()) {
-//            Bson mongoFilter = filter.get().getMongoFilter();
-//            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
-//        } else {
-//            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
-//        }
-//
-//        return StreamSupport.stream(documents.spliterator(), false)
-//                .map(CheckedLink::new);
-//    }
-//
-
-
-//    @Override
-//    public Boolean moveToHistory(CheckedLink checkedLink) {
-//        String url = checkedLink.getUrl();
-//        try {
-//            linksCheckedHistory.insertOne(checkedLink.getMongoDocument());
-//        } catch (MongoException e) {
-//            //shouldnt happen, but if it does continue the loop
-//            _logger.error("Error with the url: " + url + " while cleaning linkschecked (removing links from older runs). Exception message: " + e.getMessage());
-//            return false;
-//        }
-//
-//        try {
-//            linksChecked.deleteOne(eq("url", url));
-//        } catch (MongoException e) {
-//            //shouldnt happen, but if it does continue the loop
-//            _logger.error("Error with the url: " + url + " while cleaning linkschecked (removing links from older runs). Exception message: " + e.getMessage());
-//            return false;
-//        }
-//        return true;
-//    }
 }

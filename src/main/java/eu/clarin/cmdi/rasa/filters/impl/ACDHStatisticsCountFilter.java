@@ -55,15 +55,10 @@ public class ACDHStatisticsCountFilter implements StatisticsFilter {
     public void setTableName(String tableName) throws SQLException {
         if (broken != null || undetermined != null) {
             if (tableName.equals("urls")) {
-                throw new SQLException("Undetermined or broken filter can not be used on the urls table. Use status view instead.");
+                throw new SQLException("Undetermined or broken filter can not be used on the urls table. Use status instead.");
             }
         }
 
-        if(collection!=null || record!=null){
-            if (tableName.equals("status")) {
-                throw new SQLException("Collection or record filter can not be used on the status table. Use status view instead.");
-            }
-        }
         this.tableName = tableName;
     }
 

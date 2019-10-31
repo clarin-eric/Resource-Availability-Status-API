@@ -43,7 +43,6 @@ public interface StatisticsResource {
     * */
     Statistics getOverallStatistics(String collection) throws SQLException;
 
-    long countStatusView(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
     long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
     long countStatusTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
 }

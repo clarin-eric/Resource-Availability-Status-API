@@ -106,7 +106,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     public String prepareQuery(String inList) {
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        String query = "SELECT * FROM statusView";
+        String query = "SELECT * FROM status";
 
         boolean firstAlready = false;
         if (status != null) {

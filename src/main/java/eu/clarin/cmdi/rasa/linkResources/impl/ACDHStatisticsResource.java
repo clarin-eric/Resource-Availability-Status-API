@@ -51,10 +51,10 @@ public class ACDHStatisticsResource implements StatisticsResource {
         String query;
         PreparedStatement statement;
         if (collection == null || collection.equals("Overall")) {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView GROUP BY statusCode";
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
             statement = con.prepareStatement(query);
         } else {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView WHERE collection=? GROUP BY statusCode";
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
             statement = con.prepareStatement(query);
             statement.setString(1, collection);
         }
@@ -69,10 +69,10 @@ public class ACDHStatisticsResource implements StatisticsResource {
         String query;
         PreparedStatement statement;
         if (collection == null || collection.equals("Overall")) {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView";
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
             statement = con.prepareStatement(query);
         } else {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM statusView WHERE collection=?";
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
             statement = con.prepareStatement(query);
             statement.setString(1, collection);
         }
@@ -81,11 +81,6 @@ public class ACDHStatisticsResource implements StatisticsResource {
         Record record = DSL.using(con).fetchOne(rs);
         //return null if count is 0, ie. collection not found in database
         return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
-    }
-
-    @Override
-    public long countStatusView(Optional<ACDHStatisticsCountFilter> filter) throws SQLException {
-        return count(filter, "statusView");
     }
 
     //Important, dont use status codes in this filter, so dont use broken and undetermined, or exception will be thrown
