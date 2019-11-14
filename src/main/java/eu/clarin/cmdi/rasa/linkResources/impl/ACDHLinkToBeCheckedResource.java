@@ -43,7 +43,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     @Override
     public LinkToBeChecked get(String url) throws SQLException {
-        String query = "SELECT * FROM url WHERE url=?";
+        String query = "SELECT * FROM urls WHERE url=?";
 
         PreparedStatement statement = con.prepareStatement(query);
         statement.setString(1, url);
