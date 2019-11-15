@@ -22,6 +22,7 @@ import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
+import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import org.apache.commons.lang3.Range;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -44,7 +45,11 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     //2019-10-11 00:00:00, same as initDB
     private static final LocalDateTime thenDateTime = LocalDateTime.of(2019, 10, 11, 0, 0, 0);
+    private static final LocalDateTime thenDateTime1 = LocalDateTime.of(2019, 10, 12, 0, 0, 0);
+    private static final LocalDateTime thenDateTime2 = LocalDateTime.of(2019, 10, 13, 0, 0, 0);
     private static final Timestamp then = Timestamp.valueOf(thenDateTime);
+    private static final Timestamp then1 = Timestamp.valueOf(thenDateTime1);
+    private static final Timestamp then2 = Timestamp.valueOf(thenDateTime2);
 
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
@@ -192,10 +197,36 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         //and should contain
         googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
         assertTrue(googleStream.anyMatch(x -> Objects.equals(x, checkedLink)));
+
     }
 
     @Test
-    public void ZZ2deleteTestShouldSaveCorrectly() throws SQLException {
+    public void ZZ2getHistoryTestShouldReturnCorrectResults() throws SQLException {
+        //add again but with time then2
+        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType");
+        CheckedLink checkedLink1 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then1, "Ok", "Google", 0, "GoogleRecord", "mimeType");
+        CheckedLink checkedLink2 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then2, "Ok", "Google", 0, "GoogleRecord", "mimeType");
+
+
+        checkedLinkResource.save(checkedLink1);
+        assertEquals(checkedLink1,checkedLinkResource.get(testURL));
+
+        List<CheckedLink> history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
+        assertEquals(1,history.size());
+        assertEquals(checkedLink,history.get(0));
+
+        //add again, history should have 2
+        checkedLinkResource.save(checkedLink2);
+        assertEquals(checkedLink2,checkedLinkResource.get(testURL));
+
+        history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
+        assertEquals(2,history.size());
+        assertEquals(checkedLink1,history.get(0));
+        assertEquals(checkedLink,history.get(1));
+    }
+
+    @Test
+    public void ZZ3deleteTestShouldSaveCorrectly() throws SQLException {
         //first status then url
         checkedLinkResource.delete(testURL);
         linkToBeCheckedResource.delete(testURL);
@@ -208,7 +239,5 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
         assertFalse(googleStream.anyMatch(x -> x.getUrl().equals(testURL)));
     }
-
-    //todo history test
 
 }

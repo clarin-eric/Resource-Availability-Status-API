@@ -205,4 +205,18 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
         return row == 1;
     }
+
+    @Override
+    public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
+
+        String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
+
+        PreparedStatement preparedStatement = con.prepareStatement(query);
+        preparedStatement.setString(1, url);
+
+        ResultSet rs = preparedStatement.executeQuery();
+
+        return DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toList());
+
+    }
 }

@@ -51,20 +51,20 @@ CREATE INDEX collection_record ON stormychecker.status (collection,record);
 CREATE INDEX collection_record_url ON stormychecker.status (collection,record,url);
 CREATE INDEX record_url ON stormychecker.status (record,url);
 
---CREATE TABLE stormychecker.history (
--- url VARCHAR(255),
--- statusCode INT(32),
--- method VARCHAR(128),
--- contentType VARCHAR(255),
--- byteSize INT(255),
--- duration INT(128),
--- timestamp TIMESTAMP,
--- redirectCount INT(32),
--- record VARCHAR(255),
--- collection VARCHAR(255),
--- expectedMimeType VARCHAR(255),
--- message VARCHAR(255)
---);
+CREATE TABLE stormychecker.history (
+ url VARCHAR(255),
+ statusCode INT(32),
+ method VARCHAR(128),
+ contentType VARCHAR(255),
+ byteSize INT(255),
+ duration INT(128),
+ timestamp TIMESTAMP,
+ redirectCount INT(32),
+ record VARCHAR(255),
+ collection VARCHAR(255),
+ expectedMimeType VARCHAR(255),
+ message VARCHAR(255)
+);
 
 INSERT INTO urls(url,record,collection,expectedMimeType)
 VALUES

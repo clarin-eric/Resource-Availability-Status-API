@@ -60,7 +60,7 @@ public interface CheckedLinkResource {
     Boolean delete(String url) throws SQLException;
 
     /* retrieval of history for one URl as key with optional filtering, Order is timestamp based. */
-//    Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter);
+    List<CheckedLink> getHistory(String url, Order order) throws SQLException;
 
     /* Move from linksChecked to linkCheckedHistory. */
     Boolean saveToHistory(CheckedLink checkedLink) throws SQLException;
