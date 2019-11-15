@@ -163,7 +163,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
         try {
-            String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+            String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 
             PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
             preparedStatement.setString(1, checkedLink.getUrl());
@@ -177,6 +177,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             preparedStatement.setString(9, checkedLink.getCollection());
             preparedStatement.setString(10, checkedLink.getRecord());
             preparedStatement.setString(11, checkedLink.getExpectedMimeType());
+            preparedStatement.setString(12, checkedLink.getMessage());
 
             //affected rows
             int row = preparedStatement.executeUpdate();

@@ -31,7 +31,7 @@ public class CheckedLink {
     private int byteSize;
     private int duration;
     private Timestamp timestamp;
-
+    private String message;
     private String collection;
     private int redirectCount;
     private String record;
@@ -42,7 +42,7 @@ public class CheckedLink {
 
     public CheckedLink(String url, String method, int status,
                        String contentType, int byteSize, int duration,
-                       Timestamp timestamp, String collection, int redirectCount,
+                       Timestamp timestamp, String message, String collection, int redirectCount,
                        String record, String expectedMimeType) {
         this.url = url;
         this.method = method;
@@ -51,6 +51,7 @@ public class CheckedLink {
         this.byteSize = byteSize;
         this.duration = duration;
         this.timestamp = timestamp;
+        this.message = message;
         this.collection = collection;
         this.redirectCount = redirectCount;
         this.record = record;
@@ -65,6 +66,7 @@ public class CheckedLink {
         this.byteSize = (int) record.getValue("byteSize");
         this.duration = (int) record.getValue("duration");
         this.timestamp = (Timestamp) record.getValue("timestamp");
+        this.message = (String) record.getValue("message");
         this.redirectCount = (int) record.getValue("redirectCount");
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
@@ -159,20 +161,28 @@ public class CheckedLink {
         this.expectedMimeType = expectedMimeType;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CheckedLink that = (CheckedLink) o;
-
         return status == that.status &&
+                byteSize == that.byteSize &&
                 duration == that.duration &&
-                timestamp.compareTo(that.timestamp) == 0 &&
                 redirectCount == that.redirectCount &&
                 url.equals(that.url) &&
                 Objects.equals(method, that.method) &&
                 Objects.equals(contentType, that.contentType) &&
-                Objects.equals(byteSize, that.byteSize) &&
+                Objects.equals(timestamp, that.timestamp) &&
+                Objects.equals(message, that.message) &&
                 Objects.equals(collection, that.collection) &&
                 Objects.equals(record, that.record) &&
                 Objects.equals(expectedMimeType, that.expectedMimeType);
@@ -180,21 +190,24 @@ public class CheckedLink {
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, method, status, contentType, byteSize, duration, timestamp, redirectCount, collection, record, expectedMimeType);
+        return Objects.hash(url, method, status, contentType, byteSize, duration, timestamp, message, collection, redirectCount, record, expectedMimeType);
     }
 
     @Override
     public String toString() {
-        return url +
-                ", \"" + method +
-                "\", " + status +
-                ", \"" + contentType +
-                "\", " + byteSize +
-                ", " + duration +
-                ", " + timestamp +
-                ", \"" + collection +
-                "\", " + redirectCount +
-                ", \"" + record +
-                "\", \"" + expectedMimeType + "\"";
+        return "CheckedLink{" +
+                "url='" + url + '\'' +
+                ", method='" + method + '\'' +
+                ", status=" + status +
+                ", contentType='" + contentType + '\'' +
+                ", byteSize=" + byteSize +
+                ", duration=" + duration +
+                ", timestamp=" + timestamp +
+                ", message='" + message + '\'' +
+                ", collection='" + collection + '\'' +
+                ", redirectCount=" + redirectCount +
+                ", record='" + record + '\'' +
+                ", expectedMimeType='" + expectedMimeType + '\'' +
+                '}';
     }
 }

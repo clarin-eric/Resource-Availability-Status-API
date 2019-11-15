@@ -22,10 +22,7 @@ import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
-import eu.clarin.cmdi.rasa.DAO.CheckedLink;
-import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import org.apache.commons.lang3.Range;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -35,7 +32,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,7 +49,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
-        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "NotGoogle", 0, "record", null);
+        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "Ok", "NotGoogle", 0, "record", null);
         CheckedLink actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
         assertEquals(expected, actual);
 
@@ -160,7 +156,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
-        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, 0, null, null)));
+        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, null, 0, null, null)));
     }
 
     @Test
@@ -186,7 +182,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
         //save(first urls then status)
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType"));
-        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Google", 0, "GoogleRecord", "mimeType");
+        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType");
         checkedLinkResource.save(checkedLink);
 
         //after saving should be 4
