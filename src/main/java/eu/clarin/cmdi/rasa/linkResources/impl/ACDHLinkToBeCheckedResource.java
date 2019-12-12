@@ -17,6 +17,7 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
@@ -35,42 +36,46 @@ import java.util.stream.Stream;
 
 public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
-    private Connection con;
+    private HikariDataSource ds;
 
-    public ACDHLinkToBeCheckedResource(Connection con) {
-        this.con = con;
+    public ACDHLinkToBeCheckedResource(HikariDataSource ds) {
+        this.ds = ds;
     }
 
     @Override
     public LinkToBeChecked get(String url) throws SQLException {
         String query = "SELECT * FROM urls WHERE url=?";
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, url);
 
-        PreparedStatement statement = con.prepareStatement(query);
-        statement.setString(1, url);
+            ResultSet rs = statement.executeQuery();
 
-        ResultSet rs = statement.executeQuery();
+            Record record = DSL.using(con).fetchOne(rs);
 
-        Record record = DSL.using(con).fetchOne(rs);
-
-        //only one element
-        return record == null ? null : new LinkToBeChecked(record);
+            //only one element
+            return record == null ? null : new LinkToBeChecked(record);
+        }
     }
 
     @Override
     public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
 
         String defaultQuery = "SELECT * FROM urls";
+        List<LinkToBeChecked> resultList;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (!filter.isPresent()) {
+                statement = con.prepareStatement(defaultQuery);
+            } else {
+                statement = filter.get().getStatement(con);
+            }
 
-        PreparedStatement statement;
-        if (!filter.isPresent()) {
-            statement = con.prepareStatement(defaultQuery);
-        } else {
-            statement = filter.get().getStatement(con);
+            ResultSet rs = statement.executeQuery();
+
+            resultList = DSL.using(con).fetchStream(rs).map(LinkToBeChecked::new).collect(Collectors.toList());
         }
-
-        ResultSet rs = statement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(LinkToBeChecked::new);
+        return resultList.stream();
     }
 
     @Override
@@ -81,41 +86,46 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     @Override
     public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
         String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+            preparedStatement.setString(1, linkToBeChecked.getUrl());
+            preparedStatement.setString(2, linkToBeChecked.getRecord());
+            preparedStatement.setString(3, linkToBeChecked.getCollection());
+            preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
 
-        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
-        preparedStatement.setString(1, linkToBeChecked.getUrl());
-        preparedStatement.setString(2, linkToBeChecked.getRecord());
-        preparedStatement.setString(3, linkToBeChecked.getCollection());
-        preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+            //affected rows
+            int row = preparedStatement.executeUpdate();
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
-
-        return row == 1;
+            return row == 1;
+        }
     }
 
     @Override
     public Boolean delete(String url) throws SQLException {
         String deleteQuery = "DELETE FROM urls WHERE url=?";
-        PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
-        preparedStatement.setString(1,url);
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
+            preparedStatement.setString(1, url);
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
+            //affected rows
+            int row = preparedStatement.executeUpdate();
 
-        return row == 1;
+            return row == 1;
+        }
     }
 
     @Override
     public List<String> getCollectionNames() throws SQLException {
 
         String query = "SELECT DISTINCT collection from urls";
-        PreparedStatement statement = con.prepareStatement(query);
-        ResultSet rs = statement.executeQuery();
-
         List<String> collectionNames = new ArrayList<>();
-        while (rs.next()) {
-            collectionNames.add(rs.getString("collection"));
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement = con.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
+
+            while (rs.next()) {
+                collectionNames.add(rs.getString("collection"));
+            }
         }
         return collectionNames;
     }

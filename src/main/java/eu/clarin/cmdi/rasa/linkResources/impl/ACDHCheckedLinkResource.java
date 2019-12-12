@@ -17,6 +17,7 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
@@ -40,57 +41,64 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
-    private Connection con;
+    private HikariDataSource ds;
 
-    public ACDHCheckedLinkResource(Connection con) {
-        this.con = con;
+    public ACDHCheckedLinkResource(HikariDataSource ds) {
+        this.ds = ds;
     }
 
     @Override
     public CheckedLink get(String url) throws SQLException {
         String query = "SELECT * FROM status WHERE url=?";
+        try (Connection con = ds.getConnection()) {
 
-        PreparedStatement statement = con.prepareStatement(query);
-        statement.setString(1, url);
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, url);
 
-        ResultSet rs = statement.executeQuery();
+            ResultSet rs = statement.executeQuery();
 
-        Record record = DSL.using(con).fetchOne(rs);
+            Record record = DSL.using(con).fetchOne(rs);
 
-        //only one element
-        return record == null ? null : new CheckedLink(record);
+            //only one element
+            return record == null ? null : new CheckedLink(record);
+        }
     }
 
     @Override
     public CheckedLink get(String url, String collection) throws SQLException {
         String query = "SELECT * FROM status WHERE url=? AND collection=?";
 
-        PreparedStatement statement = con.prepareStatement(query);
-        statement.setString(1, url);
-        statement.setString(2, collection);
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement = con.prepareStatement(query);
+            statement.setString(1, url);
+            statement.setString(2, collection);
 
-        ResultSet rs = statement.executeQuery();
+            ResultSet rs = statement.executeQuery();
 
-        Record record = DSL.using(con).fetchOne(rs);
-        //only one element
-        return record == null ? null : new CheckedLink(record);
+            Record record = DSL.using(con).fetchOne(rs);
+            //only one element
+            return record == null ? null : new CheckedLink(record);
+        }
     }
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
 
         String defaultQuery = "SELECT * FROM status";
+        List<CheckedLink> resultList;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (!filter.isPresent()) {
+                statement = con.prepareStatement(defaultQuery);
+            } else {
+                statement = filter.get().getStatement(con);
+            }
 
-        PreparedStatement statement;
-        if (!filter.isPresent()) {
-            statement = con.prepareStatement(defaultQuery);
-        } else {
-            statement = filter.get().getStatement(con);
+            ResultSet rs = statement.executeQuery();
+
+            resultList = DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toList());
         }
-
-        ResultSet rs = statement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
+        return resultList.stream();
     }
 
     @Override
@@ -112,10 +120,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             filter = new ACDHCheckedLinkFilter(start, end);
         }
 
-        PreparedStatement statement = filter.getStatement(con);
-        ResultSet rs = statement.executeQuery();
+        List<CheckedLink> resultList;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement = filter.getStatement(con);
+            ResultSet rs = statement.executeQuery();
 
-        return DSL.using(con).fetchStream(rs).map(CheckedLink::new);
+            resultList = DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toList());
+        }
+        return resultList.stream();
     }
 
     @Override
@@ -130,16 +142,20 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         inList += ")";
 
         String defaultQuery = "SELECT * FROM status WHERE" + inList;
-        PreparedStatement statement;
-        if (!filter.isPresent()) {
-            statement = con.prepareStatement(defaultQuery);
-        } else {
-            statement = filter.get().getStatement(con, inList);
+        Map<String, CheckedLink> resultMap;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (!filter.isPresent()) {
+                statement = con.prepareStatement(defaultQuery);
+            } else {
+                statement = filter.get().getStatement(con, inList);
+            }
+
+            ResultSet rs = statement.executeQuery();
+
+            resultMap = DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
         }
-
-        ResultSet rs = statement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+        return resultMap;
     }
 
 
@@ -165,24 +181,26 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         try {
             String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 
-            PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
-            preparedStatement.setString(1, checkedLink.getUrl());
-            preparedStatement.setInt(2, checkedLink.getStatus());
-            preparedStatement.setString(3, checkedLink.getMethod());
-            preparedStatement.setString(4, checkedLink.getContentType());
-            preparedStatement.setInt(5, checkedLink.getByteSize());
-            preparedStatement.setInt(6, checkedLink.getDuration());
-            preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
-            preparedStatement.setInt(8, checkedLink.getRedirectCount());
-            preparedStatement.setString(9, checkedLink.getCollection());
-            preparedStatement.setString(10, checkedLink.getRecord());
-            preparedStatement.setString(11, checkedLink.getExpectedMimeType());
-            preparedStatement.setString(12, checkedLink.getMessage());
+            try (Connection con = ds.getConnection()) {
+                PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+                preparedStatement.setString(1, checkedLink.getUrl());
+                preparedStatement.setInt(2, checkedLink.getStatus());
+                preparedStatement.setString(3, checkedLink.getMethod());
+                preparedStatement.setString(4, checkedLink.getContentType());
+                preparedStatement.setInt(5, checkedLink.getByteSize());
+                preparedStatement.setInt(6, checkedLink.getDuration());
+                preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
+                preparedStatement.setInt(8, checkedLink.getRedirectCount());
+                preparedStatement.setString(9, checkedLink.getCollection());
+                preparedStatement.setString(10, checkedLink.getRecord());
+                preparedStatement.setString(11, checkedLink.getExpectedMimeType());
+                preparedStatement.setString(12, checkedLink.getMessage());
 
-            //affected rows
-            int row = preparedStatement.executeUpdate();
+                //affected rows
+                int row = preparedStatement.executeUpdate();
 
-            return row == 1;
+                return row == 1;
+            }
         } catch (SQLException e) {
             _logger.error("SQL Exception while saving " + checkedLink.getUrl() + " into " + tableName + ":" + e.getMessage());
             return false;
@@ -197,26 +215,31 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     @Override
     public Boolean delete(String url) throws SQLException {
         String deleteQuery = "DELETE FROM status WHERE url=?";
-        PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
-        preparedStatement.setString(1, url);
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
+            preparedStatement.setString(1, url);
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
+            //affected rows
+            int row = preparedStatement.executeUpdate();
 
-        return row == 1;
+            return row == 1;
+        }
     }
 
     @Override
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
 
         String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
+        List<CheckedLink> resultList;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement preparedStatement = con.prepareStatement(query);
+            preparedStatement.setString(1, url);
 
-        PreparedStatement preparedStatement = con.prepareStatement(query);
-        preparedStatement.setString(1, url);
+            ResultSet rs = preparedStatement.executeQuery();
 
-        ResultSet rs = preparedStatement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toList());
+            resultList = DSL.using(con).fetchStream(rs).map(CheckedLink::new).collect(Collectors.toList());
+        }
+        return resultList;
 
     }
 }

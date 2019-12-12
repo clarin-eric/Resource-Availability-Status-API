@@ -33,7 +33,6 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
 
-    private Connection con;
     private HikariDataSource ds;
 
     public ACDHRasaFactory(String databaseURI, String userName, String password) {
@@ -43,17 +42,17 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
 
     @Override
     public ACDHCheckedLinkResource getCheckedLinkResource() {
-        return new ACDHCheckedLinkResource(con);
+        return new ACDHCheckedLinkResource(ds);
     }
 
     @Override
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-        return new ACDHLinkToBeCheckedResource(con);
+        return new ACDHLinkToBeCheckedResource(ds);
     }
 
     @Override
     public ACDHStatisticsResource getStatisticsResource() {
-        return new ACDHStatisticsResource(con);
+        return new ACDHStatisticsResource(ds);
     }
 
     private void connectDatabase(String databaseURI, String userName, String password) {
@@ -68,26 +67,16 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        config.addDataSourceProperty("maximumPoolSize", "100");
 
         ds = new HikariDataSource(config);
 
-        try {
-            this.con = ds.getConnection();
-            _logger.info("Connected to database.");
-        } catch (SQLException e) {
-            _logger.error("There was a problem with SQL connection: ", e);
-        }
+        _logger.info("Connected to database.");
 
     }
 
     @Override
-    public void tearDown(){
-        try{
-            this.ds.close();
-            this.con.close();
-        }catch (SQLException e){
-            //Already closed, or not even opened, do nothing
-        }
-
+    public void tearDown() {
+        this.ds.close();
     }
 }

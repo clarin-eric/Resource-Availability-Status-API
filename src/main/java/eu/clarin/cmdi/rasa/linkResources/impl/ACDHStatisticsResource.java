@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
@@ -39,48 +40,54 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHStatisticsResource.class);
 
-    private Connection con;
+    private HikariDataSource ds;
 
-    public ACDHStatisticsResource(Connection con) {
-        this.con = con;
+    public ACDHStatisticsResource(HikariDataSource ds) {
+        this.ds = ds;
     }
 
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
     public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
         String query;
-        PreparedStatement statement;
-        if (collection == null || collection.equals("Overall")) {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
-            statement = con.prepareStatement(query);
-        } else {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
-            statement = con.prepareStatement(query);
-            statement.setString(1, collection);
+        List<StatusStatistics> resultList;
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (collection == null || collection.equals("Overall")) {
+                query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
+                statement = con.prepareStatement(query);
+            } else {
+                query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
+                statement = con.prepareStatement(query);
+                statement.setString(1, collection);
+            }
+
+            ResultSet rs = statement.executeQuery();
+
+            resultList = DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
         }
-
-        ResultSet rs = statement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
+        return resultList;
     }
 
     @Override
     public Statistics getOverallStatistics(String collection) throws SQLException {
         String query;
-        PreparedStatement statement;
-        if (collection == null || collection.equals("Overall")) {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
-            statement = con.prepareStatement(query);
-        } else {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
-            statement = con.prepareStatement(query);
-            statement.setString(1, collection);
-        }
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (collection == null || collection.equals("Overall")) {
+                query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
+                statement = con.prepareStatement(query);
+            } else {
+                query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
+                statement = con.prepareStatement(query);
+                statement.setString(1, collection);
+            }
 
-        ResultSet rs = statement.executeQuery();
-        Record record = DSL.using(con).fetchOne(rs);
-        //return null if count is 0, ie. collection not found in database
-        return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+            ResultSet rs = statement.executeQuery();
+            Record record = DSL.using(con).fetchOne(rs);
+            //return null if count is 0, ie. collection not found in database
+            return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+        }
     }
 
     //Important, dont use status codes in this filter, so dont use broken and undetermined, or exception will be thrown
@@ -96,17 +103,19 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     private long count(Optional<ACDHStatisticsCountFilter> filterOptional, String tableName) throws SQLException {
         String defaultQuery = "SELECT COUNT(*) as count FROM " + tableName;
-        PreparedStatement statement;
-        if (!filterOptional.isPresent()) {
-            statement = con.prepareStatement(defaultQuery);
-        } else {
-            ACDHStatisticsCountFilter filter = filterOptional.get();
-            filter.setTableName(tableName);
-            statement = filter.getStatement(con);
+        try (Connection con = ds.getConnection()) {
+            PreparedStatement statement;
+            if (!filterOptional.isPresent()) {
+                statement = con.prepareStatement(defaultQuery);
+            } else {
+                ACDHStatisticsCountFilter filter = filterOptional.get();
+                filter.setTableName(tableName);
+                statement = filter.getStatement(con);
+            }
+            ResultSet rs = statement.executeQuery();
+            Record record = DSL.using(con).fetchOne(rs);
+            return (Long) record.getValue("count");
         }
-        ResultSet rs = statement.executeQuery();
-        Record record = DSL.using(con).fetchOne(rs);
-        return (Long) record.getValue("count");
     }
 
 }
