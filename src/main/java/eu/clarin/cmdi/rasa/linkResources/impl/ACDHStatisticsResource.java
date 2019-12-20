@@ -18,11 +18,10 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import com.zaxxer.hikari.HikariDataSource;
+import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
-import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
@@ -40,54 +39,51 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHStatisticsResource.class);
 
-    private HikariDataSource ds;
+    private Connection con;
 
-    public ACDHStatisticsResource(HikariDataSource ds) {
-        this.ds = ds;
+    public ACDHStatisticsResource(Connection con) {
+        this.con = con;
     }
 
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
     public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
         String query;
-        List<StatusStatistics> resultList;
-        try (Connection con = ds.getConnection()) {
-            PreparedStatement statement;
-            if (collection == null || collection.equals("Overall")) {
-                query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
-                statement = con.prepareStatement(query);
-            } else {
-                query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
-                statement = con.prepareStatement(query);
-                statement.setString(1, collection);
-            }
 
-            ResultSet rs = statement.executeQuery();
-
-            resultList = DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
+        PreparedStatement statement;
+        if (collection == null || collection.equals("Overall")) {
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
+            statement = con.prepareStatement(query);
+        } else {
+            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
+            statement = con.prepareStatement(query);
+            statement.setString(1, collection);
         }
-        return resultList;
+
+        ResultSet rs = statement.executeQuery();
+
+        return DSL.using(con).fetchStream(rs).map(StatusStatistics::new).collect(Collectors.toList());
     }
 
     @Override
     public Statistics getOverallStatistics(String collection) throws SQLException {
         String query;
-        try (Connection con = ds.getConnection()) {
-            PreparedStatement statement;
-            if (collection == null || collection.equals("Overall")) {
-                query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
-                statement = con.prepareStatement(query);
-            } else {
-                query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
-                statement = con.prepareStatement(query);
-                statement.setString(1, collection);
-            }
 
-            ResultSet rs = statement.executeQuery();
-            Record record = DSL.using(con).fetchOne(rs);
-            //return null if count is 0, ie. collection not found in database
-            return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+        PreparedStatement statement;
+        if (collection == null || collection.equals("Overall")) {
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
+            statement = con.prepareStatement(query);
+        } else {
+            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
+            statement = con.prepareStatement(query);
+            statement.setString(1, collection);
         }
+
+        ResultSet rs = statement.executeQuery();
+        Record record = DSL.using(con).fetchOne(rs);
+        //return null if count is 0, ie. collection not found in database
+        return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+
     }
 
     //Important, dont use status codes in this filter, so dont use broken and undetermined, or exception will be thrown
@@ -103,19 +99,18 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     private long count(Optional<ACDHStatisticsCountFilter> filterOptional, String tableName) throws SQLException {
         String defaultQuery = "SELECT COUNT(*) as count FROM " + tableName;
-        try (Connection con = ds.getConnection()) {
-            PreparedStatement statement;
-            if (!filterOptional.isPresent()) {
-                statement = con.prepareStatement(defaultQuery);
-            } else {
-                ACDHStatisticsCountFilter filter = filterOptional.get();
-                filter.setTableName(tableName);
-                statement = filter.getStatement(con);
-            }
-            ResultSet rs = statement.executeQuery();
-            Record record = DSL.using(con).fetchOne(rs);
-            return (Long) record.getValue("count");
+
+        PreparedStatement statement;
+        if (!filterOptional.isPresent()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            ACDHStatisticsCountFilter filter = filterOptional.get();
+            filter.setTableName(tableName);
+            statement = filter.getStatement(con);
         }
+        ResultSet rs = statement.executeQuery();
+        Record record = DSL.using(con).fetchOne(rs);
+        return (Long) record.getValue("count");
     }
 
 }

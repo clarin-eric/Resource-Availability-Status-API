@@ -21,11 +21,12 @@ package eu.clarin.cmdi.rasa.helpers.statusCodeMapper;
 import java.util.*;
 
 public final class StatusCodeMapper {
+    //this map is used by curation module
     private static Map<Integer, Category> map;
 
     //broken can be derived from not in ok and not in undetermined
-    private static List<Integer> undetermined;
-    private static List<Integer> ok;
+    private static final List<Integer> undetermined;
+    private static final List<Integer> ok;
 
     static {
         map = new HashMap<>();
@@ -35,8 +36,8 @@ public final class StatusCodeMapper {
         undetermined = Arrays.asList(401, 405, 429);
 
         map.put(200, Category.OK);
-        ok = new ArrayList<>();
-        ok.add(200);
+        ok = Collections.singletonList(200);
+
     }
 
     public static Category get(int status) {
@@ -44,11 +45,11 @@ public final class StatusCodeMapper {
         return category == null ? Category.BROKEN : category;
     }
 
-    public static List<Integer> getOkStatuses(){
-        return ok;
+    public static List<Integer> getOkStatuses() {
+        return new ArrayList<>(ok);
     }
 
-    public static List<Integer> getUndeterminedStatuses(){
-        return undetermined;
+    public static List<Integer> getUndeterminedStatuses() {
+        return new ArrayList<>(undetermined);
     }
 }

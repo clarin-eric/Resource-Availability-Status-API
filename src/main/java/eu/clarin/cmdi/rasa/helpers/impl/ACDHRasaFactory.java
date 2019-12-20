@@ -34,28 +34,34 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
 
     private HikariDataSource ds;
+    private Connection checkedLinkConnection;
+    private Connection linkToBeCheckedConnection;
+    private Connection statisticsConnection;
 
     public ACDHRasaFactory(String databaseURI, String userName, String password) {
-
-        connectDatabase(databaseURI, userName, password);
+        try {
+            connectDatabase(databaseURI, userName, password);
+        } catch (SQLException e) {
+            _logger.error("There was a problem connecting to the database. Make sure the uri, username and password are correct: ",e);
+        }
     }
 
     @Override
     public ACDHCheckedLinkResource getCheckedLinkResource() {
-        return new ACDHCheckedLinkResource(ds);
+        return new ACDHCheckedLinkResource(checkedLinkConnection);
     }
 
     @Override
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-        return new ACDHLinkToBeCheckedResource(ds);
+        return new ACDHLinkToBeCheckedResource(linkToBeCheckedConnection);
     }
 
     @Override
     public ACDHStatisticsResource getStatisticsResource() {
-        return new ACDHStatisticsResource(ds);
+        return new ACDHStatisticsResource(statisticsConnection);
     }
 
-    private void connectDatabase(String databaseURI, String userName, String password) {
+    private void connectDatabase(String databaseURI, String userName, String password) throws SQLException {
         _logger.info("Connecting to database...");
 
         HikariConfig config = new HikariConfig();
@@ -67,9 +73,14 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        config.addDataSourceProperty("maximumPoolSize", "100");
+        config.setMaximumPoolSize(20);
+        config.setLeakDetectionThreshold(30 * 1000);
 
         ds = new HikariDataSource(config);
+
+        checkedLinkConnection = ds.getConnection();
+        linkToBeCheckedConnection = ds.getConnection();
+        statisticsConnection = ds.getConnection();
 
         _logger.info("Connected to database.");
 
