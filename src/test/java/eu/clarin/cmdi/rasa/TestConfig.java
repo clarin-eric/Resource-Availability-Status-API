@@ -20,16 +20,12 @@ package eu.clarin.cmdi.rasa;
 
 import ch.vorburger.exec.ManagedProcessException;
 import ch.vorburger.mariadb4j.DB;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import org.apache.ibatis.jdbc.ScriptRunner;
-import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
