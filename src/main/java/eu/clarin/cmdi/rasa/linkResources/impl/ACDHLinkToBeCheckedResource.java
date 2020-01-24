@@ -99,6 +99,28 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
 
     @Override
+    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
+
+        String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+
+        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+
+        for(LinkToBeChecked linkToBeChecked:linksToBeChecked){
+            preparedStatement.setString(1, linkToBeChecked.getUrl());
+            preparedStatement.setString(2, linkToBeChecked.getRecord());
+            preparedStatement.setString(3, linkToBeChecked.getCollection());
+            preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+            preparedStatement.addBatch();
+        }
+
+        //affected rows
+        int[] row = preparedStatement.executeBatch();
+
+        return row.length >= 1;
+
+    }
+
+    @Override
     public Boolean delete(String url) throws SQLException {
         String deleteQuery = "DELETE FROM urls WHERE url=?";
 

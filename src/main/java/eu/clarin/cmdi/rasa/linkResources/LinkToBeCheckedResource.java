@@ -39,6 +39,9 @@ public interface LinkToBeCheckedResource {
     /* save a link to be checked into urls, if it already exists in the collection, it fails but is ignored */
     Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException;
 
+    /* batch insert links to be checked into urls, only not existing urls are persisted */
+    Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException;
+
     /* Delete a url from urls */
     Boolean delete(String url) throws SQLException;
 

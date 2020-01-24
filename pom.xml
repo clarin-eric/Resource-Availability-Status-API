@@ -6,7 +6,7 @@
 
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>2.3.4-MYSQL-SNAPSHOT</version>
+    <version>2.3.5-MYSQL-SNAPSHOT</version>
     <build>
         <plugins>
             <plugin>
