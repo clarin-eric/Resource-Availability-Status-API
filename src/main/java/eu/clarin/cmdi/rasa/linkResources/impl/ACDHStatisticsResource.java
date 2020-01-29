@@ -40,6 +40,13 @@ public class ACDHStatisticsResource implements StatisticsResource {
     private final static Logger _logger = LoggerFactory.getLogger(ACDHStatisticsResource.class);
 
     private Connection con;
+    private final String statusStatisticsQuery = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
+    private final String statusStatisticsCollectionQuery = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
+    private final String overallStatisticsQuery = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
+    private final String overallStatisticsCollectionQuery = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
+
+
+    //set query strings once and reuse them again
 
     public ACDHStatisticsResource(Connection con) {
         this.con = con;
@@ -48,15 +55,11 @@ public class ACDHStatisticsResource implements StatisticsResource {
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
     public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
-        String query;
-
         PreparedStatement statement;
         if (collection == null || collection.equals("Overall")) {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
-            statement = con.prepareStatement(query);
+            statement = con.prepareStatement(statusStatisticsQuery);
         } else {
-            query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
-            statement = con.prepareStatement(query);
+            statement = con.prepareStatement(statusStatisticsCollectionQuery);
             statement.setString(1, collection);
         }
 
@@ -67,20 +70,18 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     @Override
     public Statistics getOverallStatistics(String collection) throws SQLException {
-        String query;
-
         PreparedStatement statement;
         if (collection == null || collection.equals("Overall")) {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
-            statement = con.prepareStatement(query);
+            statement = con.prepareStatement(overallStatisticsQuery);
         } else {
-            query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
-            statement = con.prepareStatement(query);
+            statement = con.prepareStatement(overallStatisticsCollectionQuery);
             statement.setString(1, collection);
         }
 
         ResultSet rs = statement.executeQuery();
         Record record = DSL.using(con).fetchOne(rs);
+        statement.close();
+
         //return null if count is 0, ie. collection not found in database
         return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
 
@@ -110,6 +111,7 @@ public class ACDHStatisticsResource implements StatisticsResource {
         }
         ResultSet rs = statement.executeQuery();
         Record record = DSL.using(con).fetchOne(rs);
+        statement.close();
         return (Long) record.getValue("count");
     }
 

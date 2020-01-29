@@ -104,61 +104,63 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     }
 
     public String prepareQuery(String inList) {
+        StringBuilder sb = new StringBuilder();
+
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        String query = "SELECT * FROM status";
+        sb.append("SELECT * FROM status");
 
         boolean firstAlready = false;
         if (status != null) {
-            query += " WHERE";
-            query += " statusCode>=? AND statusCode<=?";
+            sb.append(" WHERE");
+            sb.append(" statusCode>=? AND statusCode<=?");
             firstAlready = true;
         }
         if (before != null) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += " timestamp<?";
+            sb.append(" timestamp<?");
             firstAlready = true;
         }
         if (after != null) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += " timestamp>?";
+            sb.append(" timestamp>?");
             firstAlready = true;
         }
         if (collection != null && !collection.equals("Overall")) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += " collection=?";
+            sb.append(" collection=?");
             firstAlready = true;
         }
 
         if (inList != null) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += inList;
+            sb.append(inList);
         }
 
         if (start > 0 && end > 0) {
-            query += " LIMIT ? OFFSET ?";
+            sb.append(" LIMIT ? OFFSET ?");
         } else if (start > 0) {
-            query += " LIMIT 18446744073709551615 OFFSET ?";
+            sb.append(" LIMIT 18446744073709551615 OFFSET ?");
         } else if (end > 0) {
-            query += " LIMIT ?";
+            sb.append(" LIMIT ?");
         }
-        return query;
+        return sb.toString();
     }
 
     private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
@@ -185,14 +187,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         }
 
         if (start > 0 && end > 0) {
-//            query += "LIMIT ? OFFSET ?";
+//            sb.append("LIMIT ? OFFSET ?");
             statement.setInt(i, end - start + 1);
             statement.setInt(i + 1, start - 1);//start 1 would need offset 0
         } else if (start > 0) {
-//            query += " LIMIT 18446744073709551615 OFFSET ?";
+//            sb.append(" LIMIT 18446744073709551615 OFFSET ?");
             statement.setInt(i, start - 1);//start 1 would need offset 0
         } else if (end > 0) {
-//            query += " LIMIT ?";
+//            sb.append(" LIMIT ?");
             statement.setInt(i, end);
         }
 

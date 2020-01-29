@@ -74,62 +74,64 @@ public class ACDHStatisticsCountFilter implements StatisticsFilter {
 
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
+        StringBuilder sb = new StringBuilder();
 
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        String query = "SELECT COUNT(*) as count FROM " + tableName;
+        sb.append("SELECT COUNT(*) as count FROM ").append(tableName);
 
         boolean firstAlready = false;
         if (collection != null) {
-            query += " WHERE collection=?";
+            sb.append(" WHERE collection=?");
             firstAlready = true;
         }
         if (record != null) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += "  record=?";
+            sb.append("  record=?");
             firstAlready = true;
         }
         if (broken != null && broken) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += "  statusCode NOT IN (";
+            sb.append("  statusCode NOT IN (");
 
             List<Integer> statuses = StatusCodeMapper.getOkStatuses();
             statuses.addAll(StatusCodeMapper.getUndeterminedStatuses());
+            String comma = "";
             for (int status : statuses) {
-                query += status + ",";
+                sb.append(comma);
+                comma = ",";
+                sb.append(status);
             }
-            //delete the last comma
-            query = query.substring(0, query.length() - 1);
-            query += ")";
-
+            sb.append(")");
 
             firstAlready = true;
         }
         if (undetermined != null && undetermined) {
             if (firstAlready) {
-                query += " AND";
+                sb.append(" AND");
             } else {
-                query += " WHERE";
+                sb.append(" WHERE");
             }
-            query += "  statusCode IN (";
+            sb.append("  statusCode IN (");
 
+            String comma = "";
             for (int status : StatusCodeMapper.getUndeterminedStatuses()) {
-                query += status + ",";
+                sb.append(comma);
+                comma = ",";
+                sb.append(status);
             }
-            //delete the last comma
-            query = query.substring(0, query.length() - 1);
-            query += ")";
+            sb.append(")");
         }
 
-        PreparedStatement statement = con.prepareStatement(query);
+        PreparedStatement statement = con.prepareStatement(sb.toString());
         int i = 1;
         if (collection != null) {
             statement.setString(i, collection);

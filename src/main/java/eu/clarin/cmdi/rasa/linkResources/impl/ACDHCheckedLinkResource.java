@@ -45,21 +45,27 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private Connection con;
 
+    private final String urlQuery = "SELECT * FROM status WHERE url=?";
+    private final String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
+    private final String defaultQuery = "SELECT * FROM status";
+    private final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+    private final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+    private final String deleteURLQuery = "DELETE FROM status WHERE url=?";
+
     public ACDHCheckedLinkResource(Connection con) {
         this.con = con;
     }
 
     @Override
     public CheckedLink get(String url) throws SQLException {
-        String query = "SELECT * FROM status WHERE url=?";
 
-
-        PreparedStatement statement = con.prepareStatement(query);
+        PreparedStatement statement = con.prepareStatement(urlQuery);
         statement.setString(1, url);
 
         ResultSet rs = statement.executeQuery();
 
         Record record = DSL.using(con).fetchOne(rs);
+        statement.close();
 
         //only one element
         return record == null ? null : new CheckedLink(record);
@@ -68,15 +74,16 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public CheckedLink get(String url, String collection) throws SQLException {
-        String query = "SELECT * FROM status WHERE url=? AND collection=?";
 
-        PreparedStatement statement = con.prepareStatement(query);
+        PreparedStatement statement = con.prepareStatement(urlCollectionQuery);
         statement.setString(1, url);
         statement.setString(2, collection);
 
         ResultSet rs = statement.executeQuery();
 
         Record record = DSL.using(con).fetchOne(rs);
+        statement.close();
+
         //only one element
         return record == null ? null : new CheckedLink(record);
 
@@ -84,8 +91,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
-
-        String defaultQuery = "SELECT * FROM status";
 
         PreparedStatement statement;
         if (!filter.isPresent()) {
@@ -128,23 +133,26 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) throws SQLException {
-        //todo maybe find a better solution for this in list
-        String inList = " url IN (";
-        for (String url : urlCollection) {
-            inList += "'" + url + "',";
-        }
-        //delete the last comma
-        inList = inList.substring(0, inList.length() - 1);
-        inList += ")";
 
-        String defaultQuery = "SELECT * FROM status WHERE" + inList;
-        Map<String, CheckedLink> resultMap;
+        //if urlCollection is given, this is how all these from the collection are returned:
+        //example query: select * from status where url in ('www.google.com','www.facebook.com');
+        StringBuilder sb = new StringBuilder();
+        sb.append(" url IN (");
+        String comma="";
+        for (String url : urlCollection) {
+            sb.append(comma);
+            comma=",";
+            sb.append("'").append(url).append("'");
+        }
+        sb.append(")");
+
+        String defaultQuery = "SELECT * FROM status WHERE" + sb.toString();
 
         PreparedStatement statement;
         if (!filter.isPresent()) {
             statement = con.prepareStatement(defaultQuery);
         } else {
-            statement = filter.get().getStatement(con, inList);
+            statement = filter.get().getStatement(con, sb.toString());
         }
 
         ResultSet rs = statement.executeQuery();
@@ -173,10 +181,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
         try {
-            String insertQuery = "INSERT INTO " + tableName + "(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-
-
-            PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+            PreparedStatement preparedStatement;
+            if (tableName.equals("status")) {
+                preparedStatement = con.prepareStatement(insertStatusQuery);
+            } else {
+                preparedStatement = con.prepareStatement(insertHistoryQuery);
+            }
             preparedStatement.setString(1, checkedLink.getUrl());
             preparedStatement.setInt(2, checkedLink.getStatus());
             preparedStatement.setString(3, checkedLink.getMethod());
@@ -192,6 +202,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
             //affected rows
             int row = preparedStatement.executeUpdate();
+            preparedStatement.close();
 
             return row == 1;
 
@@ -208,13 +219,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Boolean delete(String url) throws SQLException {
-        String deleteQuery = "DELETE FROM status WHERE url=?";
-
-        PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
+        PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery);
         preparedStatement.setString(1, url);
 
         //affected rows
         int row = preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         return row == 1;
 
@@ -223,6 +233,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     @Override
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
 
+        //not requested much, so no need to optimize
         String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
         PreparedStatement preparedStatement = con.prepareStatement(query);
         preparedStatement.setString(1, url);

@@ -37,20 +37,27 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     private Connection con;
 
+    //set query strings once and reuse them again
+    private final String urlQuery = "SELECT * FROM urls WHERE url=?";
+    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
+    private final String collectionQuery = "SELECT DISTINCT collection from urls";
+    private final String defaultQuery = "SELECT * FROM urls";
+    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+
     public ACDHLinkToBeCheckedResource(Connection con) {
         this.con = con;
     }
 
     @Override
     public LinkToBeChecked get(String url) throws SQLException {
-        String query = "SELECT * FROM urls WHERE url=?";
 
-        PreparedStatement statement = con.prepareStatement(query);
+        PreparedStatement statement = con.prepareStatement(urlQuery);
         statement.setString(1, url);
 
         ResultSet rs = statement.executeQuery();
 
         Record record = DSL.using(con).fetchOne(rs);
+        statement.close();
 
         //only one element
         return record == null ? null : new LinkToBeChecked(record);
@@ -59,8 +66,6 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     @Override
     public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
-
-        String defaultQuery = "SELECT * FROM urls";
 
         PreparedStatement statement;
         if (!filter.isPresent()) {
@@ -83,7 +88,6 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     @Override
     public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
-        String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
 
         PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
         preparedStatement.setString(1, linkToBeChecked.getUrl());
@@ -93,6 +97,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
         //affected rows
         int row = preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         return row == 1;
 
@@ -101,11 +106,9 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     @Override
     public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
 
-        String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
-
         PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
 
-        for(LinkToBeChecked linkToBeChecked:linksToBeChecked){
+        for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
             preparedStatement.setString(1, linkToBeChecked.getUrl());
             preparedStatement.setString(2, linkToBeChecked.getRecord());
             preparedStatement.setString(3, linkToBeChecked.getCollection());
@@ -115,21 +118,20 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
         //affected rows
         int[] row = preparedStatement.executeBatch();
-
+        preparedStatement.close();
         return row.length >= 1;
 
     }
 
     @Override
     public Boolean delete(String url) throws SQLException {
-        String deleteQuery = "DELETE FROM urls WHERE url=?";
 
-        PreparedStatement preparedStatement = con.prepareStatement(deleteQuery);
+        PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery);
         preparedStatement.setString(1, url);
 
         //affected rows
         int row = preparedStatement.executeUpdate();
-
+        preparedStatement.close();
         return row == 1;
 
     }
@@ -137,15 +139,15 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     @Override
     public List<String> getCollectionNames() throws SQLException {
 
-        String query = "SELECT DISTINCT collection from urls";
         List<String> collectionNames = new ArrayList<>();
 
-        PreparedStatement statement = con.prepareStatement(query);
+        PreparedStatement statement = con.prepareStatement(collectionQuery);
         ResultSet rs = statement.executeQuery();
 
         while (rs.next()) {
             collectionNames.add(rs.getString("collection"));
         }
+        statement.close();
 
         return collectionNames;
     }

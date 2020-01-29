@@ -27,6 +27,7 @@ import java.sql.SQLException;
 public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
 
     private String collection;
+    private final String query = "SELECT * FROM urls WHERE collection=?";
 
     public ACDHLinkToBeCheckedFilter(String collection) {
         this.collection = collection;
@@ -40,7 +41,6 @@ public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         //if it comes here, then it means there is a collection to be filtered
-        String query = "SELECT * FROM urls WHERE collection=?";
         PreparedStatement statement = con.prepareStatement(query);
         statement.setString(1, collection);
 
