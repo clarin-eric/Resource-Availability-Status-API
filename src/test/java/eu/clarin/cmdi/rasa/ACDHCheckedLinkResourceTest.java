@@ -77,66 +77,81 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void collectionFilterShouldReturnCorrectResults() throws SQLException {
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google");
-        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-        long count = links.count();
-        assertEquals(3, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(3, count);
+        }
 
         filter = new ACDHCheckedLinkFilter("noCollection");
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(0, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
 
     }
 
     @Test
     public void dateFiltersShouldReturnCorrectResults() throws SQLException {
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault());
-        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-        long count = links.count();
-        assertEquals(22, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(22, count);
+        }
 
         filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), null, ZoneId.systemDefault());
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(22, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(22, count);
+        }
+
 
         filter = new ACDHCheckedLinkFilter(null, null, thenDateTime.minusDays(1), ZoneId.systemDefault());
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(22, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(22, count);
+        }
+
 
         filter = new ACDHCheckedLinkFilter(null, thenDateTime.minusDays(1), thenDateTime.plusDays(1), ZoneId.systemDefault());
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(0, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
+
     }
 
     @Test
     public void statusCodeFilterShouldReturnCorrectResults() throws SQLException {
 
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Google", 200);
-        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-        long count = links.count();
-        assertEquals(3, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(3, count);
+        }
 
         filter = new ACDHCheckedLinkFilter(Range.between(100, 600), null, null, ZoneId.systemDefault());
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(22, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(22, count);
+        }
+
 
         filter = new ACDHCheckedLinkFilter(Range.between(1, 90), null, null, ZoneId.systemDefault());
-        links = checkedLinkResource.get(Optional.of(filter));
-        count = links.count();
-        assertEquals(0, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
+
 
     }
 
     @Test
     public void combinedFilterShouldReturnCorrectResults() throws SQLException {
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter(Range.between(100, 300), thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault(), "Google");
-        Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter));
-        long count = links.count();
-        assertEquals(3, count);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(3, count);
+        }
     }
 
     @Test
@@ -166,24 +181,30 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void filterWithStartAndEndTestShouldReturnCorrectResults() throws SQLException {
-        Stream<CheckedLink> linksStream = checkedLinkResource.get(Optional.empty(), 1, 10);
-        List<CheckedLink> links = linksStream.collect(Collectors.toList());
-        assertEquals(10, links.size());
+        try (Stream<CheckedLink> linksStream = checkedLinkResource.get(Optional.empty(), 1, 10)) {
+            List<CheckedLink> links = linksStream.collect(Collectors.toList());
+            assertEquals(10, links.size());
 
-        Stream<CheckedLink> linksOneOffsetStream = checkedLinkResource.get(Optional.empty(), 2, 10);
-        List<CheckedLink> linksOneOffset = linksOneOffsetStream.collect(Collectors.toList());
-        assertEquals(9, linksOneOffset.size());
 
-        links.remove(0);
-        assertEquals(links, linksOneOffset);
+            try (Stream<CheckedLink> linksOneOffsetStream = checkedLinkResource.get(Optional.empty(), 2, 10)) {
+                List<CheckedLink> linksOneOffset = linksOneOffsetStream.collect(Collectors.toList());
+                assertEquals(9, linksOneOffset.size());
+
+
+                links.remove(0);
+                assertEquals(links, linksOneOffset);
+            }
+        }
+
     }
 
     //the next two methods should be run in order
     @Test
     public void ZZ1saveTestShouldSaveCorrectly() throws SQLException {
         //before saving only 3 google urls
-        Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
-        assertEquals(3, googleStream.count());
+        try (Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")))) {
+            assertEquals(3, googleStream.count());
+        }
 
         //save(first urls then status)
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType"));
@@ -191,12 +212,15 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         checkedLinkResource.save(checkedLink);
 
         //after saving should be 4
-        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
-        assertEquals(4, googleStream.count());
+        try (Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")))) {
+            assertEquals(4, googleStream.count());
+        }
+
 
         //and should contain
-        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
-        assertTrue(googleStream.anyMatch(x -> Objects.equals(x, checkedLink)));
+        try (Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")))) {
+            assertTrue(googleStream.anyMatch(x -> Objects.equals(x, checkedLink)));
+        }
 
     }
 
@@ -209,20 +233,20 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
 
         checkedLinkResource.save(checkedLink1);
-        assertEquals(checkedLink1,checkedLinkResource.get(testURL));
+        assertEquals(checkedLink1, checkedLinkResource.get(testURL));
 
         List<CheckedLink> history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
-        assertEquals(1,history.size());
-        assertEquals(checkedLink,history.get(0));
+        assertEquals(1, history.size());
+        assertEquals(checkedLink, history.get(0));
 
         //add again, history should have 2
         checkedLinkResource.save(checkedLink2);
-        assertEquals(checkedLink2,checkedLinkResource.get(testURL));
+        assertEquals(checkedLink2, checkedLinkResource.get(testURL));
 
         history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
-        assertEquals(2,history.size());
-        assertEquals(checkedLink1,history.get(0));
-        assertEquals(checkedLink,history.get(1));
+        assertEquals(2, history.size());
+        assertEquals(checkedLink1, history.get(0));
+        assertEquals(checkedLink, history.get(1));
     }
 
     @Test
@@ -232,12 +256,15 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         linkToBeCheckedResource.delete(testURL);
 
         //after deleting only 3 google urls
-        Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
-        assertEquals(3, googleStream.count());
+        try (Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")))) {
+            assertEquals(3, googleStream.count());
+        }
 
         //and shouldn't contain
-        googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")));
-        assertFalse(googleStream.anyMatch(x -> x.getUrl().equals(testURL)));
+        try (Stream<CheckedLink> googleStream = checkedLinkResource.get(Optional.of(new ACDHCheckedLinkFilter("Google")))) {
+            assertFalse(googleStream.anyMatch(x -> x.getUrl().equals(testURL)));
+        }
+
     }
 
 }

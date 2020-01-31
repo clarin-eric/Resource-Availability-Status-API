@@ -110,6 +110,8 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         //because it is checked before if the filter variables are set
         sb.append("SELECT * FROM status");
 
+        //todo string joiner for and
+        //todo before that if clause for where
         boolean firstAlready = false;
         if (status != null) {
             sb.append(" WHERE");
@@ -156,13 +158,15 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         if (start > 0 && end > 0) {
             sb.append(" LIMIT ? OFFSET ?");
         } else if (start > 0) {
-            sb.append(" LIMIT 18446744073709551615 OFFSET ?");
+            sb.append(" LIMIT 18446744073709551615 OFFSET ?");//max number because you cant use use offset without limit
         } else if (end > 0) {
             sb.append(" LIMIT ?");
         }
         return sb.toString();
     }
 
+
+    //todo spring namedparameterjdbctemplate
     private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
 

@@ -31,7 +31,9 @@ public interface LinkToBeCheckedResource {
     /* retrieve for single url */
     LinkToBeChecked get(String url) throws SQLException;
 
-    /* get all urls that match a filter */
+    /* get all urls that match a filter
+    * returned stream needs to be closed after use, so use it with try with resources
+    */
     Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
 
     List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException;

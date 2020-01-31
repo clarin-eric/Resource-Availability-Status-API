@@ -22,6 +22,8 @@ import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,13 +37,10 @@ import java.util.stream.Stream;
 
 public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
+    private final static Logger _logger = LoggerFactory.getLogger(ACDHLinkToBeCheckedResource.class);
+
     private Connection con;
 
-    //set query strings once and reuse them again
-    private final String urlQuery = "SELECT * FROM urls WHERE url=?";
-    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
-    private final String collectionQuery = "SELECT DISTINCT collection from urls";
-    private final String defaultQuery = "SELECT * FROM urls";
     private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
 
     public ACDHLinkToBeCheckedResource(Connection con) {
@@ -51,89 +50,107 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     @Override
     public LinkToBeChecked get(String url) throws SQLException {
 
-        PreparedStatement statement = con.prepareStatement(urlQuery);
-        statement.setString(1, url);
+        String urlQuery = "SELECT * FROM urls WHERE url=?";
+        try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
 
-        ResultSet rs = statement.executeQuery();
+            statement.setString(1, url);
 
-        Record record = DSL.using(con).fetchOne(rs);
-        statement.close();
+            try (ResultSet rs = statement.executeQuery()) {
 
-        //only one element
-        return record == null ? null : new LinkToBeChecked(record);
+                Record record = DSL.using(con).fetchOne(rs);
 
+                //only one element
+                return record == null ? null : new LinkToBeChecked(record);
+            }
+        }
     }
 
+    //call this method in a try with resources so that the underlying resources are closed after use
     @Override
     public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        String defaultQuery = "SELECT * FROM urls";
+        PreparedStatement statement = getPreparedStatement(defaultQuery, filter);
+        ResultSet rs = statement.executeQuery();
 
+        Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
+        recordStream.onClose(() -> {
+            try {
+                rs.close();
+                statement.close();
+            } catch (SQLException e) {
+                _logger.error("Can't close prepared statement or resultset.");
+            }
+        });
+
+        return recordStream.map(LinkToBeChecked::new);
+    }
+
+    private PreparedStatement getPreparedStatement(String defaultQuery, Optional<LinkToBeCheckedFilter> filter) throws SQLException {
         PreparedStatement statement;
         if (!filter.isPresent()) {
             statement = con.prepareStatement(defaultQuery);
         } else {
             statement = filter.get().getStatement(con);
         }
-
-        ResultSet rs = statement.executeQuery();
-
-        return DSL.using(con).fetchStream(rs).map(LinkToBeChecked::new);
-
-
+        return statement;
     }
 
     @Override
     public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
-        return get(filter).collect(Collectors.toList());
+        try (Stream<LinkToBeChecked> linkToBeCheckedStream = get(filter)) {
+            return linkToBeCheckedStream.collect(Collectors.toList());
+        }
     }
 
     @Override
     public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
 
-        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
-        preparedStatement.setString(1, linkToBeChecked.getUrl());
-        preparedStatement.setString(2, linkToBeChecked.getRecord());
-        preparedStatement.setString(3, linkToBeChecked.getCollection());
-        preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+        try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
+            preparedStatement.setString(1, linkToBeChecked.getUrl());
+            preparedStatement.setString(2, linkToBeChecked.getRecord());
+            preparedStatement.setString(3, linkToBeChecked.getCollection());
+            preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
-        preparedStatement.close();
+            //affected rows
+            int row = preparedStatement.executeUpdate();
 
-        return row == 1;
-
+            return row == 1;
+        }
     }
 
     @Override
     public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
 
-        PreparedStatement preparedStatement = con.prepareStatement(insertQuery);
+        try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
 
-        for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
-            preparedStatement.setString(1, linkToBeChecked.getUrl());
-            preparedStatement.setString(2, linkToBeChecked.getRecord());
-            preparedStatement.setString(3, linkToBeChecked.getCollection());
-            preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
-            preparedStatement.addBatch();
+            for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
+                preparedStatement.setString(1, linkToBeChecked.getUrl());
+                preparedStatement.setString(2, linkToBeChecked.getRecord());
+                preparedStatement.setString(3, linkToBeChecked.getCollection());
+                preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                preparedStatement.addBatch();
+            }
+
+            //affected rows
+            int[] row = preparedStatement.executeBatch();
+
+            return row.length >= 1;
         }
-
-        //affected rows
-        int[] row = preparedStatement.executeBatch();
-        preparedStatement.close();
-        return row.length >= 1;
-
     }
 
     @Override
     public Boolean delete(String url) throws SQLException {
 
-        PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery);
-        preparedStatement.setString(1, url);
+        String deleteURLQuery = "DELETE FROM urls WHERE url=?";
+        try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
 
-        //affected rows
-        int row = preparedStatement.executeUpdate();
-        preparedStatement.close();
-        return row == 1;
+            preparedStatement.setString(1, url);
 
+            //affected rows
+            int row = preparedStatement.executeUpdate();
+
+            return row == 1;
+        }
     }
 
     @Override
@@ -141,15 +158,17 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
         List<String> collectionNames = new ArrayList<>();
 
-        PreparedStatement statement = con.prepareStatement(collectionQuery);
-        ResultSet rs = statement.executeQuery();
+        String collectionQuery = "SELECT DISTINCT collection from urls";
+        try (PreparedStatement statement = con.prepareStatement(collectionQuery)) {
+            try (ResultSet rs = statement.executeQuery()) {
 
-        while (rs.next()) {
-            collectionNames.add(rs.getString("collection"));
+                while (rs.next()) {
+                    collectionNames.add(rs.getString("collection"));
+                }
+
+                return collectionNames;
+            }
         }
-        statement.close();
-
-        return collectionNames;
     }
 
     //todo maybe insert and delete in batch method, see curation module to check if it is needed

@@ -42,10 +42,14 @@ public interface CheckedLinkResource {
     /* retrieve for single url from collection */
     CheckedLink get(String url, String collection) throws SQLException;
 
-    /* get all urls that match a filter */
+    /* get all urls that match a filter
+    * returned stream needs to be closed after use, so use it with try with resources
+    */
     Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException;
 
-    /* get all urls that match a filter but limiting from start to end */
+    /* get all urls that match a filter but limiting from start to end
+     * returned stream needs to be closed after use, so use it with try with resources
+     */
     Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) throws SQLException;
 
     /* batch retrieval with url as key with optional filtering
