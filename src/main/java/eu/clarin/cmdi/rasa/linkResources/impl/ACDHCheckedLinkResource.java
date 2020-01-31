@@ -40,6 +40,10 @@ import java.util.stream.Stream;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
+    private enum Table {
+        STATUS, HISTORY
+    }
+
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
     private Connection con;
@@ -85,23 +89,21 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
+        final String defaultQuery = "SELECT * FROM status";
+        final PreparedStatement statement = getPreparedStatement(defaultQuery, filter, null);
+        final ResultSet rs = statement.executeQuery();
 
-        String defaultQuery = "SELECT * FROM status";
-        PreparedStatement statement = getPreparedStatement(defaultQuery, filter, null);
-        ResultSet rs = statement.executeQuery();
-
-        Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
-        recordStream.onClose(() -> {
-            try {
-                rs.close();
-                statement.close();
-            } catch (SQLException e) {
-                _logger.error("Can't close prepared statement or resultset.");
-            }
-        });
-
-        return recordStream.map(CheckedLink::new);
-
+        return DSL.using(con)
+                .fetchStream(rs)
+                .map(CheckedLink::new)
+                .onClose(() -> {
+                    try {
+                        rs.close();
+                        statement.close();
+                    } catch (SQLException e) {
+                        _logger.error("Can't close prepared statement or resultset.");
+                    }
+                });
     }
 
     /**
@@ -177,7 +179,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     }
 
-
     @Override
     public Boolean save(CheckedLink checkedLink) throws SQLException {
 
@@ -193,22 +194,23 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         }
 
         //save new one
-        return insertCheckedLink(checkedLink, "status");
+        return insertCheckedLink(checkedLink, Table.STATUS);
     }
 
-    private PreparedStatement getInsertPreparedStatement(String tableName) throws SQLException {
-        PreparedStatement preparedStatement;
-        if (tableName.equals("status")) {
-            String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-            preparedStatement = con.prepareStatement(insertStatusQuery);
-        } else {//history
-            String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-            preparedStatement = con.prepareStatement(insertHistoryQuery);
+    private PreparedStatement getInsertPreparedStatement(Table tableName) throws SQLException {
+        final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        switch (tableName) {
+            case STATUS:
+                return con.prepareStatement(insertStatusQuery);
+            case HISTORY:
+                return con.prepareStatement(insertHistoryQuery);
+            default:
+                throw new RuntimeException("Unsupported table name" + tableName);
         }
-        return preparedStatement;
     }
 
-    private Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
+    private Boolean insertCheckedLink(CheckedLink checkedLink, Table tableName) {
         try (PreparedStatement preparedStatement = getInsertPreparedStatement(tableName)) {
 
             preparedStatement.setString(1, checkedLink.getUrl());
@@ -237,7 +239,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Boolean saveToHistory(CheckedLink checkedLink) throws SQLException {
-        return insertCheckedLink(checkedLink, "history");
+        return insertCheckedLink(checkedLink, Table.HISTORY);
     }
 
     @Override
