@@ -23,6 +23,9 @@ import org.jooq.Record;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/**
+ * General statistics, namely count, average response time, max response time
+ */
 public class Statistics {
 
     private long count;

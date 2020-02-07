@@ -22,6 +22,9 @@ import org.jooq.Record;
 
 import java.util.Objects;
 
+/**
+ * Corresponds to a tuple in the urls table
+ */
 public class LinkToBeChecked {
     private String url;
     private String record;
@@ -38,6 +41,10 @@ public class LinkToBeChecked {
         this.expectedMimeType = expectedMimeType;
     }
 
+    /**
+     * Create linkToBeChecked from the necessary info in a given CheckedLink
+     * @param checkedLink CheckedLink to be copied
+     */
     public LinkToBeChecked(CheckedLink checkedLink) {
         this.url = checkedLink.getUrl();
         this.record = checkedLink.getRecord();

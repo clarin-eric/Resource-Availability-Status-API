@@ -38,10 +38,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-//TODO more javadoc
-//TODO maven javadoc creator
-//TODO README.md for github
-
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);

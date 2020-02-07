@@ -22,6 +22,9 @@ import org.jooq.Record;
 import java.sql.Timestamp;
 import java.util.Objects;
 
+/**
+ * Corresponds to a tuple in the status table
+ */
 public class CheckedLink {
 
     private String url;

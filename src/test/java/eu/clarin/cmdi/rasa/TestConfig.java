@@ -22,6 +22,7 @@ import ch.vorburger.exec.ManagedProcessException;
 import ch.vorburger.mariadb4j.DB;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
+import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
@@ -42,7 +43,7 @@ public abstract class TestConfig {
 
     private static RasaFactory rasaFactory;
 
-    static ACDHCheckedLinkResource checkedLinkResource;
+    static CheckedLinkResource checkedLinkResource;
     static LinkToBeCheckedResource linkToBeCheckedResource;
     static StatisticsResource statisticsResource;
 

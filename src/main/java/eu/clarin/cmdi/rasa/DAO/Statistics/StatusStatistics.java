@@ -22,6 +22,9 @@ import org.jooq.Record;
 
 import java.util.Objects;
 
+/**
+ * Status statistics: general statistics specific to one status code
+ */
 public class StatusStatistics extends Statistics {
     private int status;
 
