@@ -40,6 +40,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
     private String testURL = "https://mail.google.com";
 
     //TODO batch insert test!!!
+    //TODO batch delete test!!!
     //todo basic basic get test
 
     @Test
@@ -103,8 +104,6 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         try (Stream<LinkToBeChecked> googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")))) {
             assertEquals(3, googleStream.count());
         }
-        ;
-
 
         //save
         LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType");
@@ -114,7 +113,6 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         try (Stream<LinkToBeChecked> googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")))) {
             assertEquals(4, googleStream.count());
         }
-
 
         //and should contain
         try (Stream<LinkToBeChecked> googleStream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter("Google")))) {

@@ -38,6 +38,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+//TODO more javadoc
+//TODO maven javadoc creator
+//TODO README.md for github
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
@@ -84,7 +87,6 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     }
 
-    //call this method in a try with resources so that the underlying resources are closed after use
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
 
@@ -153,14 +155,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
-    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) throws SQLException {
+    public Map<String, CheckedLink> get(Collection<String> urls, Optional<CheckedLinkFilter> filter) throws SQLException {
 
         //if urlCollection is given, this is how all these from the collection are returned:
         //example query: select * from status where url in ('www.google.com','www.facebook.com');
         StringBuilder sb = new StringBuilder();
         sb.append(" url IN (");
         String comma = "";
-        for (String url : urlCollection) {
+        for (String url : urls) {
             sb.append(comma);
             comma = ",";
             sb.append("'").append(url).append("'");

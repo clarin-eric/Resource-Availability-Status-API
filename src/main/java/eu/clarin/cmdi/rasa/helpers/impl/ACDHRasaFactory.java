@@ -38,6 +38,13 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     private Connection linkToBeCheckedConnection;
     private Connection statisticsConnection;
 
+    /**
+     * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
+     * Different resources can be obtained with their respective get methods.
+     * @param databaseURI uri of the database
+     * @param userName username for the database
+     * @param password password for the database
+     */
     public ACDHRasaFactory(String databaseURI, String userName, String password) {
         try {
             connectDatabase(databaseURI, userName, password);

@@ -20,5 +20,6 @@ package eu.clarin.cmdi.rasa.helpers;
 
 public enum Table {
     URLS,
-    STATUS;
+    STATUS,
+    HISTORY;
 }

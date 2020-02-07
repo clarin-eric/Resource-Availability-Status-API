@@ -20,6 +20,10 @@ package eu.clarin.cmdi.rasa.helpers.statusCodeMapper;
 
 import java.util.*;
 
+/**
+ * Static class to map categories to status codes
+ * IMPORTANT: The mapping will soon be deprecated and categories will be directly persisted in the database
+ */
 public final class StatusCodeMapper {
     //this map is used by curation module
     private static Map<Integer, Category> map;
@@ -40,15 +44,31 @@ public final class StatusCodeMapper {
 
     }
 
+    /**
+     * Get category from the status code
+     * @param status status code requested
+     * @deprecated soon to be
+     * @return category of the given status code
+     */
     public static Category get(int status) {
         Category category = map.get(status);
         return category == null ? Category.BROKEN : category;
     }
 
+    /**
+     * Get status code integers for ok category
+     * @deprecated soon to be
+     * @return list of status codes
+     */
     public static List<Integer> getOkStatuses() {
         return new ArrayList<>(ok);
     }
 
+    /**
+     * Get status code integers for undetermined category
+     * @deprecated soon to be
+     * @return list of status codes
+     */
     public static List<Integer> getUndeterminedStatuses() {
         return new ArrayList<>(undetermined);
     }

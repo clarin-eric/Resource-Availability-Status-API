@@ -42,6 +42,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     private Connection con;
 
     private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
 
     public ACDHLinkToBeCheckedResource(Connection con) {
         this.con = con;
@@ -141,7 +142,6 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     @Override
     public Boolean delete(String url) throws SQLException {
 
-        String deleteURLQuery = "DELETE FROM urls WHERE url=?";
         try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
 
             preparedStatement.setString(1, url);
@@ -150,6 +150,24 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
             int row = preparedStatement.executeUpdate();
 
             return row == 1;
+        }
+    }
+
+    @Override
+    public Boolean delete(List<String> urls) throws SQLException {
+
+        try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+            for(String url:urls){
+                preparedStatement.setString(1, url);
+                preparedStatement.addBatch();
+            }
+
+
+            //affected rows
+            int[] row = preparedStatement.executeBatch();
+
+            return row.length >= 1;
         }
     }
 
@@ -171,5 +189,5 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
         }
     }
 
-    //todo maybe insert and delete in batch method, see curation module to check if it is needed
+
 }
