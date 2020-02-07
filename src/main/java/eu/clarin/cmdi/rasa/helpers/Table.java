@@ -16,11 +16,9 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.filters;
+package eu.clarin.cmdi.rasa.helpers;
 
-public interface StatisticsFilter extends Filter {
-
-    String getCollection();
-    String getRecord();
-
+public enum Table {
+    URLS,
+    STATUS;
 }

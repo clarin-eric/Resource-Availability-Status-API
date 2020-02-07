@@ -106,6 +106,15 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     }
 
+    /**
+     * This method is used to be able to have the prepared statement creation in one line, so that it fits well in to a try-with-resources block
+     * Then the caller methods don't need to concern themselves with closing the statement.
+     * @param defaultQuery
+     * @param filter
+     * @param inList
+     * @return
+     * @throws SQLException
+     */
     private PreparedStatement getPreparedStatement(String defaultQuery, Optional<CheckedLinkFilter> filter, String inList) throws SQLException {
         PreparedStatement statement;
         if (!filter.isPresent()) {

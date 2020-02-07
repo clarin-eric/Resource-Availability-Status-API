@@ -27,6 +27,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
@@ -39,8 +42,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     private int start = -1;
     private int end = -1;
 
-    //zoneId is the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
-    //also before and after parameters should be instantiated with ZoneId.systemDefault() as well
+
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone) {
         this.status = status;
         this.before = before;
@@ -48,6 +57,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.zone = zone;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String collection) {
         this.status = status;
         this.before = before;
@@ -56,15 +73,29 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.collection = collection;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(String collection) {
         this.collection = collection;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(String collection, int status) {
         this.collection = collection;
         this.status = Range.between(status, status);
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param start limits the results, starting from this entry in the database
+     * @param end limits the results until this entry in the database
+     */
     public ACDHCheckedLinkFilter(int start, int end) {
         this.start = start;
         this.end = end;
@@ -103,56 +134,38 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.start = start;
     }
 
-    public String prepareQuery(String inList) {
+    /**
+     * Prepares the query based on the variables
+     * @param inList filters out the results, only urls within this list can be in the results
+     * @return prepared query to be used in preparing the statement
+     */
+    private String prepareQuery(String inList) {
         StringBuilder sb = new StringBuilder();
 
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
         sb.append("SELECT * FROM status");
 
-        //todo string joiner for and
-        //todo before that if clause for where
-        boolean firstAlready = false;
-        if (status != null) {
-            sb.append(" WHERE");
-            sb.append(" statusCode>=? AND statusCode<=?");
-            firstAlready = true;
+        StringJoiner sj = new StringJoiner(" AND ");
+
+        if(status!=null){
+            sj.add("statusCode>=? AND statusCode<=?");
         }
-        if (before != null) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append(" timestamp<?");
-            firstAlready = true;
+        if(before!=null){
+            sj.add("timestamp<?");
         }
-        if (after != null) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append(" timestamp>?");
-            firstAlready = true;
+        if(after!=null){
+            sj.add("timestamp>?");
         }
         if (collection != null && !collection.equals("Overall")) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append(" collection=?");
-            firstAlready = true;
+            sj.add("collection=?");
+        }
+        if (inList != null) {
+            sj.add(inList);
         }
 
-        if (inList != null) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append(inList);
+        if(sj.length()>0){
+            sb.append(" WHERE ").append(sj.toString());
         }
 
         if (start > 0 && end > 0) {
@@ -166,7 +179,13 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     }
 
 
-    //todo spring namedparameterjdbctemplate
+    /**
+     * This method prepares the statement with the filter's variables with the given query.
+     * @param con database connection
+     * @param query query to be prepared
+     * @return a fully prepared statement with the query and given parameters, the caller can directly execute and read the results
+     * @throws SQLException can occur during preparing the statement
+     */
     private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
 
@@ -205,7 +224,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return statement;
     }
 
-    //returns a mysql statement filter depending on the non null parameters
+
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         String query = prepareQuery(null);

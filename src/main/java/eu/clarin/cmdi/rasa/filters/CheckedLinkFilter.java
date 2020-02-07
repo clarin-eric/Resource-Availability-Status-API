@@ -26,17 +26,60 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-//all three fields are nullable
+/**
+ * This class creates a filter for the status table with the given values through the constructor
+ */
 public interface CheckedLinkFilter extends Filter {
+    /**
+     * returns the statuses set for the filter.
+     * @return range of integers that are the accepted statuses
+     */
     Range<Integer> getStatus();
+
+    /**
+     *
+     * @return the date set for checkedBefore
+     */
     LocalDateTime getCheckedBeforeDate();
+
+    /**
+     *
+     * @return the date set for checkedAfter
+     */
     LocalDateTime getCheckedAfterDate();
+
+    /**
+     * Gets the collection
+     * @return collection
+     */
     String getCollection();
+
+    /**
+     * Gets the zoneID
+     * @return zone id for the filter
+     */
     ZoneId getZone();
 
+    /**
+     * Sets the start. If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
+     * @param start starting line to read from the database
+     */
     void setStart(int start);
+
+    /**
+     * Sets the end. If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
+     * @param end last line to read from the database
+     */
     void setEnd(int end);
 
+    /**
+     * Same as getStatement(Connection con) but only the urls within the inList will be returned if they match the filter variables.
+     * If a url matches the given variables in the filter but is not in inList, it won't be in the results
+     * @param con database connection
+     * @param inList filters out the results, only urls within this list can be in the results
+     * @return fully prepared statement with filter variables set and ready to execute
+     * @throws SQLException can occur during preparing the statement
+     */
     PreparedStatement getStatement(Connection con, String inList) throws SQLException;
 
 }

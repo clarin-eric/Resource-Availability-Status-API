@@ -18,48 +18,90 @@
 
 package eu.clarin.cmdi.rasa.filters.impl;
 
-import eu.clarin.cmdi.rasa.filters.StatisticsFilter;
+import eu.clarin.cmdi.rasa.filters.StatisticsCountFilter;
+import eu.clarin.cmdi.rasa.helpers.Table;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.StatusCodeMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.StringJoiner;
 
-public class ACDHStatisticsCountFilter implements StatisticsFilter {
+public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
 
     private String collection;
     private String record;
-    private String tableName;
+    private Table tableName;
     private Boolean broken;
     private Boolean undetermined;
 
-    public ACDHStatisticsCountFilter(String collection, String record, boolean broken, boolean undetermined) {
+    /**
+     * Creates a statistics filter for the tables urls and status. Different constructors are for convenience.
+     *
+     * @param tableName database table to count, only allowed values: URLS, STATUS
+     */
+    public ACDHStatisticsCountFilter(Table tableName) throws SQLException {
+        this.tableName = tableName;
+        checkTable();
+    }
+
+    /**
+     * Creates a statistics filter for the tables urls and status. Different constructors are for convenience. All are nullable.
+     *
+     * @param collection   collection of the statistics
+     * @param record       record of the statistics
+     * @param broken       determines if the result should include broken links
+     * @param undetermined determines if the result should include undetermined links
+     * @param tableName    database table to count, only allowed values: URLS, STATUS
+     */
+    public ACDHStatisticsCountFilter(String collection, String record, Boolean broken, Boolean undetermined, Table tableName) throws SQLException {
         this.collection = collection;
         this.record = record;
         this.broken = broken;
         this.undetermined = undetermined;
+        this.tableName = tableName;
+        checkTable();
     }
 
-    public ACDHStatisticsCountFilter(boolean broken, boolean undetermined) {
+    /**
+     * Creates a statistics filter for the tables urls and status. Different constructors are for convenience. All values are nullable.
+     *
+     * @param broken       determines if the result should include broken links
+     * @param undetermined determines if the result should include undetermined links
+     * @param tableName    database table to count, only allowed values: URLS, STATUS
+     */
+    public ACDHStatisticsCountFilter(Boolean broken, Boolean undetermined, Table tableName) throws SQLException {
         this.broken = broken;
         this.undetermined = undetermined;
+        this.tableName = tableName;
+        checkTable();
     }
 
-    public ACDHStatisticsCountFilter(String collection, String record) {
+    /**
+     * Creates a statistics filter for the tables urls and status. Different constructors are for convenience. All values are nullable.
+     *
+     * @param collection collection of the statistics
+     * @param record     record of the statistics
+     * @param tableName  database table to count, only allowed values: URLS, STATUS
+     */
+    public ACDHStatisticsCountFilter(String collection, String record, Table tableName) throws SQLException {
         this.collection = collection;
         this.record = record;
+        this.tableName = tableName;
+        checkTable();
     }
 
-    //this method is called from within rasa depending on the method
-    public void setTableName(String tableName) throws SQLException {
+    private void checkTable() throws SQLException {
+        String table = tableName.toString().toLowerCase();
+        if (!table.equals("urls") && !table.equals("status")) {
+            throw new SQLException("Table name not known. Possible values are status and urls.");
+        }
         if (broken != null || undetermined != null) {
-            if (tableName.equals("urls")) {
+            if (table.equals("urls")) {
                 throw new SQLException("Undetermined or broken filter can not be used on the urls table. Use status instead.");
             }
         }
-
-        this.tableName = tableName;
     }
 
     @Override
@@ -73,62 +115,59 @@ public class ACDHStatisticsCountFilter implements StatisticsFilter {
     }
 
     @Override
+    public String getTable() {
+        return tableName.toString().toLowerCase();
+    }
+
+    @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         StringBuilder sb = new StringBuilder();
 
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        sb.append("SELECT COUNT(*) as count FROM ").append(tableName);
+        sb.append("SELECT COUNT(*) as count FROM ").append(tableName.toString().toLowerCase());
 
-        boolean firstAlready = false;
+        StringJoiner sj = new StringJoiner(" AND ");
+
         if (collection != null) {
-            sb.append(" WHERE collection=?");
-            firstAlready = true;
+            sj.add("collection=?");
         }
         if (record != null) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append("  record=?");
-            firstAlready = true;
+            sj.add("record=?");
         }
         if (broken != null && broken) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append("  statusCode NOT IN (");
+            StringBuilder tempSB = new StringBuilder();
+            tempSB.append("  statusCode NOT IN (");
 
             List<Integer> statuses = StatusCodeMapper.getOkStatuses();
             statuses.addAll(StatusCodeMapper.getUndeterminedStatuses());
             String comma = "";
             for (int status : statuses) {
-                sb.append(comma);
+                tempSB.append(comma);
                 comma = ",";
-                sb.append(status);
+                tempSB.append(status);
             }
-            sb.append(")");
+            tempSB.append(")");
 
-            firstAlready = true;
+            sj.add(tempSB.toString());
         }
         if (undetermined != null && undetermined) {
-            if (firstAlready) {
-                sb.append(" AND");
-            } else {
-                sb.append(" WHERE");
-            }
-            sb.append("  statusCode IN (");
+            StringBuilder tempSB = new StringBuilder();
+            tempSB.append("  statusCode IN (");
 
             String comma = "";
             for (int status : StatusCodeMapper.getUndeterminedStatuses()) {
-                sb.append(comma);
+                tempSB.append(comma);
                 comma = ",";
-                sb.append(status);
+                tempSB.append(status);
             }
-            sb.append(")");
+            tempSB.append(")");
+
+            sj.add(tempSB.toString());
+        }
+
+        if (sj.length() > 0) {
+            sb.append(" WHERE ").append(sj.toString());
         }
 
         PreparedStatement statement = con.prepareStatement(sb.toString());
@@ -142,21 +181,5 @@ public class ACDHStatisticsCountFilter implements StatisticsFilter {
         }
 
         return statement;
-    }
-
-    public boolean isUndetermined() {
-        return undetermined;
-    }
-
-    public void setUndetermined(boolean undetermined) {
-        this.undetermined = undetermined;
-    }
-
-    public boolean isBroken() {
-        return broken;
-    }
-
-    public void setBroken(boolean broken) {
-        this.broken = broken;
     }
 }

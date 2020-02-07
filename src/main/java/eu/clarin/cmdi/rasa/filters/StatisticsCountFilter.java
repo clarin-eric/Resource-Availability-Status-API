@@ -18,18 +18,24 @@
 
 package eu.clarin.cmdi.rasa.filters;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-public interface Filter {
-
+/**
+ * This class creates a count filter for the status and urls tables with the given values through the constructor
+ */
+public interface StatisticsCountFilter extends Filter {
 
     /**
-     * Prepares a statement with the given values of the filter in the constructor
-     * @param con database connection
-     * @return fully prepared statement with filter variables set and ready to execute
-     * @throws SQLException can occur during preparing the statement
+     * @return collection of the statistics
      */
-    PreparedStatement getStatement(Connection con) throws SQLException;
+    String getCollection();
+
+    /**
+     * @return record of the statistics
+     */
+    String getRecord();
+
+    /**
+     * @return table name
+     */
+    String getTable();
+
 }

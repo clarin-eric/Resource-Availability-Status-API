@@ -36,6 +36,10 @@ public interface StatisticsResource {
      */
     List<StatusStatistics> getStatusStatistics(String collection) throws SQLException;
 
+    /* todo some text
+     */
+    List<StatusStatistics> getStatusStatistics() throws SQLException;
+
     /*get overall statistics without grouping by status
     so get overall count, avg response time and max response time
     for a given collection or for all collections(either "Overall" or null).
@@ -43,6 +47,15 @@ public interface StatisticsResource {
     * */
     Statistics getOverallStatistics(String collection) throws SQLException;
 
-    long countUrlsTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
-    long countStatusTable(Optional<ACDHStatisticsCountFilter> filter) throws SQLException;
+    //**todo some text
+    Statistics getOverallStatistics() throws SQLException;
+
+    /**
+     * counts table with the given filter. Table name in the filter must be set
+     * @param filter
+     * @return
+     * @throws SQLException
+     */
+    long countTable(ACDHStatisticsCountFilter filter) throws SQLException;
+
 }

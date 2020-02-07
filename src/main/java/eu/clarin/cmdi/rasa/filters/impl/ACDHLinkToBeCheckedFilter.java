@@ -29,6 +29,10 @@ public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
     private String collection;
     private final String query = "SELECT * FROM urls WHERE collection=?";
 
+    /**
+     * Creates a link to be checked filter for the table urls
+     * @param collection collection of the link
+     */
     public ACDHLinkToBeCheckedFilter(String collection) {
         this.collection = collection;
     }
