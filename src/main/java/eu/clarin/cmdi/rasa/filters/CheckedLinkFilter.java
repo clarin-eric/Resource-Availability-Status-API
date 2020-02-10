@@ -25,6 +25,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * This class creates a filter for the status table with the given values through the constructor
@@ -79,9 +81,10 @@ public interface CheckedLinkFilter extends Filter {
      * If a url matches the given variables in the filter but is not in inList, it won't be in the results
      * @param con database connection
      * @param inList filters out the results, only urls within this list can be in the results
+     * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
      * @return fully prepared statement with filter variables set and ready to execute
      * @throws SQLException can occur during preparing the statement
      */
-    PreparedStatement getStatement(Connection con, String inList) throws SQLException;
+    PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException;
 
 }
