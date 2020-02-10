@@ -175,6 +175,9 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         assertEquals(googleURLs.get(1), links.get(googleURLs.get(1)).getUrl());
         //shouldnt be in there
         assertNull(links.get("https://drive.google.com"));
+        
+        links = checkedLinkResource.get(Collections.emptyList(), Optional.empty());
+        assertEquals(0, links.size());
     }
 
     @Test

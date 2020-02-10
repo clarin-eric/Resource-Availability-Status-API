@@ -31,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -152,35 +153,42 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Map<String, CheckedLink> get(Collection<String> urls, Optional<CheckedLinkFilter> filter) throws SQLException {
+        if (urls.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            //if urlCollection is given, this is how all these from the collection are returned:
+            //example query: select * from status where url in ('www.google.com','www.facebook.com');
+            //construct a param list for URLs
+            final StringJoiner queryInClauseJoiner = new StringJoiner(",", " url IN (", ")");
+            //add a '?' for each URL
+            urls.forEach((url) -> queryInClauseJoiner.add("?"));
+            final String queryInClause = queryInClauseJoiner.toString();
 
-        //if urlCollection is given, this is how all these from the collection are returned:
-        //example query: select * from status where url in ('www.google.com','www.facebook.com');
-        
-        //construct a param list for URLs
-        final StringJoiner queryInClauseJoiner = new StringJoiner(",", " url IN (", ")");
-        //add a '?' for each URL
-        urls.forEach((url) -> queryInClauseJoiner.add("?"));
-        final String queryInClause = queryInClauseJoiner.toString();
+            final String defaultQuery = "SELECT * FROM status WHERE" + queryInClause;
 
-        final String defaultQuery = "SELECT * FROM status WHERE" + queryInClause;
-
-        //callback to add actual URLs as parameters to prepared statement
-        final BiFunction<PreparedStatement, Integer, Integer> addUrlParms = (statement, i) -> {
-            try {
-                for (String url : urls) {
-                    statement.setString(i++, url);
+            //callback to add actual URLs as parameters to prepared statement
+            final BiFunction<PreparedStatement, Integer, Integer> addUrlParms = (statement, i) -> {
+                try {
+                    for (String url : urls) {
+                        statement.setString(i++, url);
+                    }
+                    return i;
+                } catch (SQLException ex) {
+                    throw new RuntimeException("SQL exception while setting URL parameters for query", ex);
                 }
-                return i;
-            } catch (SQLException ex) {
-                throw new RuntimeException("SQL exception while setting URL parameters for query", ex);
-            }
-        };
+            };
 
-        try (PreparedStatement statement = getPreparedStatement(defaultQuery, filter.or(() -> Optional.of(new ACDHCheckedLinkFilter(null))), queryInClause, addUrlParms)) {
+            // make sure to always pass a filter, otherwise URL 'filter' will not be applied
+            final Optional<CheckedLinkFilter> filterOrNoop = filter.or(
+                    () -> Optional.of(new ACDHCheckedLinkFilter(null))
+            );
 
-            try (ResultSet rs = statement.executeQuery()) {
-                try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
-                    return recordStream.map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+            try (PreparedStatement statement = getPreparedStatement(defaultQuery, filterOrNoop, queryInClause, addUrlParms)) {
+
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+                    }
                 }
             }
         }
