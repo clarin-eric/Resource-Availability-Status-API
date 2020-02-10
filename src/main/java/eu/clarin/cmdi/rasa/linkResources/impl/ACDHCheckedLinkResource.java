@@ -47,31 +47,28 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
-    private Connection con;
+    private final Connection con;
 
     public ACDHCheckedLinkResource(Connection con) {
         this.con = con;
     }
 
     @Override
-    public CheckedLink get(String url) throws SQLException {
+    public Optional<CheckedLink> get(String url) throws SQLException {
 
         final String urlQuery = "SELECT * FROM status WHERE url=?";
         try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
             statement.setString(1, url);
 
             try (ResultSet rs = statement.executeQuery()) {
-                Record record = DSL.using(con).fetchOne(rs);
-
-                //only one element
-                return record == null ? null : new CheckedLink(record);
+                final Record record = DSL.using(con).fetchOne(rs);
+                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
             }
         }
-
     }
 
     @Override
-    public CheckedLink get(String url, String collection) throws SQLException {
+    public Optional<CheckedLink> get(String url, String collection) throws SQLException {
 
         final String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
         try (PreparedStatement statement = con.prepareStatement(urlCollectionQuery)) {
@@ -80,10 +77,8 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
             try (ResultSet rs = statement.executeQuery()) {
 
-                Record record = DSL.using(con).fetchOne(rs);
-
-                //only one element
-                return record == null ? null : new CheckedLink(record);
+                final Record record = DSL.using(con).fetchOne(rs);
+                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
             }
         }
     }
@@ -191,11 +186,11 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     public Boolean save(CheckedLink checkedLink) throws SQLException {
 
         //get old checked link
-        CheckedLink oldCheckedLink = get(checkedLink.getUrl());
-
-        if (oldCheckedLink != null) {
+        final Optional<CheckedLink> oldCheckedLink = get(checkedLink.getUrl());
+        
+        if (oldCheckedLink.isPresent()) {
             //save to history
-            saveToHistory(oldCheckedLink);
+            saveToHistory(oldCheckedLink.get());
 
             //delete it
             delete(checkedLink.getUrl());

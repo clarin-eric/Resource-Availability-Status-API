@@ -55,12 +55,14 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
         CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "Ok", "NotGoogle", 0, "record", null);
-        CheckedLink actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
-        assertEquals(expected, actual);
+        Optional<CheckedLink> actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
+        assertTrue(actual.isPresent());
+        assertEquals(expected, actual.get());
 
         for (String url : urls) {
-            CheckedLink checkedLink = checkedLinkResource.get(url);
-            assertEquals(checkedLink.getUrl(), url);
+            Optional<CheckedLink>  checkedLink = checkedLinkResource.get(url);
+            assertTrue(actual.isPresent());
+            assertEquals(checkedLink.get().getUrl(), url);
         }
     }
 
@@ -68,9 +70,10 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     public void basicGETWithCollectionTestShouldReturnCorrectResults() throws SQLException {
 
         for (String url : googleUrls) {
-            CheckedLink checkedLink = checkedLinkResource.get(url, "Google");
-            assertEquals(checkedLink.getUrl(), url);
-            assertEquals(checkedLink.getCollection(), "Google");
+            Optional<CheckedLink> checkedLink = checkedLinkResource.get(url, "Google");
+            assertTrue(checkedLink.isPresent());
+            assertEquals(checkedLink.get().getUrl(), url);
+            assertEquals(checkedLink.get().getCollection(), "Google");
         }
     }
 
@@ -233,7 +236,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
 
         checkedLinkResource.save(checkedLink1);
-        assertEquals(checkedLink1, checkedLinkResource.get(testURL));
+        assertEquals(checkedLink1, checkedLinkResource.get(testURL).get());
 
         List<CheckedLink> history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
         assertEquals(1, history.size());
@@ -241,7 +244,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
         //add again, history should have 2
         checkedLinkResource.save(checkedLink2);
-        assertEquals(checkedLink2, checkedLinkResource.get(testURL));
+        assertEquals(checkedLink2, checkedLinkResource.get(testURL).get());
 
         history = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
         assertEquals(2, history.size());
