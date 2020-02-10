@@ -56,7 +56,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     @Override
     public CheckedLink get(String url) throws SQLException {
 
-        String urlQuery = "SELECT * FROM status WHERE url=?";
+        final String urlQuery = "SELECT * FROM status WHERE url=?";
         try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
             statement.setString(1, url);
 
@@ -73,7 +73,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     @Override
     public CheckedLink get(String url, String collection) throws SQLException {
 
-        String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
+        final String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
         try (PreparedStatement statement = con.prepareStatement(urlCollectionQuery)) {
             statement.setString(1, url);
             statement.setString(2, collection);
@@ -252,7 +252,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Boolean delete(String url) throws SQLException {
-        String deleteURLQuery = "DELETE FROM status WHERE url=?";
+        final String deleteURLQuery = "DELETE FROM status WHERE url=?";
         try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
 
             preparedStatement.setString(1, url);
@@ -266,9 +266,8 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
-
         //not requested much, so no need to optimize
-        String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
+        final String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
         try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
             preparedStatement.setString(1, url);
 
