@@ -40,26 +40,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
-    
+
     private enum Table {
         STATUS, HISTORY
     }
-    
+
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
-    
+
     private Connection con;
-    
+
     public ACDHCheckedLinkResource(Connection con) {
         this.con = con;
     }
-    
+
     @Override
     public CheckedLink get(String url) throws SQLException {
-        
+
         String urlQuery = "SELECT * FROM status WHERE url=?";
         try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
             statement.setString(1, url);
-            
+
             try (ResultSet rs = statement.executeQuery()) {
                 Record record = DSL.using(con).fetchOne(rs);
 
@@ -67,19 +67,19 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 return record == null ? null : new CheckedLink(record);
             }
         }
-        
+
     }
-    
+
     @Override
     public CheckedLink get(String url, String collection) throws SQLException {
-        
+
         String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
         try (PreparedStatement statement = con.prepareStatement(urlCollectionQuery)) {
             statement.setString(1, url);
             statement.setString(2, collection);
-            
+
             try (ResultSet rs = statement.executeQuery()) {
-                
+
                 Record record = DSL.using(con).fetchOne(rs);
 
                 //only one element
@@ -87,13 +87,13 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             }
         }
     }
-    
+
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
         final String defaultQuery = "SELECT * FROM status";
         final PreparedStatement statement = getPreparedStatement(defaultQuery, filter, null);
         final ResultSet rs = statement.executeQuery();
-        
+
         return DSL.using(con)
                 .fetchStream(rs)
                 .map(CheckedLink::new)
@@ -132,28 +132,28 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     //call this method in a try with resources so that the underlying resources are closed after use
+    //TG: Why should't start and end just be part of the filter interface?
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filterOptional, int start, int end) throws SQLException {
         if (start > end) {
             throw new IllegalArgumentException("start can't be greater than end.");
         }
-        
+
         if (start <= 0 && end <= 0) {
             throw new IllegalArgumentException("start and end can't less than or equal to 0 at the same time.");
         }
-        
-        CheckedLinkFilter filter;
-        if (filterOptional.isPresent()) {
-            filter = filterOptional.get();
-            filter.setStart(start);
-            filter.setEnd(end);
-        } else {
-            filter = new ACDHCheckedLinkFilter(start, end);
-        }
-        
-        return get(Optional.of(filter));
+
+        final Optional<CheckedLinkFilter> filter
+                = filterOptional
+                        //filter was provided, combine with other params
+                        .map(f -> f.setStart(start).setEnd(end)) //TG: do we really want to modify the passed filter??? we could also clone
+                        //no filter was provided, create default filter 
+                        .or(() -> Optional.of(new ACDHCheckedLinkFilter(start, end)));
+
+        return get(filter);
+
     }
-    
+
     @Override
     public Map<String, CheckedLink> get(Collection<String> urls, Optional<CheckedLinkFilter> filter) throws SQLException {
 
@@ -168,10 +168,10 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             sb.append("'?'");
         }
         sb.append(")");
-        
+
         final String queryInClause = sb.toString();
         final String defaultQuery = "SELECT * FROM status WHERE" + queryInClause;
-        
+
         try (PreparedStatement statement = getPreparedStatement(defaultQuery, filter, queryInClause)) {
             //add URL parameters
             final AtomicInteger urlIndex = new AtomicInteger(0);
@@ -184,15 +184,15 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 }
             }
         }
-        
+
     }
-    
+
     @Override
     public Boolean save(CheckedLink checkedLink) throws SQLException {
 
         //get old checked link
         CheckedLink oldCheckedLink = get(checkedLink.getUrl());
-        
+
         if (oldCheckedLink != null) {
             //save to history
             saveToHistory(oldCheckedLink);
@@ -204,7 +204,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         //save new one
         return insertCheckedLink(checkedLink, Table.STATUS);
     }
-    
+
     private PreparedStatement getInsertPreparedStatement(Table tableName) throws SQLException {
         final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
         final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
@@ -217,10 +217,10 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 throw new RuntimeException("Unsupported table name" + tableName);
         }
     }
-    
+
     private Boolean insertCheckedLink(CheckedLink checkedLink, Table tableName) {
         try (PreparedStatement preparedStatement = getInsertPreparedStatement(tableName)) {
-            
+
             preparedStatement.setString(1, checkedLink.getUrl());
             preparedStatement.setInt(2, checkedLink.getStatus());
             preparedStatement.setString(3, checkedLink.getMethod());
@@ -236,34 +236,34 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
             //affected rows
             int row = preparedStatement.executeUpdate();
-            
+
             return row == 1;
-            
+
         } catch (SQLException e) {
             _logger.error("SQL Exception while saving " + checkedLink.getUrl() + " into " + tableName + ":" + e.getMessage());
             return false;
         }
     }
-    
+
     @Override
     public Boolean saveToHistory(CheckedLink checkedLink) throws SQLException {
         return insertCheckedLink(checkedLink, Table.HISTORY);
     }
-    
+
     @Override
     public Boolean delete(String url) throws SQLException {
         String deleteURLQuery = "DELETE FROM status WHERE url=?";
         try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
-            
+
             preparedStatement.setString(1, url);
 
             //affected rows
             int row = preparedStatement.executeUpdate();
-            
+
             return row == 1;
         }
     }
-    
+
     @Override
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
 
@@ -271,14 +271,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
         String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
         try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
             preparedStatement.setString(1, url);
-            
+
             try (ResultSet rs = preparedStatement.executeQuery()) {
-                
+
                 try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
                     return recordStream.map(CheckedLink::new).collect(Collectors.toList());
                 }
             }
         }
-        
+
     }
 }

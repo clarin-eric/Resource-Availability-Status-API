@@ -61,16 +61,18 @@ public interface CheckedLinkFilter extends Filter {
     ZoneId getZone();
 
     /**
-     * Sets the start. If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
+     * Sets the start.If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
      * @param start starting line to read from the database
+     * @return this
      */
-    void setStart(int start);
+    CheckedLinkFilter setStart(int start);
 
     /**
-     * Sets the end. If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
+     * Sets the end.If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
      * @param end last line to read from the database
+     * @return this
      */
-    void setEnd(int end);
+    CheckedLinkFilter setEnd(int end);
 
     /**
      * Same as getStatement(Connection con) but only the urls within the inList will be returned if they match the filter variables.

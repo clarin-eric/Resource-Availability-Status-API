@@ -27,8 +27,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.StringJoiner;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
@@ -126,12 +124,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
-    public void setEnd(int limitEnd) {
+    public ACDHCheckedLinkFilter setEnd(int limitEnd) {
         this.end = limitEnd;
+        return this;
     }
 
-    public void setStart(int start) {
+    public ACDHCheckedLinkFilter setStart(int start) {
         this.start = start;
+        return this;
     }
 
     /**
