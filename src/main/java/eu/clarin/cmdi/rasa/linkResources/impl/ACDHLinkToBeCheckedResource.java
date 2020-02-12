@@ -17,6 +17,7 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
@@ -49,7 +50,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
 
     @Override
-    public LinkToBeChecked get(String url) throws SQLException {
+    public Optional<LinkToBeChecked> get(String url) throws SQLException {
 
         String urlQuery = "SELECT * FROM urls WHERE url=?";
         try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
@@ -58,10 +59,8 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
             try (ResultSet rs = statement.executeQuery()) {
 
-                Record record = DSL.using(con).fetchOne(rs);
-
-                //only one element
-                return record == null ? null : new LinkToBeChecked(record);
+                final Record record = DSL.using(con).fetchOne(rs);
+                return Optional.ofNullable(record).map(LinkToBeChecked::new);
             }
         }
     }
@@ -88,7 +87,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     private PreparedStatement getPreparedStatement(String defaultQuery, Optional<LinkToBeCheckedFilter> filter) throws SQLException {
         PreparedStatement statement;
-        if (!filter.isPresent()) {
+        if (filter.isEmpty()) {
             statement = con.prepareStatement(defaultQuery);
         } else {
             statement = filter.get().getStatement(con);

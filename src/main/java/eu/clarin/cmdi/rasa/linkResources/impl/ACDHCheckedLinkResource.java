@@ -64,7 +64,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
             try (ResultSet rs = statement.executeQuery()) {
                 final Record record = DSL.using(con).fetchOne(rs);
-                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
+                return Optional.ofNullable(record).map(CheckedLink::new);
             }
         }
     }
@@ -80,7 +80,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             try (ResultSet rs = statement.executeQuery()) {
 
                 final Record record = DSL.using(con).fetchOne(rs);
-                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
+                return Optional.ofNullable(record).map(CheckedLink::new);
             }
         }
     }

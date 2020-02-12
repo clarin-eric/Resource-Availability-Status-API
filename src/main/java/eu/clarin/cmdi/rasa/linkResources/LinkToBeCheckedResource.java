@@ -34,7 +34,7 @@ public interface LinkToBeCheckedResource {
      * @return found LinkToBeChecked
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    LinkToBeChecked get(String url) throws SQLException;
+    Optional<LinkToBeChecked> get(String url) throws SQLException;
 
     /**
      * Get all urls that match a filter as a stream.
