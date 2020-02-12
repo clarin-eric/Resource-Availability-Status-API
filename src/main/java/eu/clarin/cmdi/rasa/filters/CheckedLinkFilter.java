@@ -25,6 +25,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * This class creates a filter for the status table with the given values through the constructor
@@ -61,25 +63,28 @@ public interface CheckedLinkFilter extends Filter {
     ZoneId getZone();
 
     /**
-     * Sets the start. If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
+     * Sets the start.If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
      * @param start starting line to read from the database
+     * @return this
      */
-    void setStart(int start);
+    CheckedLinkFilter setStart(int start);
 
     /**
-     * Sets the end. If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
+     * Sets the end.If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
      * @param end last line to read from the database
+     * @return this
      */
-    void setEnd(int end);
+    CheckedLinkFilter setEnd(int end);
 
     /**
      * Same as getStatement(Connection con) but only the urls within the inList will be returned if they match the filter variables.
      * If a url matches the given variables in the filter but is not in inList, it won't be in the results
      * @param con database connection
      * @param inList filters out the results, only urls within this list can be in the results
+     * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
      * @return fully prepared statement with filter variables set and ready to execute
      * @throws SQLException can occur during preparing the statement
      */
-    PreparedStatement getStatement(Connection con, String inList) throws SQLException;
+    PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException;
 
 }

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
@@ -27,9 +26,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.StringJoiner;
+import java.util.function.BiFunction;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
@@ -126,17 +124,21 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
-    public void setEnd(int limitEnd) {
+    public ACDHCheckedLinkFilter setEnd(int limitEnd) {
         this.end = limitEnd;
+        return this;
     }
 
-    public void setStart(int start) {
+    public ACDHCheckedLinkFilter setStart(int start) {
         this.start = start;
+        return this;
     }
 
     /**
      * Prepares the query based on the variables
-     * @param inList filters out the results, only urls within this list can be in the results
+     *
+     * @param inList filters out the results, only urls within this list can be
+     * in the results
      * @return prepared query to be used in preparing the statement
      */
     private String prepareQuery(String inList) {
@@ -148,13 +150,13 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
         StringJoiner sj = new StringJoiner(" AND ");
 
-        if(status!=null){
+        if (status != null) {
             sj.add("statusCode>=? AND statusCode<=?");
         }
-        if(before!=null){
+        if (before != null) {
             sj.add("timestamp<?");
         }
-        if(after!=null){
+        if (after != null) {
             sj.add("timestamp>?");
         }
         if (collection != null && !collection.equals("Overall")) {
@@ -164,7 +166,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             sj.add(inList);
         }
 
-        if(sj.length()>0){
+        if (sj.length() > 0) {
             sb.append(" WHERE ").append(sj.toString());
         }
 
@@ -178,15 +180,18 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return sb.toString();
     }
 
-
     /**
-     * This method prepares the statement with the filter's variables with the given query.
+     * This method prepares the statement with the filter's variables with the
+     * given query.
+     *
      * @param con database connection
      * @param query query to be prepared
-     * @return a fully prepared statement with the query and given parameters, the caller can directly execute and read the results
+     * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
+     * @return a fully prepared statement with the query and given parameters,
+     * the caller can directly execute and read the results
      * @throws SQLException can occur during preparing the statement
      */
-    private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
+    private PreparedStatement prepareStatement(Connection con, String query, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
 
         //query setting done, now fill it
@@ -209,6 +214,10 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             i++;
         }
 
+        if (addInListParams != null) {
+            i = addInListParams.apply(statement, i);
+        }
+
         if (start > 0 && end > 0) {
 //            sb.append("LIMIT ? OFFSET ?");
             statement.setInt(i, end - start + 1);
@@ -224,18 +233,16 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return statement;
     }
 
-
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         String query = prepareQuery(null);
-        return prepareStatement(con, query);
+        return prepareStatement(con, query, null);
     }
 
     @Override
-    public PreparedStatement getStatement(Connection con, String inList) throws SQLException {
+    public PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
         String query = prepareQuery(inList);
-        return prepareStatement(con, query);
+        return prepareStatement(con, query, addInListParams);
     }
-
 
 }

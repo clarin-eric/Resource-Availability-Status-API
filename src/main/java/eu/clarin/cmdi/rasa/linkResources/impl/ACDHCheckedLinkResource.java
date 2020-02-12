@@ -31,103 +31,105 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
+    private enum Table {
+        STATUS, HISTORY
+    }
+
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
-    private Connection con;
+    private final Connection con;
 
     public ACDHCheckedLinkResource(Connection con) {
         this.con = con;
     }
 
     @Override
-    public CheckedLink get(String url) throws SQLException {
+    public Optional<CheckedLink> get(String url) throws SQLException {
 
-        String urlQuery = "SELECT * FROM status WHERE url=?";
-        PreparedStatement statement = con.prepareStatement(urlQuery);
-        statement.setString(1, url);
+        final String urlQuery = "SELECT * FROM status WHERE url=?";
+        try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
+            statement.setString(1, url);
 
-        ResultSet rs = statement.executeQuery();
-
-        Record record = DSL.using(con).fetchOne(rs);
-        statement.close();
-
-        //only one element
-        return record == null ? null : new CheckedLink(record);
-
+            try (ResultSet rs = statement.executeQuery()) {
+                final Record record = DSL.using(con).fetchOne(rs);
+                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
+            }
+        }
     }
 
     @Override
-    public CheckedLink get(String url, String collection) throws SQLException {
+    public Optional<CheckedLink> get(String url, String collection) throws SQLException {
 
-        String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
-        PreparedStatement statement = con.prepareStatement(urlCollectionQuery);
-        statement.setString(1, url);
-        statement.setString(2, collection);
+        final String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
+        try (PreparedStatement statement = con.prepareStatement(urlCollectionQuery)) {
+            statement.setString(1, url);
+            statement.setString(2, collection);
 
-        ResultSet rs = statement.executeQuery();
+            try (ResultSet rs = statement.executeQuery()) {
 
-        Record record = DSL.using(con).fetchOne(rs);
-        statement.close();
-
-        //only one element
-        return record == null ? null : new CheckedLink(record);
-
+                final Record record = DSL.using(con).fetchOne(rs);
+                return Optional.ofNullable(record).map(r -> new CheckedLink(r));
+            }
+        }
     }
 
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
+        final String defaultQuery = "SELECT * FROM status";
+        final PreparedStatement statement = getPreparedStatement(defaultQuery, filter, null, null);
+        final ResultSet rs = statement.executeQuery();
 
-        String defaultQuery = "SELECT * FROM status";
-        PreparedStatement statement = getPreparedStatement(defaultQuery, filter, null);
-        ResultSet rs = statement.executeQuery();
-
-        Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
-        recordStream.onClose(() -> {
-            try {
-                rs.close();
-                statement.close();
-            } catch (SQLException e) {
-                _logger.error("Can't close prepared statement or resultset.");
-            }
-        });
-
-        return recordStream.map(CheckedLink::new);
-
+        return DSL.using(con)
+                .fetchStream(rs)
+                .map(CheckedLink::new)
+                .onClose(() -> {
+                    try {
+                        rs.close();
+                        statement.close();
+                    } catch (SQLException e) {
+                        _logger.error("Can't close prepared statement or resultset.");
+                    }
+                });
     }
 
     /**
-     * This method is used to be able to have the prepared statement creation in one line, so that it fits well in to a try-with-resources block
-     * Then the caller methods don't need to concern themselves with closing the statement.
+     * This method is used to be able to have the prepared statement creation in
+     * one line, so that it fits well in to a try-with-resources block Then the
+     * caller methods don't need to concern themselves with closing the
+     * statement.
+     *
      * @param defaultQuery
      * @param filter
      * @param inList
      * @return
      * @throws SQLException
      */
-    private PreparedStatement getPreparedStatement(String defaultQuery, Optional<CheckedLinkFilter> filter, String inList) throws SQLException {
-        PreparedStatement statement;
+    private PreparedStatement getPreparedStatement(String defaultQuery, Optional<CheckedLinkFilter> filter, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
         if (!filter.isPresent()) {
-            statement = con.prepareStatement(defaultQuery);
+            return con.prepareStatement(defaultQuery);
         } else {
             if (inList != null) {
-                statement = filter.get().getStatement(con, inList);
+                return filter.get().getStatement(con, inList, addInListParams);
             } else {
-                statement = filter.get().getStatement(con);
+                return filter.get().getStatement(con);
             }
         }
-        return statement;
     }
 
     //call this method in a try with resources so that the underlying resources are closed after use
+    //TG: Why should't start and end just be part of the filter interface?
     @Override
     public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filterOptional, int start, int end) throws SQLException {
         if (start > end) {
@@ -138,77 +140,93 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             throw new IllegalArgumentException("start and end can't less than or equal to 0 at the same time.");
         }
 
-        CheckedLinkFilter filter;
-        if (filterOptional.isPresent()) {
-            filter = filterOptional.get();
-            filter.setStart(start);
-            filter.setEnd(end);
-        } else {
-            filter = new ACDHCheckedLinkFilter(start, end);
-        }
+        final Optional<CheckedLinkFilter> filter
+                = filterOptional
+                        //filter was provided, combine with other params
+                        .map(f -> f.setStart(start).setEnd(end)) //TG: do we really want to modify the passed filter??? we could also clone
+                        //no filter was provided, create default filter 
+                        .or(() -> Optional.of(new ACDHCheckedLinkFilter(start, end)));
 
-        return get(Optional.of(filter));
+        return get(filter);
+
     }
 
     @Override
     public Map<String, CheckedLink> get(Collection<String> urls, Optional<CheckedLinkFilter> filter) throws SQLException {
+        if (urls.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            //if urlCollection is given, this is how all these from the collection are returned:
+            //example query: select * from status where url in ('www.google.com','www.facebook.com');
+            //construct a param list for URLs
+            final StringJoiner queryInClauseJoiner = new StringJoiner(",", " url IN (", ")");
+            //add a '?' for each URL
+            urls.forEach((url) -> queryInClauseJoiner.add("?"));
+            final String queryInClause = queryInClauseJoiner.toString();
 
-        //if urlCollection is given, this is how all these from the collection are returned:
-        //example query: select * from status where url in ('www.google.com','www.facebook.com');
-        StringBuilder sb = new StringBuilder();
-        sb.append(" url IN (");
-        String comma = "";
-        for (String url : urls) {
-            sb.append(comma);
-            comma = ",";
-            sb.append("'").append(url).append("'");
-        }
-        sb.append(")");
+            final String defaultQuery = "SELECT * FROM status WHERE" + queryInClause;
 
-        String defaultQuery = "SELECT * FROM status WHERE" + sb.toString();
+            //callback to add actual URLs as parameters to prepared statement
+            final BiFunction<PreparedStatement, Integer, Integer> addUrlParms = (statement, i) -> {
+                try {
+                    for (String url : urls) {
+                        statement.setString(i++, url);
+                    }
+                    return i;
+                } catch (SQLException ex) {
+                    throw new RuntimeException("SQL exception while setting URL parameters for query", ex);
+                }
+            };
 
-        try (PreparedStatement statement = getPreparedStatement(defaultQuery, filter, sb.toString())) {
-            try (ResultSet rs = statement.executeQuery()) {
-                try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
-                    return recordStream.map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+            // make sure to always pass a filter, otherwise URL 'filter' will not be applied
+            final Optional<CheckedLinkFilter> filterOrNoop = filter.or(
+                    () -> Optional.of(new ACDHCheckedLinkFilter(null))
+            );
+
+            try (PreparedStatement statement = getPreparedStatement(defaultQuery, filterOrNoop, queryInClause, addUrlParms)) {
+
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+                    }
                 }
             }
         }
 
     }
 
-
     @Override
     public Boolean save(CheckedLink checkedLink) throws SQLException {
 
         //get old checked link
-        CheckedLink oldCheckedLink = get(checkedLink.getUrl());
+        final Optional<CheckedLink> oldCheckedLink = get(checkedLink.getUrl());
 
-        if (oldCheckedLink != null) {
+        if (oldCheckedLink.isPresent()) {
             //save to history
-            saveToHistory(oldCheckedLink);
+            saveToHistory(oldCheckedLink.get());
 
             //delete it
             delete(checkedLink.getUrl());
         }
 
         //save new one
-        return insertCheckedLink(checkedLink, "status");
+        return insertCheckedLink(checkedLink, Table.STATUS);
     }
 
-    private PreparedStatement getInsertPreparedStatement(String tableName) throws SQLException {
-        PreparedStatement preparedStatement;
-        if (tableName.equals("status")) {
-            String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-            preparedStatement = con.prepareStatement(insertStatusQuery);
-        } else {//history
-            String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-            preparedStatement = con.prepareStatement(insertHistoryQuery);
+    private PreparedStatement getInsertPreparedStatement(Table tableName) throws SQLException {
+        final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        switch (tableName) {
+            case STATUS:
+                return con.prepareStatement(insertStatusQuery);
+            case HISTORY:
+                return con.prepareStatement(insertHistoryQuery);
+            default:
+                throw new RuntimeException("Unsupported table name" + tableName);
         }
-        return preparedStatement;
     }
 
-    private Boolean insertCheckedLink(CheckedLink checkedLink, String tableName) {
+    private Boolean insertCheckedLink(CheckedLink checkedLink, Table tableName) {
         try (PreparedStatement preparedStatement = getInsertPreparedStatement(tableName)) {
 
             preparedStatement.setString(1, checkedLink.getUrl());
@@ -237,12 +255,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public Boolean saveToHistory(CheckedLink checkedLink) throws SQLException {
-        return insertCheckedLink(checkedLink, "history");
+        return insertCheckedLink(checkedLink, Table.HISTORY);
     }
 
     @Override
     public Boolean delete(String url) throws SQLException {
-        String deleteURLQuery = "DELETE FROM status WHERE url=?";
+        final String deleteURLQuery = "DELETE FROM status WHERE url=?";
         try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
 
             preparedStatement.setString(1, url);
@@ -256,9 +274,8 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
     @Override
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
-
         //not requested much, so no need to optimize
-        String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
+        final String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
         try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
             preparedStatement.setString(1, url);
 

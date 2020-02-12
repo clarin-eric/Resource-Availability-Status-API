@@ -48,7 +48,7 @@ public interface CheckedLinkResource {
      * @return CheckedLink for the given url
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    CheckedLink get(String url) throws SQLException;
+    Optional<CheckedLink> get(String url) throws SQLException;
 
     /* retrieve for single url from collection */
 
@@ -60,7 +60,7 @@ public interface CheckedLinkResource {
      * @return Checked link for the given url from the given collection
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    CheckedLink get(String url, String collection) throws SQLException;
+    Optional<CheckedLink> get(String url, String collection) throws SQLException;
 
     /*
      * returned stream needs to be closed after use, so use it with try with resources
