@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.helpers.impl;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
@@ -28,15 +29,14 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
 
     private HikariDataSource ds;
-    private Connection checkedLinkConnection;
     private Connection linkToBeCheckedConnection;
     private Connection statisticsConnection;
+    private final ConnectionProvider connectionProvider;
 
     /**
      * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
@@ -51,11 +51,13 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         } catch (SQLException e) {
             _logger.error("There was a problem connecting to the database. Make sure the uri, username and password are correct: ",e);
         }
+        
+        connectionProvider = () -> ds.getConnection();
     }
 
     @Override
     public ACDHCheckedLinkResource getCheckedLinkResource() {
-        return new ACDHCheckedLinkResource(checkedLinkConnection);
+        return new ACDHCheckedLinkResource(connectionProvider);
     }
 
     @Override
@@ -81,11 +83,10 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
         config.setMaximumPoolSize(20);
-        config.setLeakDetectionThreshold(30 * 1000);
+        config.setLeakDetectionThreshold(10 * 1000);
 
         ds = new HikariDataSource(config);
 
-        checkedLinkConnection = ds.getConnection();
         linkToBeCheckedConnection = ds.getConnection();
         statisticsConnection = ds.getConnection();
 
