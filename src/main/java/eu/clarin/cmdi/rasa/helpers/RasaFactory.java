@@ -18,13 +18,37 @@
 
 package eu.clarin.cmdi.rasa.helpers;
 
+import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
+import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
+//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+//import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 
 public interface RasaFactory {
 
-    public ACDHCheckedLinkResource getCheckedLinkResource();
-    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource();
-    public ACDHStatisticsResource getStatisticsResource();
+    /**
+     * Get checkedLinkResource to query and update the status table
+     * @return checkedLinkResource to query and update the status table
+     */
+    CheckedLinkResource getCheckedLinkResource();
+
+    /**
+     * Get linkToBeCheckedResource to query and update the urls table
+     * @return checkedLinkResource to query and update the status table
+     */
+    LinkToBeCheckedResource getLinkToBeCheckedResource();
+
+    /**
+     * Get statisticsResource to query both status and urls tables
+     * @return statisticsResource to query both status and urls tables
+     */
+    StatisticsResource getStatisticsResource();
+
+    /**
+     * Close all opened connections
+     */
+    void tearDown();
 }

@@ -18,7 +18,14 @@
 
 package eu.clarin.cmdi.rasa.filters;
 
+/**
+ * This class creates a filter for the urls table with the given values through the constructor
+ */
 public interface LinkToBeCheckedFilter extends Filter{
 
+    /**
+     *
+     * @return collection of the links
+     */
     String getCollection();
 }

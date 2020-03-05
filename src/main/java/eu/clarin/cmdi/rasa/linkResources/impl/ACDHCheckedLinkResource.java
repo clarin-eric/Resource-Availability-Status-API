@@ -17,185 +17,294 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import com.mongodb.MongoException;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndReplaceOptions;
-import com.mongodb.client.model.Sorts;
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
-import eu.clarin.cmdi.rasa.links.CheckedLink;
-import org.bson.Document;
-import org.bson.conversions.Bson;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
+import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import static com.mongodb.client.model.Filters.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.stream.Stream;
 
 public class ACDHCheckedLinkResource implements CheckedLinkResource {
 
+    private enum Table {
+        STATUS, HISTORY
+    }
+
     private final static Logger _logger = LoggerFactory.getLogger(ACDHCheckedLinkResource.class);
 
-    private MongoCollection<Document> linksChecked;
-    private MongoCollection<Document> linksCheckedHistory;
-    private MongoCollection<Document> linksToBeChecked;
+    private final ConnectionProvider connectionProvider;
 
-    public ACDHCheckedLinkResource(MongoCollection<Document> linksChecked, MongoCollection<Document> linksCheckedHistory, MongoCollection<Document> linksToBeChecked) {
-        this.linksChecked = linksChecked;
-        this.linksCheckedHistory = linksCheckedHistory;
-        this.linksToBeChecked = linksToBeChecked;
+    public ACDHCheckedLinkResource(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
-    public CheckedLink get(String url) {
-        Document doc = linksChecked.find(eq("url", url)).first();
-        return doc == null ? null : new CheckedLink(doc);
-    }
+    public Optional<CheckedLink> get(String url) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            final String urlQuery = "SELECT * FROM status WHERE url=?";
+            try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
+                statement.setString(1, url);
 
-    @Override
-    public CheckedLink get(String url, String collection) {
-        Document doc = linksChecked.find(Filters.and(eq("collection", collection), eq("url", url))).first();
-        return doc == null ? null : new CheckedLink(doc);
-    }
-
-    @Override
-    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) {
-        final Iterable<Document> documents;
-
-        if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-            documents = linksChecked.find(mongoFilter).noCursorTimeout(true);
-        } else {
-            documents = linksChecked.find().noCursorTimeout(true);
-        }
-
-        return StreamSupport.stream(documents.spliterator(), false)
-                .map(CheckedLink::new);
-    }
-
-    @Override
-    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter, int start, int end) {
-        final Iterable<Document> documents;
-
-        if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-            documents = linksChecked.find(mongoFilter).skip(start).limit(end).noCursorTimeout(true);
-        } else {
-            documents = linksChecked.find().skip(start).limit(end).noCursorTimeout(true);
-        }
-
-        return StreamSupport.stream(documents.spliterator(), false)
-                .map(CheckedLink::new);
-    }
-
-    @Override
-    public Map<String, CheckedLink> get(Collection<String> urlCollection, Optional<CheckedLinkFilter> filter) {
-        final FindIterable<Document> urls;
-        if (filter.isPresent()) {
-            final Bson mongoFilter = filter.get().getMongoFilter();
-            urls = linksChecked.find(and(in("url", urlCollection), mongoFilter)).noCursorTimeout(true);
-        } else {
-            urls = linksChecked.find(in("url", urlCollection));
-        }
-        
-        return StreamSupport.stream(urls.spliterator(), false)
-                .collect(Collectors.toMap(doc -> doc.getString("url"), CheckedLink::new));
-    }
-
-    @Override
-    public Stream<CheckedLink> getHistory(String url, Order order, Optional<CheckedLinkFilter> filter) {
-        final Bson sort = order.equals(Order.ASC) ? Sorts.ascending("timestamp") : Sorts.descending("timestamp");
-
-        final Iterable<Document> documents;
-
-        if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-            documents = linksCheckedHistory.find(Filters.and(eq("url", url), mongoFilter)).noCursorTimeout(true).sort(sort);
-        } else {
-            documents = linksCheckedHistory.find(eq("url", url)).noCursorTimeout(true).sort(sort);
-        }
-
-        return StreamSupport.stream(documents.spliterator(), false)
-                .map(CheckedLink::new);
-    }
-
-    @Override
-    public List<String> getCollectionNames() {
-        Iterable<String> collections = linksChecked.distinct("collection", String.class);
-
-        return StreamSupport.stream(collections.spliterator(), false)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Boolean save(CheckedLink checkedLink) {
-
-        //separate mongo actions so that one of them doesn't disturb the other
-        //save it to the history
-        Bson filter = Filters.eq("url", checkedLink.getUrl());
-        try {
-            Document oldElementDoc = linksChecked.find(filter).first();
-            if (oldElementDoc != null) {
-                oldElementDoc.remove("_id");//remove id so that it generates a new one.
-                linksCheckedHistory.insertOne(oldElementDoc);
+                try (ResultSet rs = statement.executeQuery()) {
+                    final Record record = DSL.using(con).fetchOne(rs);
+                    return Optional.ofNullable(record).map(CheckedLink::new);
+                }
             }
+        }
+    }
 
-        } catch (MongoException e) {
-            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-            //do nothing so that the whole thread doesnt die because of one url, just skip it
-            return false;
+    @Override
+    public Optional<CheckedLink> get(String url, String collection) throws SQLException {
+
+        final String urlCollectionQuery = "SELECT * FROM status WHERE url=? AND collection=?";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = con.prepareStatement(urlCollectionQuery)) {
+                statement.setString(1, url);
+                statement.setString(2, collection);
+
+                try (ResultSet rs = statement.executeQuery()) {
+
+                    final Record record = DSL.using(con).fetchOne(rs);
+                    return Optional.ofNullable(record).map(CheckedLink::new);
+                }
+            }
+        }
+    }
+
+    @Override
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filter) throws SQLException {
+        final String defaultQuery = "SELECT * FROM status";
+        final Connection con = connectionProvider.getConnection();
+        final PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter, null, null);
+        final ResultSet rs = statement.executeQuery();
+        return DSL.using(con)
+                .fetchStream(rs)
+                .map(CheckedLink::new)
+                .onClose(() -> {
+                    try {
+                        rs.close();
+                    } catch (SQLException e) {
+                        _logger.error("Can't close resultset.");
+                    }
+                    try {
+                        statement.close();
+                    } catch (SQLException e) {
+                        _logger.error("Can't close prepared statement.");
+                    }
+                    try {
+                        con.close();
+                    } catch (SQLException e) {
+                        _logger.error("Can't close connection.");
+                    }
+                });
+    }
+
+    /**
+     * This method is used to be able to have the prepared statement creation in
+     * one line, so that it fits well in to a try-with-resources block Then the
+     * caller methods don't need to concern themselves with closing the
+     * statement.
+     *
+     * @param defaultQuery
+     * @param filter
+     * @param inList
+     * @return
+     * @throws SQLException
+     */
+    private PreparedStatement getPreparedStatement(Connection con, String defaultQuery, Optional<CheckedLinkFilter> filter, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
+        if (!filter.isPresent()) {
+            return con.prepareStatement(defaultQuery);
+        } else {
+            if (inList != null) {
+                return filter.get().getStatement(con, inList, addInListParams);
+            } else {
+                return filter.get().getStatement(con);
+            }
+        }
+    }
+
+    //call this method in a try with resources so that the underlying resources are closed after use
+    //TG: Why should't start and end just be part of the filter interface?
+    @Override
+    public Stream<CheckedLink> get(Optional<CheckedLinkFilter> filterOptional, int start, int end) throws SQLException {
+        if (start > end) {
+            throw new IllegalArgumentException("start can't be greater than end.");
         }
 
-        try {
-            //replace if the url is in linksChecked already
-            //if not add new
-            FindOneAndReplaceOptions findOneAndReplaceOptions = new FindOneAndReplaceOptions();
-            linksChecked.findOneAndReplace(filter, checkedLink.getMongoDocument(), findOneAndReplaceOptions.upsert(true));
-
-        } catch (MongoException e) {
-            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-            //do nothing so that the whole thread doesnt die because of one url, just skip it
-            return false;
+        if (start <= 0 && end <= 0) {
+            throw new IllegalArgumentException("start and end can't less than or equal to 0 at the same time.");
         }
 
-        try {
+        final Optional<CheckedLinkFilter> filter
+                = filterOptional
+                        //filter was provided, combine with other params
+                        .map(f -> f.setStart(start).setEnd(end)) //TG: do we really want to modify the passed filter??? we could also clone
+                        //no filter was provided, create default filter 
+                        .or(() -> Optional.of(new ACDHCheckedLinkFilter(start, end)));
 
-            //delete from linksToBeChecked(whether successful or there was an error, ist wuascht)
-            linksToBeChecked.deleteOne(filter);
-
-            return true;
-        } catch (MongoException e) {
-            _logger.error("There was an error with the url: " + checkedLink.getUrl() + " .It is being skipped. Error message: " + e.getMessage());
-            //do nothing so that the whole thread doesnt die because of one url, just skip it
-            return false;
-        }
+        return get(filter);
 
     }
 
-//    @Override
-//    public Boolean moveToHistory(CheckedLink checkedLink) {
-//        String url = checkedLink.getUrl();
-//        try {
-//            linksCheckedHistory.insertOne(checkedLink.getMongoDocument());
-//        } catch (MongoException e) {
-//            //shouldnt happen, but if it does continue the loop
-//            _logger.error("Error with the url: " + url + " while cleaning linkschecked (removing links from older runs). Exception message: " + e.getMessage());
-//            return false;
-//        }
-//
-//        try {
-//            linksChecked.deleteOne(eq("url", url));
-//        } catch (MongoException e) {
-//            //shouldnt happen, but if it does continue the loop
-//            _logger.error("Error with the url: " + url + " while cleaning linkschecked (removing links from older runs). Exception message: " + e.getMessage());
-//            return false;
-//        }
-//        return true;
-//    }
+    @Override
+    public Map<String, CheckedLink> get(Collection<String> urls, Optional<CheckedLinkFilter> filter) throws SQLException {
+        if (urls.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            try (Connection con = connectionProvider.getConnection()) {
+                //if urlCollection is given, this is how all these from the collection are returned:
+                //example query: select * from status where url in ('www.google.com','www.facebook.com');
+                //construct a param list for URLs
+                final StringJoiner queryInClauseJoiner = new StringJoiner(",", " url IN (", ")");
+                //add a '?' for each URL
+                urls.forEach((url) -> queryInClauseJoiner.add("?"));
+                final String queryInClause = queryInClauseJoiner.toString();
+
+                final String defaultQuery = "SELECT * FROM status WHERE" + queryInClause;
+
+                //callback to add actual URLs as parameters to prepared statement
+                final BiFunction<PreparedStatement, Integer, Integer> addUrlParms = (statement, i) -> {
+                    try {
+                        for (String url : urls) {
+                            statement.setString(i++, url);
+                        }
+                        return i;
+                    } catch (SQLException ex) {
+                        throw new RuntimeException("SQL exception while setting URL parameters for query", ex);
+                    }
+                };
+
+                // make sure to always pass a filter, otherwise URL 'filter' will not be applied
+                final Optional<CheckedLinkFilter> filterOrNoop = filter.or(
+                        () -> Optional.of(new ACDHCheckedLinkFilter(null))
+                );
+
+                try (PreparedStatement statement = getPreparedStatement(con, defaultQuery, filterOrNoop, queryInClause, addUrlParms)) {
+
+                    try (ResultSet rs = statement.executeQuery()) {
+                        try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                            return recordStream.map(CheckedLink::new).collect(Collectors.toMap(CheckedLink::getUrl, Function.identity()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public Boolean save(CheckedLink checkedLink) throws SQLException {
+
+        //get old checked link
+        final Optional<CheckedLink> oldCheckedLink = get(checkedLink.getUrl());
+
+        if (oldCheckedLink.isPresent()) {
+            //save to history
+            saveToHistory(oldCheckedLink.get());
+
+            //delete it
+            delete(checkedLink.getUrl());
+        }
+
+        //save new one
+        return insertCheckedLink(checkedLink, Table.STATUS);
+    }
+
+    private PreparedStatement getInsertPreparedStatement(Connection con, Table tableName) throws SQLException {
+        final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        switch (tableName) {
+            case STATUS:
+                return con.prepareStatement(insertStatusQuery);
+            case HISTORY:
+                return con.prepareStatement(insertHistoryQuery);
+            default:
+                throw new RuntimeException("Unsupported table name" + tableName);
+        }
+    }
+
+    private Boolean insertCheckedLink(CheckedLink checkedLink, Table tableName) {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = getInsertPreparedStatement(con, tableName)) {
+
+                preparedStatement.setString(1, checkedLink.getUrl());
+                preparedStatement.setInt(2, checkedLink.getStatus());
+                preparedStatement.setString(3, checkedLink.getMethod());
+                preparedStatement.setString(4, checkedLink.getContentType());
+                preparedStatement.setInt(5, checkedLink.getByteSize());
+                preparedStatement.setInt(6, checkedLink.getDuration());
+                preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
+                preparedStatement.setInt(8, checkedLink.getRedirectCount());
+                preparedStatement.setString(9, checkedLink.getCollection());
+                preparedStatement.setString(10, checkedLink.getRecord());
+                preparedStatement.setString(11, checkedLink.getExpectedMimeType());
+                preparedStatement.setString(12, checkedLink.getMessage());
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        } catch (SQLException e) {
+            _logger.error("SQL Exception while saving " + checkedLink.getUrl() + " into " + tableName + ":" + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean saveToHistory(CheckedLink checkedLink) throws SQLException {
+        return insertCheckedLink(checkedLink, Table.HISTORY);
+    }
+
+    @Override
+    public Boolean delete(String url) throws SQLException {
+        final String deleteURLQuery = "DELETE FROM status WHERE url=?";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+                preparedStatement.setString(1, url);
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
+    public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
+        //not requested much, so no need to optimize
+        final String query = "SELECT * FROM history WHERE url=? ORDER BY timestamp " + order.name();
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
+                preparedStatement.setString(1, url);
+
+                try (ResultSet rs = preparedStatement.executeQuery()) {
+
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(CheckedLink::new).collect(Collectors.toList());
+                    }
+                }
+            }
+        }
+
+    }
 }

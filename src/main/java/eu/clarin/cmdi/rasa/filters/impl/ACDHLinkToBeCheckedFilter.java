@@ -18,14 +18,21 @@
 
 package eu.clarin.cmdi.rasa.filters.impl;
 
-import com.mongodb.client.model.Filters;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
-import org.bson.conversions.Bson;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
 
     private String collection;
+    private final String query = "SELECT * FROM urls WHERE collection=?";
 
+    /**
+     * Creates a link to be checked filter for the table urls
+     * @param collection collection of the link
+     */
     public ACDHLinkToBeCheckedFilter(String collection) {
         this.collection = collection;
     }
@@ -36,15 +43,11 @@ public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
     }
 
     @Override
-    public Bson getMongoFilter() {
-        Bson collectionFilter;
+    public PreparedStatement getStatement(Connection con) throws SQLException {
+        //if it comes here, then it means there is a collection to be filtered
+        PreparedStatement statement = con.prepareStatement(query);
+        statement.setString(1, collection);
 
-        if (collection != null) {
-            collectionFilter = Filters.eq("collection", collection);
-        } else {
-            collectionFilter = Filters.where("1==1");
-        }
-
-        return collectionFilter;
+        return statement;
     }
 }

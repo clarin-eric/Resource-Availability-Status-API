@@ -18,11 +18,24 @@
 
 package eu.clarin.cmdi.rasa.filters;
 
-public interface StatisticsFilter extends Filter {
+/**
+ * This class creates a count filter for the status and urls tables with the given values through the constructor
+ */
+public interface StatisticsCountFilter extends Filter {
 
-    boolean getBroken();
-    boolean getUndetermined();
+    /**
+     * @return collection of the statistics
+     */
     String getCollection();
+
+    /**
+     * @return record of the statistics
+     */
     String getRecord();
+
+    /**
+     * @return table name
+     */
+    String getTable();
 
 }

@@ -16,12 +16,15 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.links;
+package eu.clarin.cmdi.rasa.DAO;
 
-import org.bson.Document;
+import org.jooq.Record;
 
 import java.util.Objects;
 
+/**
+ * Corresponds to a tuple in the urls table
+ */
 public class LinkToBeChecked {
     private String url;
     private String record;
@@ -38,6 +41,10 @@ public class LinkToBeChecked {
         this.expectedMimeType = expectedMimeType;
     }
 
+    /**
+     * Create linkToBeChecked from the necessary info in a given CheckedLink
+     * @param checkedLink CheckedLink to be copied
+     */
     public LinkToBeChecked(CheckedLink checkedLink) {
         this.url = checkedLink.getUrl();
         this.record = checkedLink.getRecord();
@@ -45,18 +52,11 @@ public class LinkToBeChecked {
         this.expectedMimeType = checkedLink.getExpectedMimeType();
     }
 
-    public LinkToBeChecked(Document document) {
-        this.url = document.getString("url");
-        this.collection = document.getString("collection");
-        this.record = document.getString("record");
-        this.expectedMimeType = document.getString("expectedMimeType");
-    }
-
-    public Document getMongoDocument() {
-        return new Document("url", url)
-                .append("record", record)
-                .append("collection", collection)
-                .append("expectedMimeType", expectedMimeType);
+    public LinkToBeChecked(Record record) {
+        this.url = (String) record.getValue("url");
+        this.record = (String) record.getValue("record");
+        this.collection = (String) record.getValue("collection");
+        this.expectedMimeType = (String) record.getValue("expectedMimeType");
     }
 
     public String getUrl() {
@@ -105,5 +105,15 @@ public class LinkToBeChecked {
     @Override
     public int hashCode() {
         return Objects.hash(url, record, collection, expectedMimeType);
+    }
+
+    @Override
+    public String toString() {
+        return "LinkToBeChecked{" +
+                "url='" + url + '\'' +
+                ", record='" + record + '\'' +
+                ", collection='" + collection + '\'' +
+                ", expectedMimeType='" + expectedMimeType + '\'' +
+                '}';
     }
 }

@@ -18,129 +18,69 @@
 
 package eu.clarin.cmdi.rasa;
 
-import com.mongodb.MongoTimeoutException;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
+import ch.vorburger.exec.ManagedProcessException;
+import ch.vorburger.mariadb4j.DB;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
+import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
-import org.apache.log4j.LogManager;
-import org.bson.Document;
+import org.apache.ibatis.jdbc.ScriptRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
-
-import static org.junit.Assert.fail;
 
 public abstract class TestConfig {
 
-    public static RasaFactory rasaFactory;
-    public static ACDHCheckedLinkResource checkedLinkResource;
-    public static LinkToBeCheckedResource linkToBeCheckedResource;
-    public static StatisticsResource statisticsResource;
+    private static RasaFactory rasaFactory;
 
-    public static MongoCollection<Document> linksChecked;
-    public static MongoCollection<Document> linksCheckedHistory;
-    public static MongoCollection<Document> linksToBeChecked;
+    static CheckedLinkResource checkedLinkResource;
+    static LinkToBeCheckedResource linkToBeCheckedResource;
+    static StatisticsResource statisticsResource;
 
-    private static MongoClient mongoClient;
-    private static MongoDatabase database;
-
-    private static String databaseName;
-
+    //same urls as in initDB.sql
     static List<String> urls = Arrays.asList("http://www.ailla.org/waiting.html", "http://www.ailla.org/audio_files/EMP1M1B1.mp3", "http://www.ailla.org/audio_files/WBA1M3A2.mp3", "http://www.ailla.org/text_files/WBA1M1A2a.mp3", "http://www.ailla.org/audio_files/KUA2M1A1.mp3", "http://www.ailla.org/text_files/KUA2M1.pdf", "http://www.ailla.org/audio_files/sarixojani.mp3", "http://www.ailla.org/audio_files/TEH11M7A1sa.mp3", "http://www.ailla.org/text_files/TEH11M7.pdf", "http://dspin.dwds.de:8088/ddc-sru/dta/", "http://dspin.dwds.de:8088/ddc-sru/grenzboten/", "http://dspin.dwds.de:8088/ddc-sru/rem/", "http://www.deutschestextarchiv.de/rem/?d=M084E-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M220P-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M119-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M171-G1.xml", "http://www.deutschestextarchiv.de/rem/?d=M185-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M048P-N1.xml", "http://www.deutschestextarchiv.de/rem/?d=M112-G1.xml");
     static List<String> googleUrls = Arrays.asList("https://www.google.com", "https://maps.google.com", "https://drive.google.com");
 
+    private static DB database;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws SQLException, IOException, ManagedProcessException {
 
-        LogManager.getLogger("org.mongodb.driver.cluster").setLevel(org.apache.log4j.Level.OFF);
+        database = DB.newEmbeddedDB(3308);
 
-
-        try {
-            mongoClient = MongoClients.create();
-
-            UUID uuid = UUID.randomUUID();
-            databaseName = uuid.toString();
-
-            createCollections();
-
-            rasaFactory = new ACDHRasaFactory(databaseName, null);//localhost
-
-            checkedLinkResource = rasaFactory.getCheckedLinkResource();
-            linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
-            statisticsResource = rasaFactory.getStatisticsResource();
-        } catch (MongoTimeoutException e) {
-            System.err.println("RASA needs a running Mongo instance on localhost:27017 (default) for tests to work. \n" +
-                    "These are integration tests, that test the functionality of RASA with a working database. \n" +
-                    "Tests will be run on a created database with a randomly generated name on the mongo instance.\n" +
-                    "The database is deleted after the tests are run. \n\n" +
-                    "Please start a mongo database instance in the environment!");
-            fail();
-        }
+        database.start();
+        database.createDB("stormychecker");
 
 
-    }
+        //create database and fill it with initDB.sql
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        ScriptRunner runner = new ScriptRunner(con);
+        InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/initDB.sql"));
+        runner.runScript(reader);
+        reader.close();
+        con.close();
 
-    private static void createCollections() {
-
-        database = mongoClient.getDatabase(databaseName);
-
-        database.createCollection("linksChecked");
-        linksChecked = database.getCollection("linksChecked");
-
-        IndexOptions unique = new IndexOptions().unique(true);
-        linksChecked.createIndex(Indexes.ascending("url"), unique);
-        linksChecked.createIndex(Indexes.ascending("record"));
-        linksChecked.createIndex(Indexes.ascending("status"));
-        linksChecked.createIndex(Indexes.ascending("collection"));
-        linksChecked.createIndex(Indexes.ascending("collection", "status"));
-        linksChecked.createIndex(Indexes.ascending("collection", "url"));
-        linksChecked.createIndex(Indexes.ascending("record", "status"));
-        linksChecked.createIndex(Indexes.ascending("status", "url"));
-        linksChecked.createIndex(Indexes.ascending("timestamp"));
-        linksChecked.createIndex(Indexes.ascending("collection", "record", "url"));
-        linksChecked.createIndex(Indexes.ascending("record", "url"));
-
-
-        database.createCollection("linksToBeChecked");
-        linksToBeChecked = database.getCollection("linksToBeChecked");
-        linksToBeChecked.createIndex(Indexes.ascending("url"), unique);
-        linksToBeChecked.createIndex(Indexes.ascending("collection"));
-        linksToBeChecked.createIndex(Indexes.ascending("record"));
-        linksToBeChecked.createIndex(Indexes.ascending("collection", "url"));
-        linksToBeChecked.createIndex(Indexes.ascending("record", "url"));
-
-        database.createCollection("linksCheckedHistory");
-        linksCheckedHistory = database.getCollection("linksCheckedHistory");
-        linksCheckedHistory.createIndex(Indexes.ascending("timestamp"));
+        rasaFactory = new ACDHRasaFactory("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        checkedLinkResource = rasaFactory.getCheckedLinkResource();
+        linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
+        statisticsResource = rasaFactory.getStatisticsResource();
 
     }
 
     @AfterClass
-    public static void tearDown() {
-
-        dropCollections();
-
-        database.drop();
-
+    public static void tearDown() throws ManagedProcessException {
+        database.stop();
+        rasaFactory.tearDown();
     }
-
-    private static void dropCollections() {
-        linksChecked.drop();
-        linksCheckedHistory.drop();
-        linksToBeChecked.drop();
-    }
-
 
 }

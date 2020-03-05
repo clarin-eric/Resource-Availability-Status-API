@@ -19,19 +19,77 @@
 package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface LinkToBeCheckedResource {
 
-    /* get all urls that match a filter */
-    Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter);
+    /**
+     * Retrieve LinkToBeChecked for single url
+     * @param url url of the row
+     * @return found LinkToBeChecked
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Optional<LinkToBeChecked> get(String url) throws SQLException;
 
-    List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter);
+    /**
+     * Get all urls that match a filter as a stream.
+     * Returned stream needs to be closed after use, so use it with try with resources.
+     * Recommended to use, so it closes automatically: try(Stream<LinkToBeChecked links=linkToBeCheckedResource.get(Optional.of(filter))){...}
+     * @param filter filter to apply on the query
+     * @return A Stream of LinkToBeChecked elements. It needs to be closed after use.
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
 
-    /* save a link to be checked into linksToBeChecked, if it already exists in the collection, it fails but is ignored */
-    Boolean save(LinkToBeChecked linkToBeChecked);
+    /**
+     * Get all urls that match a filter as a list
+     * @param filter filter to apply on the query
+     * @return A List of LinkToBeChecked elements
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
+
+    /**
+     * Save a link to be checked into urls table, if it already exists in the collection, it fails but is ignored
+     * @param linkToBeChecked Element to be persisted
+     * @return If the operation was successful(not if the linkToBeChecked was persisted)
+     * @throws SQLException occurs if there was an error during statement preparation
+     */
+    Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException;
+
+    /**
+     * Batch insert links to be checked into urls, only not existing urls are persisted.
+     * @param linksToBeChecked List of elements to be persisted
+     * @return If at least one url from the list was persisted
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException;
+
+    /**
+     * Delete an element from urls table
+     * @param url Url to be deleted
+     * @return If the url was deleted
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean delete(String url) throws SQLException;
+
+    /**
+     * Delete multiple elements from the urls table
+     * @param urls List of urls to be deleted
+     * @return If at least one url from the list was deleted
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean delete(List<String> urls) throws SQLException;
+
+    /**
+     * Retrieve all the names of all collections in the database(urls table)
+     * @return List of all collection names
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    List<String> getCollectionNames() throws SQLException;
 }

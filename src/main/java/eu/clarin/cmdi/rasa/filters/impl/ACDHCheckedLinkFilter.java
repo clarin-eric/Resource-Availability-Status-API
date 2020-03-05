@@ -15,24 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 package eu.clarin.cmdi.rasa.filters.impl;
 
-import com.mongodb.client.model.Filters;
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import org.apache.commons.lang3.Range;
-import org.bson.conversions.Bson;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-import static com.mongodb.client.model.Filters.*;
+import java.util.StringJoiner;
+import java.util.function.BiFunction;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
-
-    //linkchecker is run in Vienna, thats why all timestamps in the database are Vienna based
-    private ZoneId VIENNA_ZONE = ZoneId.of("Europe/Vienna");
 
     private Range<Integer> status;
     private LocalDateTime before;
@@ -40,8 +37,17 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     private ZoneId zone;
     private String collection;
 
-    //zoneId is the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
-    //also before and after parameters should be instantiated with ZoneId.systemDefault() as well
+    private int start = -1;
+    private int end = -1;
+
+
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone) {
         this.status = status;
         this.before = before;
@@ -49,6 +55,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.zone = zone;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String collection) {
         this.status = status;
         this.before = before;
@@ -57,13 +71,32 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         this.collection = collection;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(String collection) {
         this.collection = collection;
     }
 
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param status a range of integers as statuses
+     * @param collection collection of the links
+     */
     public ACDHCheckedLinkFilter(String collection, int status) {
         this.collection = collection;
-        this.status = Range.between(status,status);
+        this.status = Range.between(status, status);
+    }
+
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     * @param start limits the results, starting from this entry in the database
+     * @param end limits the results until this entry in the database
+     */
+    public ACDHCheckedLinkFilter(int start, int end) {
+        this.start = start;
+        this.end = end;
     }
 
     @Override
@@ -91,39 +124,125 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
-    //returns a mongo filter depending on the non null parameters
-    @Override
-    public Bson getMongoFilter() {
+    public ACDHCheckedLinkFilter setEnd(int limitEnd) {
+        this.end = limitEnd;
+        return this;
+    }
 
-        Bson filter;
+    public ACDHCheckedLinkFilter setStart(int start) {
+        this.start = start;
+        return this;
+    }
+
+    /**
+     * Prepares the query based on the variables
+     *
+     * @param inList filters out the results, only urls within this list can be
+     * in the results
+     * @return prepared query to be used in preparing the statement
+     */
+    private String prepareQuery(String inList) {
+        StringBuilder sb = new StringBuilder();
+
+        //if it's here, that means there is something in the where clause.
+        //because it is checked before if the filter variables are set
+        sb.append("SELECT * FROM status");
+
+        StringJoiner sj = new StringJoiner(" AND ");
 
         if (status != null) {
-            filter = Filters.and(gte("status", status.getMinimum()), lte("status", status.getMaximum()));
-        } else {
-            filter = Filters.where("1==1");
+            sj.add("statusCode>=? AND statusCode<=?");
         }
-
-        //here vienna zone is used because the database timestamps are all in vienna zone
         if (before != null) {
-            ZonedDateTime beforeZdt = before.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
-            long beforeMillis = beforeZdt.toInstant().toEpochMilli();
-
-            filter = Filters.and(filter, lt("timestamp", beforeMillis));
+            sj.add("timestamp<?");
         }
-
         if (after != null) {
-            ZonedDateTime afterZdt = after.atZone(zone).withZoneSameInstant(VIENNA_ZONE);
-            long afterMillis = afterZdt.toInstant().toEpochMilli();
-
-            filter = Filters.and(filter, gt("timestamp", afterMillis));
+            sj.add("timestamp>?");
         }
-
         if (collection != null && !collection.equals("Overall")) {
-            filter = Filters.and(filter, eq("collection", collection));
+            sj.add("collection=?");
+        }
+        if (inList != null) {
+            sj.add(inList);
         }
 
+        if (sj.length() > 0) {
+            sb.append(" WHERE ").append(sj.toString());
+        }
 
-        return filter;
+        if (start > 0 && end > 0) {
+            sb.append(" LIMIT ? OFFSET ?");
+        } else if (start > 0) {
+            sb.append(" LIMIT 18446744073709551615 OFFSET ?");//max number because you cant use use offset without limit
+        } else if (end > 0) {
+            sb.append(" LIMIT ?");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * This method prepares the statement with the filter's variables with the
+     * given query.
+     *
+     * @param con database connection
+     * @param query query to be prepared
+     * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
+     * @return a fully prepared statement with the query and given parameters,
+     * the caller can directly execute and read the results
+     * @throws SQLException can occur during preparing the statement
+     */
+    private PreparedStatement prepareStatement(Connection con, String query, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
+        PreparedStatement statement = con.prepareStatement(query);
+
+        //query setting done, now fill it
+        int i = 1;
+        if (status != null) {
+            statement.setInt(i, status.getMinimum());
+            statement.setInt(i + 1, status.getMaximum());
+            i += 2;
+        }
+        if (before != null) {
+            statement.setTimestamp(i, Timestamp.valueOf(before));
+            i++;
+        }
+        if (after != null) {
+            statement.setTimestamp(i, Timestamp.valueOf(after));
+            i++;
+        }
+        if (collection != null && !collection.equals("Overall")) {
+            statement.setString(i, collection);
+            i++;
+        }
+
+        if (addInListParams != null) {
+            i = addInListParams.apply(statement, i);
+        }
+
+        if (start > 0 && end > 0) {
+//            sb.append("LIMIT ? OFFSET ?");
+            statement.setInt(i, end - start + 1);
+            statement.setInt(i + 1, start - 1);//start 1 would need offset 0
+        } else if (start > 0) {
+//            sb.append(" LIMIT 18446744073709551615 OFFSET ?");
+            statement.setInt(i, start - 1);//start 1 would need offset 0
+        } else if (end > 0) {
+//            sb.append(" LIMIT ?");
+            statement.setInt(i, end);
+        }
+
+        return statement;
+    }
+
+    @Override
+    public PreparedStatement getStatement(Connection con) throws SQLException {
+        String query = prepareQuery(null);
+        return prepareStatement(con, query, null);
+    }
+
+    @Override
+    public PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
+        String query = prepareQuery(inList);
+        return prepareStatement(con, query, addInListParams);
     }
 
 }

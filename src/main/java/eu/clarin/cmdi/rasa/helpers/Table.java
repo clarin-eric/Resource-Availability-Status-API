@@ -16,20 +16,10 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.filters;
+package eu.clarin.cmdi.rasa.helpers;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
-public interface Filter {
-
-
-    /**
-     * Prepares a statement with the given values of the filter in the constructor
-     * @param con database connection
-     * @return fully prepared statement with filter variables set and ready to execute
-     * @throws SQLException can occur during preparing the statement
-     */
-    PreparedStatement getStatement(Connection con) throws SQLException;
+public enum Table {
+    URLS,
+    STATUS,
+    HISTORY;
 }

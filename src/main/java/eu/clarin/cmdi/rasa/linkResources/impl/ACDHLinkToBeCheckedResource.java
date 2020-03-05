@@ -17,86 +17,186 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import com.mongodb.MongoException;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
-import eu.clarin.cmdi.rasa.links.LinkToBeChecked;
-import org.bson.Document;
-import org.bson.conversions.Bson;
+import org.jooq.Record;
+import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
-    private MongoCollection<Document> linksToBeChecked;
+    private final static Logger _logger = LoggerFactory.getLogger(ACDHLinkToBeCheckedResource.class);
 
-    public ACDHLinkToBeCheckedResource(MongoCollection<Document> linksToBeChecked) {
-        this.linksToBeChecked = linksToBeChecked;
+    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
+
+    private final ConnectionProvider connectionProvider;
+
+    public ACDHLinkToBeCheckedResource(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
-    public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) {
-        List<LinkToBeChecked> result = new ArrayList<>();
+    public Optional<LinkToBeChecked> get(String url) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            String urlQuery = "SELECT * FROM urls WHERE url=?";
+            try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
 
-        MongoCursor<Document> cursor;
+                statement.setString(1, url);
 
-        if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksToBeChecked.find(mongoFilter).noCursorTimeout(true).iterator();
-        } else {
-            cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
-        }
+                try (ResultSet rs = statement.executeQuery()) {
 
-        try {
-            while (cursor.hasNext()) {
-                result.add(new LinkToBeChecked(cursor.next()));
+                    final Record record = DSL.using(con).fetchOne(rs);
+                    return Optional.ofNullable(record).map(LinkToBeChecked::new);
+                }
             }
-        } finally {
-            cursor.close();
         }
-
-        return result.stream();
     }
 
+    //call this method in a try with resources so that the underlying resources are closed after use
     @Override
-    public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) {
-        List<LinkToBeChecked> result = new ArrayList<>();
+    public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        final Connection con = connectionProvider.getConnection();
+        final String defaultQuery = "SELECT * FROM urls";
+        final PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter);
+        final ResultSet rs = statement.executeQuery();
 
-        MongoCursor<Document> cursor;
-
-        if (filter.isPresent()) {
-            Bson mongoFilter = filter.get().getMongoFilter();
-            cursor = linksToBeChecked.find(mongoFilter).noCursorTimeout(true).iterator();
-        } else {
-            cursor = linksToBeChecked.find().noCursorTimeout(true).iterator();
-        }
-
-        try {
-            while (cursor.hasNext()) {
-                result.add(new LinkToBeChecked(cursor.next()));
+        Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
+        recordStream.onClose(() -> {
+            try {
+                rs.close();
+                statement.close();
+                con.close();
+            } catch (SQLException e) {
+                _logger.error("Can't close prepared statement or resultset or connection.");
             }
-        } finally {
-            cursor.close();
-        }
+        });
 
-        return result;
+        return recordStream.map(LinkToBeChecked::new);
+    }
+
+
+    private PreparedStatement getPreparedStatement(Connection con, String defaultQuery, Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        PreparedStatement statement;
+        if (filter.isEmpty()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            statement = filter.get().getStatement(con);
+        }
+        return statement;
     }
 
     @Override
-    public Boolean save(LinkToBeChecked linkToBeChecked) {
-        try {
-            linksToBeChecked.insertOne(linkToBeChecked.getMongoDocument());
-            return true;
-        } catch (MongoException e) {
-            //duplicate key error
-            //url is already in the database, do nothing
-            return false;
+    public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        try (Stream<LinkToBeChecked> linkToBeCheckedStream = get(filter)) {
+            return linkToBeCheckedStream.collect(Collectors.toList());
         }
-
     }
+
+    @Override
+    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
+                preparedStatement.setString(1, linkToBeChecked.getUrl());
+                preparedStatement.setString(2, linkToBeChecked.getRecord());
+                preparedStatement.setString(3, linkToBeChecked.getCollection());
+                preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
+
+                for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
+                    preparedStatement.setString(1, linkToBeChecked.getUrl());
+                    preparedStatement.setString(2, linkToBeChecked.getRecord());
+                    preparedStatement.setString(3, linkToBeChecked.getCollection());
+                    preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                    preparedStatement.addBatch();
+                }
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean delete(String url) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+                preparedStatement.setString(1, url);
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean delete(List<String> urls) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+                for (String url : urls) {
+                    preparedStatement.setString(1, url);
+                    preparedStatement.addBatch();
+                }
+
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
+            }
+        }
+    }
+
+    @Override
+    public List<String> getCollectionNames() throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            List<String> collectionNames = new ArrayList<>();
+
+            String collectionQuery = "SELECT DISTINCT collection from urls";
+            try (PreparedStatement statement = con.prepareStatement(collectionQuery)) {
+                try (ResultSet rs = statement.executeQuery()) {
+
+                    while (rs.next()) {
+                        collectionNames.add(rs.getString("collection"));
+                    }
+
+                    return collectionNames;
+                }
+            }
+        }
+    }
+
+
 }

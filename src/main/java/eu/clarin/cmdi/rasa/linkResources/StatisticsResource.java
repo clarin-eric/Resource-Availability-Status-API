@@ -18,22 +18,56 @@
 
 package eu.clarin.cmdi.rasa.linkResources;
 
-import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
-import eu.clarin.cmdi.rasa.links.Statistics;
+import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
+import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 public interface StatisticsResource {
 
-    /* gets status statistics per collection. status statistics are
-    the following info per status code:
-    count,avg response time, max response time
+    /**
+     * Gets status statistics per collection. Status statistics are the following info per status code:
+     * count,avg response time, max response time
+     * calls getStatusStatistics() for all collections (if given collection is null or equals "Overall").
+     * @param collection collection requested for the statistics
+     * @return A list of StatusStatistics for each status code, will return empty list if given collection doesn't exist
+     * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    List<Statistics> getStatusStatistics(String collection);
-    Statistics getOverallStatistics(String collection);
+    List<StatusStatistics> getStatusStatistics(String collection) throws SQLException;
 
-    long countLinksChecked(Optional<ACDHStatisticsFilter> filter);
-    long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter);
-    int getDuplicateCount(String collection);
+    /**
+     * Gets overall status statistics. Status statistics are the following info per status code:
+     * count,avg response time, max response time
+     * @return A list of StatusStatistics for each status code
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    List<StatusStatistics> getStatusStatistics() throws SQLException;
+
+    /**
+     * Gets overall statistics per collection without grouping by status, so get overall count, avg response time and max response time
+     * calls getOverallStatistics() for all collections (if given collection is null or equals "Overall").
+     * will return null if given collection doesn't exist
+     * @param collection collection requested for the statistics
+     * @return A Statistics object for the requested collection
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Statistics getOverallStatistics(String collection) throws SQLException;
+
+    /**
+     * Gets overall statistics without grouping by status, so get overall count, avg response time and max response time
+     * @return A Statistics object for the whole database
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Statistics getOverallStatistics() throws SQLException;
+
+    /**
+     * Counts table with the given filter. Table name in the filter must be set
+     * @param filter Filter to be applied to the count query
+     * @return number resulting from the count
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    long countTable(ACDHStatisticsCountFilter filter) throws SQLException;
+
 }

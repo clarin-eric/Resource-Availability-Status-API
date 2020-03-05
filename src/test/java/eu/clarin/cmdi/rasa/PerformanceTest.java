@@ -16,20 +16,12 @@
  *
  */
 
-package eu.clarin.cmdi.rasa.filters;
+package eu.clarin.cmdi.rasa;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+public class PerformanceTest {
+    //todo run some methods 1000000 times
+    //and see time difference
 
-public interface Filter {
+    //todo timing framework, junit? spf4j?
 
-
-    /**
-     * Prepares a statement with the given values of the filter in the constructor
-     * @param con database connection
-     * @return fully prepared statement with filter variables set and ready to execute
-     * @throws SQLException can occur during preparing the statement
-     */
-    PreparedStatement getStatement(Connection con) throws SQLException;
 }

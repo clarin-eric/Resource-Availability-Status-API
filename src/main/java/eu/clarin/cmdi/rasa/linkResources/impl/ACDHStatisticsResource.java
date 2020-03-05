@@ -18,155 +18,118 @@
 
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Accumulators;
-import com.mongodb.client.model.Aggregates;
-import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsFilter;
+import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
+import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
+import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
-import eu.clarin.cmdi.rasa.links.Statistics;
-import org.bson.Document;
+import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
-
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Sorts.ascending;
-import static com.mongodb.client.model.Sorts.orderBy;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ACDHStatisticsResource implements StatisticsResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHStatisticsResource.class);
 
-    private MongoCollection<Document> linksChecked;
-    private MongoCollection<Document> linksToBeChecked;
+    private final ConnectionProvider connectionProvider;
 
-    public ACDHStatisticsResource(MongoCollection<Document> linksChecked, MongoCollection<Document> linksToBeChecked) {
-        this.linksChecked = linksChecked;
-        this.linksToBeChecked = linksToBeChecked;
+    public ACDHStatisticsResource(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
     }
 
+    //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
-    public List<Statistics> getStatusStatistics(String collection) {
-
-        AggregateIterable<Document> iterable;
+    public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
         if (collection == null || collection.equals("Overall")) {
-            iterable = linksChecked.aggregate(Arrays.asList(
-                    Aggregates.group("$status",
-                            Accumulators.sum("count", 1),
-                            Accumulators.avg("avg_resp", "$duration"),
-                            Accumulators.max("max_resp", "$duration")
-                    ),
-                    Aggregates.sort(orderBy(ascending("_id")))
-            ));
-        } else {
-            iterable = linksChecked.aggregate(Arrays.asList(
-                    Aggregates.match(eq("collection", collection)),
-                    Aggregates.group("$status",
-                            Accumulators.sum("count", 1),
-                            Accumulators.avg("avg_resp", "$duration"),
-                            Accumulators.max("max_resp", "$duration")
-                    ),
-                    Aggregates.sort(orderBy(ascending("_id")))
-            ));
+            return getStatusStatistics();
         }
-
-
-        List<Statistics> stats = new ArrayList<>();
-
-        for (Document doc : iterable) {
-            Statistics statistics = new Statistics();
-            statistics.setAvgRespTime(doc.getDouble("avg_resp"));
-            statistics.setMaxRespTime(doc.getLong("max_resp"));
-            int statusCode = doc.getInteger("_id");
-            statistics.setStatus(statusCode);
-            if (statusCode == 200) {
-                statistics.setCategory("Ok");
-            } else if (statusCode == 401 || statusCode == 405 || statusCode == 429) {
-                statistics.setCategory("Undetermined");
-            } else {
-                statistics.setCategory("Broken");
-            }
-            statistics.setCount(doc.getInteger("count"));
-            stats.add(statistics);
-        }
-
-        return stats;
-    }
-
-    @Override
-    public Statistics getOverallStatistics(String collection) {
-        AggregateIterable<Document> aggregate;
-
-        if (collection == null || collection.equals("Overall")) {
-            aggregate = linksChecked.aggregate(
-                    Arrays.asList(
-                            Aggregates.group(null,
-                                    Accumulators.sum("count", 1),
-                                    Accumulators.avg("avg_resp", "$duration"),
-                                    Accumulators.max("max_resp", "$duration")
-                            )));
-        } else {
-            aggregate = linksChecked.aggregate(
-                    Arrays.asList(
-                            Aggregates.match(eq("collection", collection)),
-                            Aggregates.group(null,
-                                    Accumulators.sum("count", 1),
-                                    Accumulators.avg("avg_resp", "$duration"),
-                                    Accumulators.max("max_resp", "$duration")
-                            )));
-        }
-
-        Document result = aggregate.first();
-
-        Statistics statistics = new Statistics();
-        if (result != null) {
-            statistics.setAvgRespTime(result.getDouble("avg_resp"));
-            statistics.setMaxRespTime(result.getLong("max_resp"));
-            statistics.setCount(result.getInteger("count"));
-        }
-
-        return statistics;
-    }
-
-    @Override
-    public long countLinksChecked(Optional<ACDHStatisticsFilter> filter) {
-
-        if (filter.isPresent()) {
-            return linksChecked.countDocuments(filter.get().getMongoFilter());
-        } else {
-            return linksChecked.countDocuments();
-        }
-
-    }
-
-    @Override
-    public long countLinksToBeChecked(Optional<ACDHStatisticsFilter> filter) {
-        if (filter.isPresent()) {
-            return linksToBeChecked.countDocuments(filter.get().getMongoFilter());
-        } else {
-            return linksToBeChecked.countDocuments();
-        }
-    }
-
-    //todo test this method along all other methods
-    @Override
-    public int getDuplicateCount(String collection) {
-        AggregateIterable<Document> iterable = linksToBeChecked.aggregate(Arrays.asList(
-                Aggregates.match(eq("collection", collection)),
-                Aggregates.lookup("linksChecked", "url", "url", "checked")
-        ));
-        int duplicates = 0;
-        for (Document doc : iterable) {
-            if (!((List<?>) doc.get("checked")).isEmpty()) {
-                duplicates++;
+        String query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+                    }
+                }
             }
         }
 
-        return duplicates;
+    }
+
+    //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
+    @Override
+    public List<StatusStatistics> getStatusStatistics() throws SQLException {
+        String query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+                    }
+                }
+            }
+        }
+
+    }
+
+    @Override
+    public Statistics getOverallStatistics(String collection) throws SQLException {
+        if (collection == null || collection.equals("Overall")) {
+            return getOverallStatistics();
+        }
+        String query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
+
+                    //return null if count is 0, ie. collection not found in database
+                    return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                }
+            }
+        }
+    }
+
+    @Override
+    public Statistics getOverallStatistics() throws SQLException {
+        String query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
+
+                    //return null if count is 0, ie. collection not found in database
+                    return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                }
+            }
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection con, String collection, String query) throws SQLException {
+        PreparedStatement statement = con.prepareStatement(query);
+        statement.setString(1, collection);
+        return statement;
+    }
+
+    @Override
+    public long countTable(ACDHStatisticsCountFilter filter) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = filter.getStatement(con)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
+
+                    return (Long) record.getValue("count");
+                }
+            }
+        }
     }
 }
