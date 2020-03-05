@@ -29,30 +29,28 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
-
     private HikariDataSource ds;
-    private Connection linkToBeCheckedConnection;
-    private Connection statisticsConnection;
-    private final ConnectionProvider connectionProvider;
+    private ConnectionProvider connectionProvider;
 
     /**
      * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
      * Different resources can be obtained with their respective get methods.
+     *
      * @param databaseURI uri of the database
-     * @param userName username for the database
-     * @param password password for the database
+     * @param userName    username for the database
+     * @param password    password for the database
      */
     public ACDHRasaFactory(String databaseURI, String userName, String password) {
         try {
             connectDatabase(databaseURI, userName, password);
         } catch (SQLException e) {
-            _logger.error("There was a problem connecting to the database. Make sure the uri, username and password are correct: ",e);
+            _logger.error("There was a problem connecting to the database. Make sure the uri, username and password are correct: ", e);
         }
-        
-        connectionProvider = () -> ds.getConnection();
+
     }
 
     @Override
@@ -62,12 +60,12 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
 
     @Override
     public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-        return new ACDHLinkToBeCheckedResource(linkToBeCheckedConnection);
+        return new ACDHLinkToBeCheckedResource(connectionProvider);
     }
 
     @Override
     public ACDHStatisticsResource getStatisticsResource() {
-        return new ACDHStatisticsResource(statisticsConnection);
+        return new ACDHStatisticsResource(connectionProvider);
     }
 
     private void connectDatabase(String databaseURI, String userName, String password) throws SQLException {
@@ -86,9 +84,7 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         config.setLeakDetectionThreshold(10 * 1000);
 
         ds = new HikariDataSource(config);
-
-        linkToBeCheckedConnection = ds.getConnection();
-        statisticsConnection = ds.getConnection();
+        connectionProvider = () -> ds.getConnection();
 
         _logger.info("Connected to database.");
 

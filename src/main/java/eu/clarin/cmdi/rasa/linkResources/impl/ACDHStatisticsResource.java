@@ -21,6 +21,7 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import org.jooq.Record;
 import org.jooq.impl.DSL;
@@ -39,26 +40,25 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHStatisticsResource.class);
 
-    private Connection con;
+    private final ConnectionProvider connectionProvider;
 
-
-    //set query strings once and reuse them again
-
-    public ACDHStatisticsResource(Connection con) {
-        this.con = con;
+    public ACDHStatisticsResource(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
     }
 
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
     public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
-        if (collection==null || collection.equals("Overall")) {
+        if (collection == null || collection.equals("Overall")) {
             return getStatusStatistics();
         }
         String query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
-        try (PreparedStatement statement = getPreparedStatement(collection, query)) {
-            try (ResultSet rs = statement.executeQuery()) {
-                try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
-                    return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+                    }
                 }
             }
         }
@@ -69,10 +69,12 @@ public class ACDHStatisticsResource implements StatisticsResource {
     @Override
     public List<StatusStatistics> getStatusStatistics() throws SQLException {
         String query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
-        try (PreparedStatement statement = con.prepareStatement(query)) {
-            try (ResultSet rs = statement.executeQuery()) {
-                try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
-                    return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
+                        return recordStream.map(StatusStatistics::new).collect(Collectors.toList());
+                    }
                 }
             }
         }
@@ -81,36 +83,38 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     @Override
     public Statistics getOverallStatistics(String collection) throws SQLException {
-        if (collection==null || collection.equals("Overall")) {
+        if (collection == null || collection.equals("Overall")) {
             return getOverallStatistics();
         }
         String query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
-        try (PreparedStatement statement = getPreparedStatement(collection, query)) {
-            try (ResultSet rs = statement.executeQuery()) {
-                Record record = DSL.using(con).fetchOne(rs);
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
 
-                //return null if count is 0, ie. collection not found in database
-                return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                    //return null if count is 0, ie. collection not found in database
+                    return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                }
             }
-
         }
     }
 
     @Override
     public Statistics getOverallStatistics() throws SQLException {
         String query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status";
-        try (PreparedStatement statement = con.prepareStatement(query)) {
-            try (ResultSet rs = statement.executeQuery()) {
-                Record record = DSL.using(con).fetchOne(rs);
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
 
-                //return null if count is 0, ie. collection not found in database
-                return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                    //return null if count is 0, ie. collection not found in database
+                    return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                }
             }
-
         }
     }
 
-    private PreparedStatement getPreparedStatement(String collection, String query) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection con, String collection, String query) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
         statement.setString(1, collection);
         return statement;
@@ -118,11 +122,13 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     @Override
     public long countTable(ACDHStatisticsCountFilter filter) throws SQLException {
-        try (PreparedStatement statement = filter.getStatement(con)) {
-            try (ResultSet rs = statement.executeQuery()) {
-                Record record = DSL.using(con).fetchOne(rs);
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement statement = filter.getStatement(con)) {
+                try (ResultSet rs = statement.executeQuery()) {
+                    Record record = DSL.using(con).fetchOne(rs);
 
-                return (Long) record.getValue("count");
+                    return (Long) record.getValue("count");
+                }
             }
         }
     }

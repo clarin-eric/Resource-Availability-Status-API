@@ -19,7 +19,7 @@
 package eu.clarin.cmdi.rasa.helpers.statusCodeMapper;
 
 public enum Category {
-    OK,
-    UNDETERMINED,
-    BROKEN;
+    Ok,
+    Undetermined,
+    Broken;
 }

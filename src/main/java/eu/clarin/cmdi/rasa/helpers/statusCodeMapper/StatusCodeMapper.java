@@ -34,12 +34,12 @@ public final class StatusCodeMapper {
 
     static {
         map = new HashMap<>();
-        map.put(401, Category.UNDETERMINED);
-        map.put(405, Category.UNDETERMINED);
-        map.put(429, Category.UNDETERMINED);
+        map.put(401, Category.Undetermined);
+        map.put(405, Category.Undetermined);
+        map.put(429, Category.Undetermined);
         undetermined = Arrays.asList(401, 405, 429);
 
-        map.put(200, Category.OK);
+        map.put(200, Category.Ok);
         ok = Collections.singletonList(200);
 
     }
@@ -52,7 +52,7 @@ public final class StatusCodeMapper {
      */
     public static Category get(int status) {
         Category category = map.get(status);
-        return category == null ? Category.BROKEN : category;
+        return category == null ? Category.Broken : category;
     }
 
     /**
