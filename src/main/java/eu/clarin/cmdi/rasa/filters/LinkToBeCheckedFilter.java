@@ -18,6 +18,8 @@
 
 package eu.clarin.cmdi.rasa.filters;
 
+import java.sql.Date;
+
 /**
  * This class creates a filter for the urls table with the given values through the constructor
  */
@@ -28,4 +30,10 @@ public interface LinkToBeCheckedFilter extends Filter{
      * @return collection of the links
      */
     String getCollection();
+
+    /**
+     *
+     * @return harvestDate of the filter
+     */
+    Date getHarvestDate();
 }

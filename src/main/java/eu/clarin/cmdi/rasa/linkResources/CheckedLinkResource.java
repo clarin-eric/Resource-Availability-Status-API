@@ -132,11 +132,19 @@ public interface CheckedLinkResource {
     /* Move from linksChecked to linkCheckedHistory. */
 
     /**
-     * Move a checkedLink from status table to history table
+     * Save a checkedLink from status table to history table
      * @param checkedLink Checked Link to be moved
      * @return If the operation was successful
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     Boolean saveToHistory(CheckedLink checkedLink) throws SQLException;
+
+    /**
+     * Save a checkedLink from status table to history table by finding it in status table first
+     * @param url url of checked Link to be moved
+     * @return If the operation was successful
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean saveToHistory(String url) throws SQLException;
 
 }

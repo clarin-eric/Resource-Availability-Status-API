@@ -21,20 +21,33 @@ package eu.clarin.cmdi.rasa.filters.impl;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
 
     private String collection;
-    private final String query = "SELECT * FROM urls WHERE collection=?";
+    private Date harvestDate;
+    private final String collectionQuery = "SELECT * FROM urls WHERE collection=?";
+    private final String harvestDateQuery = "SELECT * FROM urls WHERE harvestDate<?";
 
     /**
      * Creates a link to be checked filter for the table urls
+     *
      * @param collection collection of the link
      */
     public ACDHLinkToBeCheckedFilter(String collection) {
         this.collection = collection;
+    }
+
+    /**
+     * Creates a link to be checked filter for the table urls with harvestDate,
+     *
+     * @param harvestDate rows with harvestDate older than this will be returned
+     */
+    public ACDHLinkToBeCheckedFilter(Date harvestDate) {
+        this.harvestDate = harvestDate;
     }
 
     @Override
@@ -43,11 +56,23 @@ public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
     }
 
     @Override
+    public Date getHarvestDate() {
+        return this.harvestDate;
+    }
+
+    @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         //if it comes here, then it means there is a collection to be filtered
-        PreparedStatement statement = con.prepareStatement(query);
-        statement.setString(1, collection);
+        PreparedStatement statement;
 
+        if (collection != null) {
+            statement = con.prepareStatement(collectionQuery);
+            statement.setString(1, collection);
+        } else {
+            statement = con.prepareStatement(harvestDateQuery);
+            statement.setDate(1, harvestDate);
+        }
         return statement;
+
     }
 }

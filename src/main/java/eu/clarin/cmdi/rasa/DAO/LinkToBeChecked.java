@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.DAO;
 
 import org.jooq.Record;
 
+import java.sql.Date;
 import java.util.Objects;
 
 /**
@@ -29,34 +30,38 @@ public class LinkToBeChecked {
     private String url;
     private String record;
     private String collection;
+    private Date harvestDate;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
     }
 
-    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType) {
+    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Date harvestDate) {
         this.url = url;
         this.record = record;
         this.collection = collection;
         this.expectedMimeType = expectedMimeType;
+        this.harvestDate = harvestDate;
     }
 
-    /**
-     * Create linkToBeChecked from the necessary info in a given CheckedLink
-     * @param checkedLink CheckedLink to be copied
-     */
-    public LinkToBeChecked(CheckedLink checkedLink) {
-        this.url = checkedLink.getUrl();
-        this.record = checkedLink.getRecord();
-        this.collection = checkedLink.getCollection();
-        this.expectedMimeType = checkedLink.getExpectedMimeType();
-    }
+//    /**
+//     * Create linkToBeChecked from the necessary info in a given CheckedLink
+//     *
+//     * @param checkedLink CheckedLink to be copied
+//     */
+//    public LinkToBeChecked(CheckedLink checkedLink) {
+//        this.url = checkedLink.getUrl();
+//        this.record = checkedLink.getRecord();
+//        this.collection = checkedLink.getCollection();
+//        this.expectedMimeType = checkedLink.getExpectedMimeType();
+//    }
 
     public LinkToBeChecked(Record record) {
         this.url = (String) record.getValue("url");
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
         this.expectedMimeType = (String) record.getValue("expectedMimeType");
+        this.harvestDate = (Date) record.getValue("harvestDate");
     }
 
     public String getUrl() {
@@ -91,6 +96,14 @@ public class LinkToBeChecked {
         this.expectedMimeType = expectedMimeType;
     }
 
+    public Date getHarvestDate() {
+        return harvestDate;
+    }
+
+    public void setHarvestDate(Date harvestDate) {
+        this.harvestDate = harvestDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -99,12 +112,13 @@ public class LinkToBeChecked {
         return url.equals(that.url) &&
                 Objects.equals(record, that.record) &&
                 Objects.equals(collection, that.collection) &&
+                Objects.equals(harvestDate, that.harvestDate) &&
                 Objects.equals(expectedMimeType, that.expectedMimeType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, record, collection, expectedMimeType);
+        return Objects.hash(url, record, collection, harvestDate, expectedMimeType);
     }
 
     @Override
@@ -113,6 +127,7 @@ public class LinkToBeChecked {
                 "url='" + url + '\'' +
                 ", record='" + record + '\'' +
                 ", collection='" + collection + '\'' +
+                ", harvestDate=" + harvestDate +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
                 '}';
     }

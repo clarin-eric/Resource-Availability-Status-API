@@ -274,6 +274,22 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     @Override
+    public Boolean saveToHistory(String url) throws SQLException {
+        final String saveToHistoryQuery = "INSERT INTO history SELECT * FROM status s WHERE s.url=?";
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(saveToHistoryQuery)) {
+
+                preparedStatement.setString(1, url);
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
     public Boolean delete(String url) throws SQLException {
         final String deleteURLQuery = "DELETE FROM status WHERE url=?";
         try (Connection con = connectionProvider.getConnection()) {
