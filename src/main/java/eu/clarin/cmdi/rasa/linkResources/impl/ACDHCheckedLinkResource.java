@@ -27,10 +27,7 @@ import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -248,7 +245,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 preparedStatement.setInt(2, checkedLink.getStatus());
                 preparedStatement.setString(3, checkedLink.getMethod());
                 preparedStatement.setString(4, checkedLink.getContentType());
-                preparedStatement.setInt(5, checkedLink.getByteSize());
+                Integer byteLength = checkedLink.getByteSize();
+                if (byteLength == null) {
+                    preparedStatement.setNull(5, Types.INTEGER);
+                } else {
+                    preparedStatement.setInt(5, byteLength);
+                }
                 preparedStatement.setInt(6, checkedLink.getDuration());
                 preparedStatement.setTimestamp(7, checkedLink.getTimestamp());
                 preparedStatement.setInt(8, checkedLink.getRedirectCount());

@@ -29,23 +29,23 @@ public class CheckedLink {
 
     private String url;
     private String method;
-    private int status;
+    private Integer status;
     private String contentType;
-    private int byteSize;
-    private int duration;
+    private Integer byteSize;
+    private Integer duration;
     private Timestamp timestamp;
     private String message;
     private String collection;
-    private int redirectCount;
+    private Integer redirectCount;
     private String record;
     private String expectedMimeType;
 
     public CheckedLink() {
     }
 
-    public CheckedLink(String url, String method, int status,
-                       String contentType, int byteSize, int duration,
-                       Timestamp timestamp, String message, String collection, int redirectCount,
+    public CheckedLink(String url, String method, Integer status,
+                       String contentType, Integer byteSize, Integer duration,
+                       Timestamp timestamp, String message, String collection, Integer redirectCount,
                        String record, String expectedMimeType) {
         this.url = url;
         this.method = method;
@@ -63,14 +63,14 @@ public class CheckedLink {
 
     public CheckedLink(Record record) {
         this.url = (String) record.getValue("url");
-        this.status = (int) record.getValue("statusCode");
+        this.status = (Integer) record.getValue("statusCode");
         this.method = (String) record.getValue("method");
         this.contentType = (String) record.getValue("contentType");
-        this.byteSize = (int) record.getValue("byteSize");
-        this.duration = (int) record.getValue("duration");
+        this.byteSize = (Integer) record.getValue("byteSize");
+        this.duration = (Integer) record.getValue("duration");
         this.timestamp = (Timestamp) record.getValue("timestamp");
         this.message = (String) record.getValue("message");
-        this.redirectCount = (int) record.getValue("redirectCount");
+        this.redirectCount = (Integer) record.getValue("redirectCount");
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
         this.expectedMimeType = (String) record.getValue("expectedMimeType");
@@ -92,11 +92,11 @@ public class CheckedLink {
         this.method = method;
     }
 
-    public int getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
-    public void setStatus(int status) {
+    public void setStatus(Integer status) {
         this.status = status;
     }
 
@@ -108,19 +108,19 @@ public class CheckedLink {
         this.contentType = contentType;
     }
 
-    public int getByteSize() {
+    public Integer getByteSize() {
         return byteSize;
     }
 
-    public void setByteSize(int byteSize) {
+    public void setByteSize(Integer byteSize) {
         this.byteSize = byteSize;
     }
 
-    public int getDuration() {
+    public Integer getDuration() {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public void setDuration(Integer duration) {
         this.duration = duration;
     }
 
@@ -132,11 +132,11 @@ public class CheckedLink {
         this.timestamp = timestamp;
     }
 
-    public int getRedirectCount() {
+    public Integer getRedirectCount() {
         return redirectCount;
     }
 
-    public void setRedirectCount(int redirectCount) {
+    public void setRedirectCount(Integer redirectCount) {
         this.redirectCount = redirectCount;
     }
 
@@ -177,16 +177,16 @@ public class CheckedLink {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CheckedLink that = (CheckedLink) o;
-        return status == that.status &&
-                byteSize == that.byteSize &&
-                duration == that.duration &&
-                redirectCount == that.redirectCount &&
-                url.equals(that.url) &&
+        return url.equals(that.url) &&
                 Objects.equals(method, that.method) &&
+                Objects.equals(status, that.status) &&
                 Objects.equals(contentType, that.contentType) &&
+                Objects.equals(byteSize, that.byteSize) &&
+                Objects.equals(duration, that.duration) &&
                 Objects.equals(timestamp, that.timestamp) &&
                 Objects.equals(message, that.message) &&
                 Objects.equals(collection, that.collection) &&
+                Objects.equals(redirectCount, that.redirectCount) &&
                 Objects.equals(record, that.record) &&
                 Objects.equals(expectedMimeType, that.expectedMimeType);
     }
