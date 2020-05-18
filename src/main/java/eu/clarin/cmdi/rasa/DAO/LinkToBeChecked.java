@@ -30,18 +30,19 @@ public class LinkToBeChecked {
     private String url;
     private String record;
     private String collection;
-    private Date harvestDate;
+    //private Date harvestDate;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
     }
 
-    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Date harvestDate) {
+    //public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Date harvestDate) {
+    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType) {
         this.url = url;
         this.record = record;
         this.collection = collection;
         this.expectedMimeType = expectedMimeType;
-        this.harvestDate = harvestDate;
+        //this.harvestDate = harvestDate;
     }
 
 //    /**
@@ -61,7 +62,7 @@ public class LinkToBeChecked {
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
         this.expectedMimeType = (String) record.getValue("expectedMimeType");
-        this.harvestDate = (Date) record.getValue("harvestDate");
+        //this.harvestDate = (Date) record.getValue("harvestDate");
     }
 
     public String getUrl() {
@@ -96,13 +97,13 @@ public class LinkToBeChecked {
         this.expectedMimeType = expectedMimeType;
     }
 
-    public Date getHarvestDate() {
-        return harvestDate;
-    }
+    //public Date getHarvestDate() {
+    //    return harvestDate;
+    //}
 
-    public void setHarvestDate(Date harvestDate) {
-        this.harvestDate = harvestDate;
-    }
+//    public void setHarvestDate(Date harvestDate) {
+//        this.harvestDate = harvestDate;
+//    }
 
     @Override
     public boolean equals(Object o) {
@@ -112,13 +113,14 @@ public class LinkToBeChecked {
         return url.equals(that.url) &&
                 Objects.equals(record, that.record) &&
                 Objects.equals(collection, that.collection) &&
-                Objects.equals(harvestDate, that.harvestDate) &&
+                //Objects.equals(harvestDate, that.harvestDate) &&
                 Objects.equals(expectedMimeType, that.expectedMimeType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, record, collection, harvestDate, expectedMimeType);
+//        return Objects.hash(url, record, collection, harvestDate, expectedMimeType);
+        return Objects.hash(url, record, collection, expectedMimeType);
     }
 
     @Override
@@ -127,7 +129,7 @@ public class LinkToBeChecked {
                 "url='" + url + '\'' +
                 ", record='" + record + '\'' +
                 ", collection='" + collection + '\'' +
-                ", harvestDate=" + harvestDate +
+                //", harvestDate=" + harvestDate +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
                 '}';
     }

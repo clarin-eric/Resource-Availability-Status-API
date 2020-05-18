@@ -28,9 +28,9 @@ import java.sql.SQLException;
 public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
 
     private String collection;
-    private Date harvestDate;
+    //private Date harvestDate;
     private final String collectionQuery = "SELECT * FROM urls WHERE collection=?";
-    private final String harvestDateQuery = "SELECT * FROM urls WHERE harvestDate<?";
+    //private final String harvestDateQuery = "SELECT * FROM urls WHERE harvestDate<?";
 
     /**
      * Creates a link to be checked filter for the table urls
@@ -46,32 +46,32 @@ public class ACDHLinkToBeCheckedFilter implements LinkToBeCheckedFilter {
      *
      * @param harvestDate rows with harvestDate older than this will be returned
      */
-    public ACDHLinkToBeCheckedFilter(Date harvestDate) {
-        this.harvestDate = harvestDate;
-    }
+    //public ACDHLinkToBeCheckedFilter(Date harvestDate) {
+      //  this.harvestDate = harvestDate;
+    //}
 
     @Override
     public String getCollection() {
         return this.collection;
     }
 
-    @Override
-    public Date getHarvestDate() {
-        return this.harvestDate;
-    }
+    //@Override
+    //public Date getHarvestDate() {
+    //    return this.harvestDate;
+    //}
 
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         //if it comes here, then it means there is a collection to be filtered
         PreparedStatement statement;
 
-        if (collection != null) {
+        //if (collection != null) {
             statement = con.prepareStatement(collectionQuery);
             statement.setString(1, collection);
-        } else {
-            statement = con.prepareStatement(harvestDateQuery);
-            statement.setDate(1, harvestDate);
-        }
+        //} else {
+        //    statement = con.prepareStatement(harvestDateQuery);
+        //    statement.setDate(1, harvestDate);
+        //}
         return statement;
 
     }
