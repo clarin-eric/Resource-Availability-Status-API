@@ -1,5 +1,5 @@
 --DONE IN JAVA CODE:
---CREATE DATABASE stormychecker;
+--  CREATE DATABASE stormychecker;
 
 --DON'T ASK, it is because of stupid mysql, quote stackoverflow: To go along with @ypercube's comment that CURRENT_TIMESTAMP is stored as UTC but retrieved as the current timezone
 --WHYYYY????????
@@ -16,6 +16,7 @@ CREATE TABLE stormychecker.urls (
  record VARCHAR(255),
  collection VARCHAR(255),
  expectedMimeType VARCHAR(255),
+ harvestDate BIGINT(255),
  PRIMARY KEY(url)
 );
 
@@ -66,32 +67,32 @@ CREATE TABLE stormychecker.history (
  message VARCHAR(255)
 );
 
-INSERT INTO urls(url,record,collection,expectedMimeType)
+INSERT INTO urls(url,record,collection,expectedMimeType,harvestDate)
 VALUES
-("http://www.ailla.org/waiting.html", "record", "NotGoogle", null),
-("http://www.ailla.org/audio_files/EMP1M1B1.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/audio_files/WBA1M3A2.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/text_files/WBA1M1A2a.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/audio_files/KUA2M1A1.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/text_files/KUA2M1.pdf", "record", "NotGoogle", null),
-("http://www.ailla.org/audio_files/sarixojani.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/audio_files/TEH11M7A1sa.mp3", "record", "NotGoogle", null),
-("http://www.ailla.org/text_files/TEH11M7.pdf", "record", "NotGoogle", null),
-("http://dspin.dwds.de:8088/ddc-sru/dta/", "record", "NotGoogle", null),
-("http://dspin.dwds.de:8088/ddc-sru/grenzboten/", "record", "NotGoogle", null),
-("http://dspin.dwds.de:8088/ddc-sru/rem/", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M084E-N1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M220P-N1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M119-N1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M171-G1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M185-N1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M048P-N1.xml", "record", "NotGoogle", null),
-("http://www.deutschestextarchiv.de/rem/?d=M112-G1.xml", "record", "NotGoogle", null),
-("https://www.google.com", "GoogleRecord", "Google", null),
-("https://maps.google.com", "GoogleRecord", "Google", null),
-("https://drive.google.com", "GoogleRecord", "Google", null);
+("http://www.ailla.org/waiting.html", "record", "NotGoogle", null, null),
+("http://www.ailla.org/audio_files/EMP1M1B1.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/audio_files/WBA1M3A2.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/text_files/WBA1M1A2a.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/audio_files/KUA2M1A1.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/text_files/KUA2M1.pdf", "record", "NotGoogle", null, null),
+("http://www.ailla.org/audio_files/sarixojani.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/audio_files/TEH11M7A1sa.mp3", "record", "NotGoogle", null, null),
+("http://www.ailla.org/text_files/TEH11M7.pdf", "record", "NotGoogle", null, null),
+("http://dspin.dwds.de:8088/ddc-sru/dta/", "record", "NotGoogle", null, null),
+("http://dspin.dwds.de:8088/ddc-sru/grenzboten/", "record", "NotGoogle", null, null),
+("http://dspin.dwds.de:8088/ddc-sru/rem/", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M084E-N1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M220P-N1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M119-N1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M171-G1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M185-N1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M048P-N1.xml", "record", "NotGoogle", null, null),
+("http://www.deutschestextarchiv.de/rem/?d=M112-G1.xml", "record", "NotGoogle", null, null),
+("https://www.google.com", "GoogleRecord", "Google", null, null),
+("https://maps.google.com", "GoogleRecord", "Google", null, null),
+("https://drive.google.com", "GoogleRecord", "Google", null, null);
 
---Should be same date as the tests:
+--Should be the same date as ACDHCheckedLinkResourceTest class:
 SET @then = '2019-10-11 00:00:00';
 
 INSERT INTO status(url,method,statusCode,contentType,byteSize,duration,timestamp,message,redirectCount,record,collection,expectedMimeType)

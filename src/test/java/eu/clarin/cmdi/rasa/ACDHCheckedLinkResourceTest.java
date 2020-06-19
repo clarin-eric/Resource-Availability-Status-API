@@ -59,8 +59,8 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
 
-        for (String url : urls) {
-            Optional<CheckedLink>  checkedLink = checkedLinkResource.get(url);
+        for (String url : otherUrls) {
+            Optional<CheckedLink> checkedLink = checkedLinkResource.get(url);
             assertTrue(actual.isPresent());
             assertEquals(checkedLink.get().getUrl(), url);
         }
@@ -175,7 +175,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         assertEquals(googleURLs.get(1), links.get(googleURLs.get(1)).getUrl());
         //shouldnt be in there
         assertNull(links.get("https://drive.google.com"));
-        
+
         links = checkedLinkResource.get(Collections.emptyList(), Optional.empty());
         assertEquals(0, links.size());
     }
@@ -213,7 +213,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         }
 
         //save(first urls then status)
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType"));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType", System.currentTimeMillis()));
         CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType");
         checkedLinkResource.save(checkedLink);
 
@@ -256,7 +256,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     }
 
     @Test
-    public void ZZ3deleteTestShouldSaveCorrectly() throws SQLException {
+    public void ZZ3deleteTestShouldDeleteCorrectly() throws SQLException {
         //first status then url
         checkedLinkResource.delete(testURL);
         linkToBeCheckedResource.delete(testURL);

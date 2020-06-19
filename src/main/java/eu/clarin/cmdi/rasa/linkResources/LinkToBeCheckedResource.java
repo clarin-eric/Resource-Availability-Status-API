@@ -21,8 +21,11 @@ package eu.clarin.cmdi.rasa.linkResources;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -30,6 +33,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Retrieve LinkToBeChecked for single url
+     *
      * @param url url of the row
      * @return found LinkToBeChecked
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -40,6 +44,7 @@ public interface LinkToBeCheckedResource {
      * Get all urls that match a filter as a stream.
      * Returned stream needs to be closed after use, so use it with try with resources.
      * Recommended to use, so it closes automatically: try(Stream<LinkToBeChecked links=linkToBeCheckedResource.get(Optional.of(filter))){...}
+     *
      * @param filter filter to apply on the query
      * @return A Stream of LinkToBeChecked elements. It needs to be closed after use.
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -48,6 +53,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Get all urls that match a filter as a list
+     *
      * @param filter filter to apply on the query
      * @return A List of LinkToBeChecked elements
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -56,6 +62,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Save a link to be checked into urls table, if it already exists in the collection, it fails but is ignored
+     *
      * @param linkToBeChecked Element to be persisted
      * @return If the operation was successful(not if the linkToBeChecked was persisted)
      * @throws SQLException occurs if there was an error during statement preparation
@@ -64,6 +71,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Batch insert links to be checked into urls, only not existing urls are persisted.
+     *
      * @param linksToBeChecked List of elements to be persisted
      * @return If at least one url from the list was persisted
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -72,6 +80,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Delete an element from urls table
+     *
      * @param url Url to be deleted
      * @return If the url was deleted
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -80,6 +89,7 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Delete multiple elements from the urls table
+     *
      * @param urls List of urls to be deleted
      * @return If at least one url from the list was deleted
      * @throws SQLException occurs if there was an error during statement preparation or execution
@@ -88,8 +98,31 @@ public interface LinkToBeCheckedResource {
 
     /**
      * Retrieve all the names of all collections in the database(urls table)
+     *
      * @return List of all collection names
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     List<String> getCollectionNames() throws SQLException;
+
+
+    /**
+     * delete any urls that have the harvestDate column older than the given one.
+     *
+     * @param date links that have older harvestDate column than this will be deleted
+     * @return number of affected rows
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    int deleteOldLinks(Long date) throws SQLException;
+
+    /**
+     * Updates the harvestDate for the given links. This way the report generation date is persisted and
+     * if there are old links in the database which are not part of the current report generation (not in the clarin records anymore)
+     * they can be deleted with the deleteOldLinks() method.
+     *
+     * @param linksToBeUpdated a list of urls
+     * @param date             current report generation date
+     * @return if at least one link was updated
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException;
 }

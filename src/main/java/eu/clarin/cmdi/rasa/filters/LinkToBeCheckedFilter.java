@@ -35,5 +35,5 @@ public interface LinkToBeCheckedFilter extends Filter{
      *
      * @return harvestDate of the filter
      */
-    //Date getHarvestDate();
+    Long getHarvestDate();
 }

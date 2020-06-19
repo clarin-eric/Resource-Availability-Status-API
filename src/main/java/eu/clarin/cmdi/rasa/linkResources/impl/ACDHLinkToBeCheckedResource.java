@@ -17,7 +17,6 @@
  */
 package eu.clarin.cmdi.rasa.linkResources.impl;
 
-import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
@@ -27,10 +26,8 @@ import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +38,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHLinkToBeCheckedResource.class);
 
-    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType) VALUES (?,?,?,?)";
+    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType,harvestDate) VALUES (?,?,?,?,?)";
     private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
 
     private final ConnectionProvider connectionProvider;
@@ -115,6 +112,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
                 preparedStatement.setString(2, linkToBeChecked.getRecord());
                 preparedStatement.setString(3, linkToBeChecked.getCollection());
                 preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
 
                 //affected rows
                 int row = preparedStatement.executeUpdate();
@@ -134,6 +132,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
                     preparedStatement.setString(2, linkToBeChecked.getRecord());
                     preparedStatement.setString(3, linkToBeChecked.getCollection());
                     preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                    preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
                     preparedStatement.addBatch();
                 }
 
@@ -194,6 +193,41 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
                     return collectionNames;
                 }
+            }
+        }
+    }
+
+    @Override
+    public int deleteOldLinks(Long date) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+
+            String deleteQuery = "DELETE FROM urls where harvestDate < ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
+                preparedStatement.setLong(1, date);
+
+                System.out.println("should be less than this: "+date);
+                //affected rows
+                return preparedStatement.executeUpdate();
+            }
+        }
+    }
+
+    @Override
+    public Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            String updateDateQuery = "UPDATE urls SET harvestDate = ? WHERE url = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(updateDateQuery)) {
+
+                for (String url : linksToBeUpdated) {
+                    preparedStatement.setLong(1, date);
+                    preparedStatement.setString(2, url);
+                    preparedStatement.addBatch();
+                }
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
             }
         }
     }
