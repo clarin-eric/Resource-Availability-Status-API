@@ -180,7 +180,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
 
     @Test
-    public void FDeleteTestShouldSaveCorrectly() throws SQLException {
+    public void FDeleteTestShouldDeleteCorrectly() throws SQLException {
         linkToBeCheckedResource.delete(Arrays.asList(testURL, testURL1));
 
         //after deleting only 3 google urls
