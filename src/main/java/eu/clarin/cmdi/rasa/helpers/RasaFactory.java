@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.helpers;
 
+import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
@@ -45,7 +46,7 @@ public interface RasaFactory {
      * Get statisticsResource to query both status and urls tables
      * @return statisticsResource to query both status and urls tables
      */
-    StatisticsResource getStatisticsResource();
+    CategoryStatisticsResource getStatisticsResource();
 
     /**
      * Close all opened connections

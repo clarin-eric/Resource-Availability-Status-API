@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
- * General statistics, namely count, average response time, max response time
+ * General statistics: count, average response time, max response time
  */
 public class Statistics {
 

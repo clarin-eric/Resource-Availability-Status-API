@@ -21,13 +21,13 @@ package eu.clarin.cmdi.rasa.helpers.impl;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
+import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCategoryStatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHStatisticsResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
@@ -64,8 +64,8 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     }
 
     @Override
-    public ACDHStatisticsResource getStatisticsResource() {
-        return new ACDHStatisticsResource(connectionProvider);
+    public CategoryStatisticsResource getStatisticsResource() {
+        return new ACDHCategoryStatisticsResource(connectionProvider);
     }
 
     private void connectDatabase(String databaseURI, String userName, String password) throws SQLException {

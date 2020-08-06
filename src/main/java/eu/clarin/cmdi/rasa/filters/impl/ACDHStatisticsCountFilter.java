@@ -20,6 +20,7 @@ package eu.clarin.cmdi.rasa.filters.impl;
 
 import eu.clarin.cmdi.rasa.filters.StatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.Table;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.StatusCodeMapper;
 
 import java.sql.Connection;
@@ -32,9 +33,8 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
 
     private String collection;
     private String record;
-    private Table tableName;
-    private Boolean broken;
-    private Boolean undetermined;
+    private final Table tableName;
+    private List<Category> categories;
 
     /**
      * Creates a statistics filter for the tables urls and status. Different constructors are for convenience.
@@ -49,17 +49,15 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
     /**
      * Creates a statistics filter for the tables urls and status. Different constructors are for convenience. All are nullable.
      *
-     * @param collection   collection of the statistics
-     * @param record       record of the statistics
-     * @param broken       determines if the result should include broken links
-     * @param undetermined determines if the result should include undetermined links
-     * @param tableName    database table to count, only allowed values: URLS, STATUS
+     * @param collection collection of the statistics
+     * @param record     record of the statistics
+     * @param categories determines which categories should be counted
+     * @param tableName  database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(String collection, String record, Boolean broken, Boolean undetermined, Table tableName) throws SQLException {
+    public ACDHStatisticsCountFilter(String collection, String record, List<Category> categories, Table tableName) throws SQLException {
         this.collection = collection;
         this.record = record;
-        this.broken = broken;
-        this.undetermined = undetermined;
+        this.categories = categories;
         this.tableName = tableName;
         checkTable();
     }
@@ -67,13 +65,11 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
     /**
      * Creates a statistics filter for the tables urls and status. Different constructors are for convenience. All values are nullable.
      *
-     * @param broken       determines if the result should include broken links
-     * @param undetermined determines if the result should include undetermined links
-     * @param tableName    database table to count, only allowed values: URLS, STATUS
+     * @param categories determines which categories should be counted
+     * @param tableName  database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(Boolean broken, Boolean undetermined, Table tableName) throws SQLException {
-        this.broken = broken;
-        this.undetermined = undetermined;
+    public ACDHStatisticsCountFilter(List<Category> categories, Table tableName) throws SQLException {
+        this.categories = categories;
         this.tableName = tableName;
         checkTable();
     }
@@ -97,10 +93,8 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
         if (!table.equals("urls") && !table.equals("status")) {
             throw new SQLException("Table name not known. Possible values are status and urls.");
         }
-        if (broken != null || undetermined != null) {
-            if (table.equals("urls")) {
-                throw new SQLException("Undetermined or broken filter can not be used on the urls table. Use status instead.");
-            }
+        if (categories != null && !categories.isEmpty() && table.equals("urls")) {
+            throw new SQLException("Categories filter can not be used on the urls table. Use status instead.");
         }
     }
 
@@ -135,34 +129,15 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
         if (record != null) {
             sj.add("record=?");
         }
-        if (broken != null && broken) {
+        if (categories != null && !categories.isEmpty()) {
+            StringJoiner sjOR = new StringJoiner(" OR ");
             StringBuilder tempSB = new StringBuilder();
-            tempSB.append("  statusCode NOT IN (");
-
-            List<Integer> statuses = StatusCodeMapper.getOkStatuses();
-            statuses.addAll(StatusCodeMapper.getUndeterminedStatuses());
-            String comma = "";
-            for (int status : statuses) {
-                tempSB.append(comma);
-                comma = ",";
-                tempSB.append(status);
+            tempSB.append(" ( ");
+            for (Category category : categories) {
+                sjOR.add("category=?");
             }
-            tempSB.append(")");
-
-            sj.add(tempSB.toString());
-        }
-        if (undetermined != null && undetermined) {
-            StringBuilder tempSB = new StringBuilder();
-            tempSB.append("  statusCode IN (");
-
-            String comma = "";
-            for (int status : StatusCodeMapper.getUndeterminedStatuses()) {
-                tempSB.append(comma);
-                comma = ",";
-                tempSB.append(status);
-            }
-            tempSB.append(")");
-
+            tempSB.append(sjOR.toString());
+            tempSB.append(" ) ");
             sj.add(tempSB.toString());
         }
 
@@ -178,7 +153,15 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
         }
         if (record != null) {
             statement.setString(i, record);
+            i++;
         }
+        if(categories!=null){
+            for(Category category:categories){
+                statement.setString(i, category.name());
+                i++;
+            }
+        }
+
 
         return statement;
     }
