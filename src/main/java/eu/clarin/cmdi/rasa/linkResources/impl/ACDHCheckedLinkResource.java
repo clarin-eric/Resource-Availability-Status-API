@@ -225,8 +225,8 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     }
 
     private PreparedStatement getInsertPreparedStatement(Connection con, Table tableName) throws SQLException {
-        final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
-        final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String insertStatusQuery = "INSERT INTO status(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message,category) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String insertHistoryQuery = "INSERT INTO history(url,statusCode,method,contentType,byteSize,duration,timestamp,redirectCount,collection,record,expectedMimeType,message,category) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         switch (tableName) {
             case STATUS:
                 return con.prepareStatement(insertStatusQuery);
@@ -258,6 +258,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 preparedStatement.setString(10, checkedLink.getRecord());
                 preparedStatement.setString(11, checkedLink.getExpectedMimeType());
                 preparedStatement.setString(12, checkedLink.getMessage());
+                preparedStatement.setString(13,checkedLink.getCategory().name());
 
                 //affected rows
                 int row = preparedStatement.executeUpdate();

@@ -24,6 +24,7 @@ import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.Table;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.junit.AfterClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -124,7 +125,7 @@ public class ACDHStatisticsResourceTest extends TestConfig {
         assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
 
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null, System.currentTimeMillis()));
-        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null));
+        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
         acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.STATUS);
         assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));

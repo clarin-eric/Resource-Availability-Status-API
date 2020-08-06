@@ -17,6 +17,7 @@
  */
 package eu.clarin.cmdi.rasa.DAO;
 
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.jooq.Record;
 
 import java.sql.Timestamp;
@@ -39,6 +40,7 @@ public class CheckedLink {
     private Integer redirectCount;
     private String record;
     private String expectedMimeType;
+    public Category category;
 
     public CheckedLink() {
     }
@@ -46,7 +48,7 @@ public class CheckedLink {
     public CheckedLink(String url, String method, Integer status,
                        String contentType, Integer byteSize, Integer duration,
                        Timestamp timestamp, String message, String collection, Integer redirectCount,
-                       String record, String expectedMimeType) {
+                       String record, String expectedMimeType, Category category) {
         this.url = url;
         this.method = method;
         this.status = status;
@@ -59,6 +61,7 @@ public class CheckedLink {
         this.redirectCount = redirectCount;
         this.record = record;
         this.expectedMimeType = expectedMimeType;
+        this.category=category;
     }
 
     public CheckedLink(Record record) {
@@ -74,6 +77,7 @@ public class CheckedLink {
         this.record = (String) record.getValue("record");
         this.collection = (String) record.getValue("collection");
         this.expectedMimeType = (String) record.getValue("expectedMimeType");
+        this.category = Category.valueOf((String) record.getValue("category"));
     }
 
     public String getUrl() {
@@ -172,6 +176,15 @@ public class CheckedLink {
         this.message = message;
     }
 
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -188,12 +201,13 @@ public class CheckedLink {
                 Objects.equals(collection, that.collection) &&
                 Objects.equals(redirectCount, that.redirectCount) &&
                 Objects.equals(record, that.record) &&
-                Objects.equals(expectedMimeType, that.expectedMimeType);
+                Objects.equals(expectedMimeType, that.expectedMimeType) &&
+                Objects.equals(category, that.category);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, method, status, contentType, byteSize, duration, timestamp, message, collection, redirectCount, record, expectedMimeType);
+        return Objects.hash(url, method, status, contentType, byteSize, duration, timestamp, message, collection, redirectCount, record, expectedMimeType, category);
     }
 
     @Override
@@ -211,6 +225,7 @@ public class CheckedLink {
                 ", redirectCount=" + redirectCount +
                 ", record='" + record + '\'' +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
+                ", category='" + category + '\'' +
                 '}';
     }
 }
