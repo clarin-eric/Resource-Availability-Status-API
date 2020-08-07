@@ -58,7 +58,10 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
             try (PreparedStatement statement = con.prepareStatement(query)) {
                 try (ResultSet rs = statement.executeQuery()) {
                     try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
-                        return recordStream.map(CategoryStatistics::new).collect(Collectors.toList());
+                        //this filter is needed because when we added category field, it was null for a lot of the entries. stormychecker needs to work a little bit until all category fields are filled.
+                        //TODO do the query "select * from status where category is null;" in the future. if there are 0 results, you can remove the filter
+                        return recordStream.filter(record -> record.getValue("category")!=null).map(CategoryStatistics::new).collect(Collectors.toList());
+//                        return recordStream.map(CategoryStatistics::new).collect(Collectors.toList());
                     }
                 }
             }
