@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.filters;
 
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.apache.commons.lang3.Range;
 
 import java.sql.Connection;
@@ -61,6 +62,12 @@ public interface CheckedLinkFilter extends Filter {
      * @return zone id for the filter
      */
     ZoneId getZone();
+
+    /**
+     * gets the category
+     * @return category for this filter
+     */
+    Category getCategory();
 
     /**
      * Sets the start.If there are 20 results and start is set to 10, it will start from the 10th and go until 20.

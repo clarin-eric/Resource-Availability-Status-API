@@ -18,6 +18,7 @@
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.apache.commons.lang3.Range;
 
 import java.sql.Connection;
@@ -36,6 +37,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     private LocalDateTime after;
     private ZoneId zone;
     private String collection;
+    private Category category;
 
     private int start = -1;
     private int end = -1;
@@ -43,10 +45,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     *
      * @param status a range of integers as statuses
      * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
-     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
-     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     * @param after  urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone   the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
      */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone) {
         this.status = status;
@@ -57,10 +60,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
-     * @param status a range of integers as statuses
-     * @param before urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
-     * @param after urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
-     * @param zone the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
+     *
+     * @param status     a range of integers as statuses
+     * @param before     urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param after      urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
+     * @param zone       the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
      * @param collection collection of the links
      */
     public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String collection) {
@@ -73,6 +77,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     *
      * @param collection collection of the links
      */
     public ACDHCheckedLinkFilter(String collection) {
@@ -81,7 +86,8 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
-     * @param status a range of integers as statuses
+     *
+     * @param status     a range of integers as statuses
      * @param collection collection of the links
      */
     public ACDHCheckedLinkFilter(String collection, int status) {
@@ -90,9 +96,21 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     }
 
     /**
+     * Creates a checked link filter for table category. Different constructors are for convenience. All values are nullable.
+     *
+     * @param collection collection of the links
+     * @param category   category requested
+     */
+    public ACDHCheckedLinkFilter(String collection, Category category) {
+        this.collection = collection;
+        this.category = category;
+    }
+
+    /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     *
      * @param start limits the results, starting from this entry in the database
-     * @param end limits the results until this entry in the database
+     * @param end   limits the results until this entry in the database
      */
     public ACDHCheckedLinkFilter(int start, int end) {
         this.start = start;
@@ -124,6 +142,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return zone;
     }
 
+    @Override
+    public Category getCategory() {
+        return category;
+    }
+
     public ACDHCheckedLinkFilter setEnd(int limitEnd) {
         this.end = limitEnd;
         return this;
@@ -138,7 +161,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
      * Prepares the query based on the variables
      *
      * @param inList filters out the results, only urls within this list can be
-     * in the results
+     *               in the results
      * @return prepared query to be used in preparing the statement
      */
     private String prepareQuery(String inList) {
@@ -152,6 +175,9 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
         if (status != null) {
             sj.add("statusCode>=? AND statusCode<=?");
+        }
+        if (category != null) {
+            sj.add("category=?");
         }
         if (before != null) {
             sj.add("timestamp<?");
@@ -184,8 +210,8 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
      * This method prepares the statement with the filter's variables with the
      * given query.
      *
-     * @param con database connection
-     * @param query query to be prepared
+     * @param con             database connection
+     * @param query           query to be prepared
      * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
      * @return a fully prepared statement with the query and given parameters,
      * the caller can directly execute and read the results
@@ -200,6 +226,10 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
             statement.setInt(i, status.getMinimum());
             statement.setInt(i + 1, status.getMaximum());
             i += 2;
+        }
+        if (category != null) {
+            statement.setString(i, category.name());
+            i++;
         }
         if (before != null) {
             statement.setTimestamp(i, Timestamp.valueOf(before));

@@ -95,6 +95,34 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     }
 
     @Test
+    public void categoryFilterShouldReturnCorrectResults() throws SQLException {
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Overall",Category.Ok);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(16, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Overall",Category.Broken);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(6, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Google",Category.Ok);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(3, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Google",Category.Broken);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
+
+    }
+
+    @Test
     public void dateFiltersShouldReturnCorrectResults() throws SQLException {
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault());
         try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
@@ -145,6 +173,8 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
             long count = links.count();
             assertEquals(0, count);
         }
+
+
 
 
     }
@@ -237,7 +267,6 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType", Category.Ok);
         CheckedLink checkedLink1 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then1, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
         CheckedLink checkedLink2 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then2, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
-
 
         checkedLinkResource.save(checkedLink1);
         assertEquals(checkedLink1, checkedLinkResource.get(testURL).get());

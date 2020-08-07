@@ -21,7 +21,6 @@ package eu.clarin.cmdi.rasa.filters.impl;
 import eu.clarin.cmdi.rasa.filters.StatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.Table;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
-import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.StatusCodeMapper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
