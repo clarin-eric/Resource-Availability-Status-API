@@ -53,7 +53,7 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
     public List<CategoryStatistics> getCategoryStatistics() throws SQLException {
-        String query = "SELECT category, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY statusCode";
+        String query = "SELECT category, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status GROUP BY category";
         try (Connection con = connectionProvider.getConnection()) {
             try (PreparedStatement statement = con.prepareStatement(query)) {
                 try (ResultSet rs = statement.executeQuery()) {
