@@ -37,6 +37,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     private LocalDateTime after;
     private ZoneId zone;
     private String collection;
+    private String record;
     private Category category;
 
     private int start = -1;
@@ -103,6 +104,19 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
      */
     public ACDHCheckedLinkFilter(String collection, Category category) {
         this.collection = collection;
+        this.category = category;
+    }
+
+    /**
+     * Creates a checked link filter for table record. Different constructors are for convenience. All values are nullable.
+     *
+     * @param collection collection of the links
+     * @param record     record of the links
+     * @param category   category requested
+     */
+    public ACDHCheckedLinkFilter(String collection, String record, Category category) {
+        this.collection = collection;
+        this.record = record;
         this.category = category;
     }
 
@@ -188,6 +202,9 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         if (collection != null && !collection.equals("Overall")) {
             sj.add("collection=?");
         }
+        if (record != null) {
+            sj.add("record=?");
+        }
         if (inList != null) {
             sj.add(inList);
         }
@@ -241,6 +258,11 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         }
         if (collection != null && !collection.equals("Overall")) {
             statement.setString(i, collection);
+            i++;
+        }
+
+        if (record != null) {
+            statement.setString(i, record);
             i++;
         }
 

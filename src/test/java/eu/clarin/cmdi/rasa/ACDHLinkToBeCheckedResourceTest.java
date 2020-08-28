@@ -213,6 +213,13 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
     public void HupdateDateTestShouldUpdateCorrectly() throws SQLException {
         //initDB.sql initializes all urls table with null as harvestDate, so lets update all to now
 
+        //first check if its really 0
+        long nowHarvestDateCount;
+        try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter(now)))) {
+            nowHarvestDateCount = stream.count();
+        }
+        assertEquals(0,nowHarvestDateCount);
+
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
             List<String> toUpdateList = new ArrayList<>();
             stream.forEach(linkToBeChecked -> {
@@ -226,15 +233,15 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
             allCount = stream.count();
         }
 
-        long nowHarvestDateCount;
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter(now)))) {
             nowHarvestDateCount = stream.count();
         }
+        assertNotEquals(0,nowHarvestDateCount);
         //means all of them has the harvestDate now
         assertEquals(allCount, nowHarvestDateCount);
 
         //all of them should have now as their harvestDate
-        //doublecheck just to see if the filter is working correctly
+        //double check just to see if the filter is working correctly
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
             stream.forEach(linkToBeChecked -> {
                 assertEquals(now, linkToBeChecked.getHarvestDate());

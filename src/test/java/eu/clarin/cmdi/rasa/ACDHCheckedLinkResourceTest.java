@@ -95,7 +95,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     }
 
     @Test
-    public void categoryFilterShouldReturnCorrectResults() throws SQLException {
+    public void categoryCollectionFilterShouldReturnCorrectResults() throws SQLException {
         CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Overall",Category.Ok);
         try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
             long count = links.count();
@@ -115,6 +115,40 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         }
 
         filter = new ACDHCheckedLinkFilter("Google",Category.Broken);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
+
+    }
+
+    @Test
+    public void categoryRecordFilterShouldReturnCorrectResults() throws SQLException {
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter("Overall", "record",Category.Ok);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(13, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Overall","record",Category.Broken);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(6, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Overall","GoogleRecord",Category.Broken);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(0, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Google","GoogleRecord",Category.Ok);
+        try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
+            long count = links.count();
+            assertEquals(3, count);
+        }
+
+        filter = new ACDHCheckedLinkFilter("Google","GoogleRecord",Category.Broken);
         try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
             long count = links.count();
             assertEquals(0, count);

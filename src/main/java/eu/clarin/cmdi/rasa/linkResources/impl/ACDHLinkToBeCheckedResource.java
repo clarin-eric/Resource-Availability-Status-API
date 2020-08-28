@@ -205,7 +205,6 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
             try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
                 preparedStatement.setLong(1, date);
 
-                System.out.println("should be less than this: "+date);
                 //affected rows
                 return preparedStatement.executeUpdate();
             }
