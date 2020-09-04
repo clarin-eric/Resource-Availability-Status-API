@@ -201,6 +201,16 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     public int deleteOldLinks(Long date) throws SQLException {
         try (Connection con = connectionProvider.getConnection()) {
 
+            //first copy them from status to history
+            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url = (SELECT url FROM urls WHERE harvestDate < ?)";
+            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
+                preparedStatement.setLong(1, date);
+
+                preparedStatement.executeUpdate();
+            }
+
+            //then delete them from url table
+            //url table on delete will also delete from status table
             String deleteQuery = "DELETE FROM urls where harvestDate < ?";
             try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
                 preparedStatement.setLong(1, date);

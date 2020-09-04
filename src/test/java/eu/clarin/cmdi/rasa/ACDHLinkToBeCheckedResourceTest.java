@@ -18,15 +18,19 @@
 
 package eu.clarin.cmdi.rasa;
 
+import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHLinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
+import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -218,7 +222,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter(now)))) {
             nowHarvestDateCount = stream.count();
         }
-        assertEquals(0,nowHarvestDateCount);
+        assertEquals(0, nowHarvestDateCount);
 
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
             List<String> toUpdateList = new ArrayList<>();
@@ -236,7 +240,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.of(new ACDHLinkToBeCheckedFilter(now)))) {
             nowHarvestDateCount = stream.count();
         }
-        assertNotEquals(0,nowHarvestDateCount);
+        assertNotEquals(0, nowHarvestDateCount);
         //means all of them has the harvestDate now
         assertEquals(allCount, nowHarvestDateCount);
 
@@ -258,15 +262,23 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType", now - 86400000);
         linkToBeCheckedResource.save(linkToBeChecked);
 
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        timestamp.setNanos(0);//mysql vorburger embedded db hack, some version mismatch causes millesconds to be always 0
+        CheckedLink checkedLink = new CheckedLink(testURL, null, null, null, null, 0, timestamp, null, "Google", 0, "GoogleRecord", "mimeType", Category.Broken);
+        checkedLinkResource.save(checkedLink);
+
         long allCount;
         try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
             allCount = stream.count();
         }
 
         //and should contain with the new harvestDate
-        try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
-            assertTrue(stream.anyMatch(x -> Objects.equals(x, linkToBeChecked)));
-        }
+        Optional<LinkToBeChecked> linkToBeCheckedReturned = linkToBeCheckedResource.get(testURL);
+        assertEquals(linkToBeChecked, linkToBeCheckedReturned.get());
+
+        //and should contain in status table
+        Optional<CheckedLink> checkedLinkReturned = checkedLinkResource.get(testURL);
+        assertEquals(checkedLink, checkedLinkReturned.get());
 
         //deleteOldLinks should delete the newly added linkToBeChecked
         assertEquals(1, linkToBeCheckedResource.deleteOldLinks(now));
@@ -278,9 +290,15 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         assertEquals(allCount - 1, newCount);
 
         //and shouldn't contain
-        try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(Optional.empty())) {
-            assertFalse(stream.anyMatch(x -> Objects.equals(x, linkToBeChecked)));
-        }
+        assertTrue(linkToBeCheckedResource.get(testURL).isEmpty());
+
+        //and shouldn't contain in status table
+        assertTrue(checkedLinkResource.get(testURL).isEmpty());
+
+        //and should be in history
+        List<CheckedLink> historyList = checkedLinkResource.getHistory(testURL, CheckedLinkResource.Order.DESC);
+        assertEquals(1, historyList.size());
+        assertEquals(checkedLink, historyList.get(0));
 
     }
 

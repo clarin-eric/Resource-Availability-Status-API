@@ -242,7 +242,12 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             try (PreparedStatement preparedStatement = getInsertPreparedStatement(con, tableName)) {
 
                 preparedStatement.setString(1, checkedLink.getUrl());
-                preparedStatement.setInt(2, checkedLink.getStatus());
+                Integer status = checkedLink.getStatus();
+                if(status==null){
+                    preparedStatement.setNull(2, Types.INTEGER);
+                }else{
+                    preparedStatement.setInt(2, status);
+                }
                 preparedStatement.setString(3, checkedLink.getMethod());
                 preparedStatement.setString(4, checkedLink.getContentType());
                 Integer byteLength = checkedLink.getByteSize();
