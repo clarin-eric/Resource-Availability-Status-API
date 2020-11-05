@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,9 +41,12 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
                 try (ResultSet rs = statement.executeQuery()) {
                     try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
                         //this filter is needed because when we added category field, it was null for a lot of the entries. stormychecker needs to work a little bit until all category fields are filled.
-                        //TODO do the query "select * from status where category is null;" in the future. if there are 0 results, you can remove the filter
-                        return recordStream.filter(record -> record.getValue("category")!=null).map(CategoryStatistics::new).collect(Collectors.toList());
-//                        return recordStream.map(CategoryStatistics::new).collect(Collectors.toList());
+                        //TODO do the query "select * from status where category is null;" in the future. if there are 0 results, you can remove the filter(dont remove the sorting)
+                        return recordStream.filter(record -> record.getValue("category") != null)
+                                .map(CategoryStatistics::new)
+                                .sorted(Comparator.comparing(CategoryStatistics::getCategory))
+                                .collect(Collectors.toList());
+//                        return recordStream.map(CategoryStatistics::new).sorted(Comparator.comparing(CategoryStatistics::getCategory)).collect(Collectors.toList());
                     }
                 }
             }
@@ -59,9 +63,12 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
                 try (ResultSet rs = statement.executeQuery()) {
                     try (Stream<Record> recordStream = DSL.using(con).fetchStream(rs)) {
                         //this filter is needed because when we added category field, it was null for a lot of the entries. stormychecker needs to work a little bit until all category fields are filled.
-                        //TODO do the query "select * from status where category is null;" in the future. if there are 0 results, you can remove the filter
-                        return recordStream.filter(record -> record.getValue("category")!=null).map(CategoryStatistics::new).collect(Collectors.toList());
-//                        return recordStream.map(CategoryStatistics::new).collect(Collectors.toList());
+                        //TODO do the query "select * from status where category is null;" in the future. if there are 0 results, you can remove the filter(dont remove the sorting)
+                        return recordStream.filter(record -> record.getValue("category") != null)
+                                .map(CategoryStatistics::new)
+                                .sorted(Comparator.comparing(CategoryStatistics::getCategory))
+                                .collect(Collectors.toList());
+//                        return recordStream.map(CategoryStatistics::new).sorted(Comparator.comparing(CategoryStatistics::getCategory)).collect(Collectors.toList());
                     }
                 }
             }
