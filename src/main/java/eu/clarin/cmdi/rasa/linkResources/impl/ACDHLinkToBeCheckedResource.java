@@ -202,7 +202,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
         try (Connection con = connectionProvider.getConnection()) {
 
             //first copy them from status to history
-            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url = (SELECT url FROM urls WHERE harvestDate < ?)";
+            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ?)";
             try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
                 preparedStatement.setLong(1, date);
 

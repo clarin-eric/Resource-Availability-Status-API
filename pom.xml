@@ -6,7 +6,7 @@
 
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>3.0.5</version>
+    <version>3.0.6</version>
 
     <build>
         <plugins>
