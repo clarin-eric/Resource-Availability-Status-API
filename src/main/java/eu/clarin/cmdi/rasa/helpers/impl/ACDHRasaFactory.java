@@ -29,12 +29,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
     private HikariDataSource ds;
     private ConnectionProvider connectionProvider;
+    
+    /**
+     * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
+     * Different resources can be obtained with their respective get methods.
+     *
+     * @param prpperties database properties (see https://github.com/brettwooldridge/HikariCP)
+     * @param userName    username for the database
+     * @param password    password for the database
+     */
+    public ACDHRasaFactory(Properties properties) {
+        try {
+            connectDatabase(properties);
+        } catch (SQLException e) {
+            _logger.error("There was a problem connecting to the database. Make sure the uri, username and password are correct: ", e);
+        }
+
+    }
+
 
     /**
      * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
@@ -67,6 +86,20 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     public CategoryStatisticsResource getStatisticsResource() {
         return new ACDHCategoryStatisticsResource(connectionProvider);
     }
+    
+    private void connectDatabase(Properties properties) throws SQLException {
+        _logger.info("Connecting to database...");
+
+        HikariConfig config = new HikariConfig(properties);
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+
+        ds = new HikariDataSource(config);
+        connectionProvider = () -> ds.getConnection();
+
+        _logger.info("Connected to database.");
+
+    }
+
 
     private void connectDatabase(String databaseURI, String userName, String password) throws SQLException {
         _logger.info("Connecting to database...");
