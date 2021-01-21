@@ -91,7 +91,6 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
         _logger.info("Connecting to database...");
 
         HikariConfig config = new HikariConfig(properties);
-        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
 
         ds = new HikariDataSource(config);
         connectionProvider = () -> ds.getConnection();
