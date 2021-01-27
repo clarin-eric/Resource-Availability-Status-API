@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -221,6 +220,32 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
         }
     }
 
+    @Override
+    public int deleteOldLinks(Long date, String collection) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+
+            //first copy them from status to history
+            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ? AND collection = ?)";
+            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
+                preparedStatement.setLong(1, date);
+                preparedStatement.setString(2, collection);
+
+                preparedStatement.executeUpdate();
+            }
+
+            //then delete them from url table
+            //url table on delete will also delete from status table
+            String deleteQuery = "DELETE FROM urls where harvestDate < ? AND collection = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
+                preparedStatement.setLong(1, date);
+                preparedStatement.setString(2, collection);
+
+                //affected rows
+                return preparedStatement.executeUpdate();
+            }
+        }
+    }
+    
     @Override
     public Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException {
         try (Connection con = connectionProvider.getConnection()) {
