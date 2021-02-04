@@ -113,6 +113,16 @@ public interface LinkToBeCheckedResource {
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     int deleteOldLinks(Long date) throws SQLException;
+    
+    /**
+     * delete any urls that have the harvestDate column older than the given one.
+     *
+     * @param date links that have older harvestDate column than this will be deleted
+     * @param collection name of the collection to fulfill the delete on
+     * @return number of affected rows
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    int deleteOldLinks(Long date, String collection) throws SQLException;
 
     /**
      * Updates the harvestDate for the given links. This way the report generation date is persisted and
