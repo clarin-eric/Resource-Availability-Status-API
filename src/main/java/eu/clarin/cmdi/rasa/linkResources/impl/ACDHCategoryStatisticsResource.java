@@ -2,7 +2,6 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import eu.clarin.cmdi.rasa.DAO.Statistics.CategoryStatistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
-import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
@@ -102,7 +101,7 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
                     Record record = DSL.using(con).fetchOne(rs);
 
                     //return null if count is 0, ie. collection not found in database
-                    return (Long) record.getValue("count") == 0L ? null : record.map(Statistics::new);
+                    return (Long) record.getValue("count") == 0L ? new Statistics(0, 0.0, 0) : record.map(Statistics::new);
                 }
             }
         }
