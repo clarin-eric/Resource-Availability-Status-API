@@ -129,7 +129,7 @@ public class ACDHCategoryStatisticsResource implements CategoryStatisticsResourc
         try (Connection con = connectionProvider.getConnection()) {
             try (PreparedStatement statement = filter.getStatement(con)) {
                 try (ResultSet rs = statement.executeQuery()) {
-
+                	rs.next();
                     return rs.getLong("count");
                 }
             }

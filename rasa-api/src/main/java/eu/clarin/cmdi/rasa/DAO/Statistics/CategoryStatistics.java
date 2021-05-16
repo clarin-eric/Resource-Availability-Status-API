@@ -35,7 +35,7 @@ public class CategoryStatistics extends Statistics {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         CategoryStatistics that = (CategoryStatistics) o;
-        return category == that.category;
+        return category.equals(that.category);
     }
 
     @Override

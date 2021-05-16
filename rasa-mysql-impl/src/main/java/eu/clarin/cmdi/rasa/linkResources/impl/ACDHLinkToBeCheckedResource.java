@@ -61,7 +61,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
                 				        rs.getString("record"),
                 				        rs.getString("collection"),
                 				        rs.getString("expectedMimeType"),
-                				        rs.getLong("harvestDate")
+                				        (Long) rs.getObject("harvestDate")
             						)
             				);
                 	}
@@ -88,7 +88,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 	            				        rs.getString("record"),
 	            				        rs.getString("collection"),
 	            				        rs.getString("expectedMimeType"),
-	            				        rs.getLong("harvestDate")
+	            				        (Long) rs.getObject("harvestDate")
 	        						)		        			
 		        			);
 		        	}

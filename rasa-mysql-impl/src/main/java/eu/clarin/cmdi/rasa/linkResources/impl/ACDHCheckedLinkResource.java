@@ -66,10 +66,10 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             				new CheckedLink(                				
 		            		        rs.getString("url"),
 		            		        rs.getString("method"),
-		            		        rs.getInt("statusCode"),           		        
+		            		        (Integer) rs.getObject("statusCode"),           		        
 		            		        rs.getString("contentType"),
-		            		        rs.getInt("byteSize"),
-		            		        rs.getInt("duration"),
+		            		        (Integer) rs.getObject("byteSize"),
+		            		        (Integer) rs.getObject("duration"),
 		            		        rs.getTimestamp("timestamp"),
 		            		        rs.getString("message"),
 		            		        rs.getString("collection"),
@@ -103,14 +103,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             				new CheckedLink(                				
 		            		        rs.getString("url"),
 		            		        rs.getString("method"),
-		            		        rs.getInt("statusCode"),           		        
+		            		        (Integer) rs.getObject("statusCode"),           		        
 		            		        rs.getString("contentType"),
-		            		        rs.getInt("byteSize"),
-		            		        rs.getInt("duration"),
+		            		        (Integer) rs.getObject("byteSize"),
+		            		        (Integer) rs.getObject("duration"),
 		            		        rs.getTimestamp("timestamp"),
 		            		        rs.getString("message"),
 		            		        rs.getString("collection"),
-		            		        rs.getInt("redirectCount"),
+		            		        (Integer) rs.getObject("redirectCount"),
 		                        	rs.getString("record"),
 		            		        rs.getString("expectedMimeType"),
 		            		        rs.getString("category")
@@ -129,30 +129,30 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     	List<CheckedLink> list = new ArrayList<CheckedLink>();
     	
         final String defaultQuery = "SELECT * FROM status";
-        final Connection con = connectionProvider.getConnection();
-        final PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter, null, null);
-        try (ResultSet rs = statement.executeQuery()) {
-        	while(rs.next()) {
-        		list.add(
-    				new CheckedLink(                				
-            		        rs.getString("url"),
-            		        rs.getString("method"),
-            		        rs.getInt("statusCode"),           		        
-            		        rs.getString("contentType"),
-            		        rs.getInt("byteSize"),
-            		        rs.getInt("duration"),
-            		        rs.getTimestamp("timestamp"),
-            		        rs.getString("message"),
-            		        rs.getString("collection"),
-            		        rs.getInt("redirectCount"),
-                        	rs.getString("record"),
-            		        rs.getString("expectedMimeType"),
-            		        rs.getString("category")
-						)
-    		        );
-        	}                    
+        try (
+    		Connection con = connectionProvider.getConnection();
+    		PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter, null, null);
+    		ResultSet rs = statement.executeQuery()) {
+	        	while(rs.next()) {
+	        		list.add(
+	    				new CheckedLink(                				
+	            		        rs.getString("url"),
+	            		        rs.getString("method"),
+	            		        (Integer) rs.getObject("statusCode"),           		        
+	            		        rs.getString("contentType"),
+	            		        (Integer) rs.getObject("byteSize"),
+	            		        (Integer) rs.getObject("duration"),
+	            		        rs.getTimestamp("timestamp"),
+	            		        rs.getString("message"),
+	            		        rs.getString("collection"),
+	            		        (Integer) rs.getObject("redirectCount"),
+	                        	rs.getString("record"),
+	            		        rs.getString("expectedMimeType"),
+	            		        rs.getString("category")
+							)
+	    		        );
+	        	}                    
         }
-        
         return list.stream();
     }
 
@@ -248,20 +248,19 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                     				new CheckedLink(                				
                             		        rs.getString("url"),
                             		        rs.getString("method"),
-                            		        rs.getInt("statusCode"),           		        
+                            		        (Integer) rs.getObject("statusCode"),           		        
                             		        rs.getString("contentType"),
-                            		        rs.getInt("byteSize"),
-                            		        rs.getInt("duration"),
+                            		        (Integer) rs.getObject("byteSize"),
+                            		        (Integer) rs.getObject("duration"),
                             		        rs.getTimestamp("timestamp"),
                             		        rs.getString("message"),
                             		        rs.getString("collection"),
-                            		        rs.getInt("redirectCount"),
+                            		        (Integer) rs.getObject("redirectCount"),
                                         	rs.getString("record"),
                             		        rs.getString("expectedMimeType"),
                             		        rs.getString("category")
                 						)
                     				);
-                    		
                     	}
                     }
                 }
@@ -392,14 +391,14 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
             				new CheckedLink(                				
                     		        rs.getString("url"),
                     		        rs.getString("method"),
-                    		        rs.getInt("statusCode"),           		        
+                    		        (Integer) rs.getObject("statusCode"),           		        
                     		        rs.getString("contentType"),
-                    		        rs.getInt("byteSize"),
-                    		        rs.getInt("duration"),
+                    		        (Integer) rs.getObject("byteSize"),
+                    		        (Integer) rs.getObject("duration"),
                     		        rs.getTimestamp("timestamp"),
                     		        rs.getString("message"),
                     		        rs.getString("collection"),
-                    		        rs.getInt("redirectCount"),
+                    		        (Integer) rs.getObject("redirectCount"),
                                 	rs.getString("record"),
                     		        rs.getString("expectedMimeType"),
                     		        rs.getString("category")
