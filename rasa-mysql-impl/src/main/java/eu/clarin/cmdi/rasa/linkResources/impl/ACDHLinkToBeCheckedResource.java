@@ -1,0 +1,284 @@
+/*
+ * Copyright (C) 2019 CLARIN
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+package eu.clarin.cmdi.rasa.linkResources.impl;
+
+import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
+import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
+import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
+
+    private final static Logger _logger = LoggerFactory.getLogger(ACDHLinkToBeCheckedResource.class);
+
+    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType,harvestDate) VALUES (?,?,?,?,?)";
+    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
+
+    private final ConnectionProvider connectionProvider;
+
+    public ACDHLinkToBeCheckedResource(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
+    }
+
+    @Override
+    public Optional<LinkToBeChecked> get(String url) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            String urlQuery = "SELECT * FROM urls WHERE url=?";
+            try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
+
+                statement.setString(1, url);
+
+                try (ResultSet rs = statement.executeQuery()) {
+                	
+                	if(rs.next()) {
+                		return Optional.of(
+                				new LinkToBeChecked(
+                				        rs.getString("url"),
+                				        rs.getString("record"),
+                				        rs.getString("collection"),
+                				        rs.getString("expectedMimeType"),
+                				        rs.getLong("harvestDate")
+            						)
+            				);
+                	}
+                	else
+                		return Optional.empty();
+                }
+            }
+        }
+    }
+
+    //call this method in a try with resources so that the underlying resources are closed after use
+    @Override
+    public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+    	List<LinkToBeChecked> list = new ArrayList<LinkToBeChecked>();
+    	
+    	try (Connection con = connectionProvider.getConnection()) {
+	        final String defaultQuery = "SELECT * FROM urls";
+	        try (PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter)){
+		        try (ResultSet rs = statement.executeQuery()){
+		        	while(rs.next()) {
+			        	list.add(
+			        			new LinkToBeChecked(
+	            				        rs.getString("url"),
+	            				        rs.getString("record"),
+	            				        rs.getString("collection"),
+	            				        rs.getString("expectedMimeType"),
+	            				        rs.getLong("harvestDate")
+	        						)		        			
+		        			);
+		        	}
+		        }
+	        }
+    	}
+
+        return list.stream();
+    }
+
+
+    private PreparedStatement getPreparedStatement(Connection con, String defaultQuery, Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        PreparedStatement statement;
+        if (filter.isEmpty()) {
+            statement = con.prepareStatement(defaultQuery);
+        } else {
+            statement = filter.get().getStatement(con);
+        }
+        return statement;
+    }
+
+    @Override
+    public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
+        try (Stream<LinkToBeChecked> linkToBeCheckedStream = get(filter)) {
+            return linkToBeCheckedStream.collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
+                preparedStatement.setString(1, linkToBeChecked.getUrl());
+                preparedStatement.setString(2, linkToBeChecked.getRecord());
+                preparedStatement.setString(3, linkToBeChecked.getCollection());
+                preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
+
+                for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
+                    preparedStatement.setString(1, linkToBeChecked.getUrl());
+                    preparedStatement.setString(2, linkToBeChecked.getRecord());
+                    preparedStatement.setString(3, linkToBeChecked.getCollection());
+                    preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
+                    preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
+                    preparedStatement.addBatch();
+                }
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean delete(String url) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+                preparedStatement.setString(1, url);
+
+                //affected rows
+                int row = preparedStatement.executeUpdate();
+
+                return row == 1;
+            }
+        }
+    }
+
+    @Override
+    public Boolean delete(List<String> urls) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
+
+                for (String url : urls) {
+                    preparedStatement.setString(1, url);
+                    preparedStatement.addBatch();
+                }
+
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
+            }
+        }
+    }
+
+    @Override
+    public List<String> getCollectionNames() throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            List<String> collectionNames = new ArrayList<>();
+
+            String collectionQuery = "SELECT DISTINCT collection from urls";
+            try (PreparedStatement statement = con.prepareStatement(collectionQuery)) {
+                try (ResultSet rs = statement.executeQuery()) {
+
+                    while (rs.next()) {
+                        collectionNames.add(rs.getString("collection"));
+                    }
+
+                    return collectionNames;
+                }
+            }
+        }
+    }
+
+    @Override
+    public int deleteOldLinks(Long date) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+
+            //first copy them from status to history
+            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ?)";
+            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
+                preparedStatement.setLong(1, date);
+
+                preparedStatement.executeUpdate();
+            }
+
+            //then delete them from url table
+            //url table on delete will also delete from status table
+            String deleteQuery = "DELETE FROM urls where harvestDate < ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
+                preparedStatement.setLong(1, date);
+
+                //affected rows
+                return preparedStatement.executeUpdate();
+            }
+        }
+    }
+
+    @Override
+    public int deleteOldLinks(Long date, String collection) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+
+            //first copy them from status to history
+            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ? AND collection = ?)";
+            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
+                preparedStatement.setLong(1, date);
+                preparedStatement.setString(2, collection);
+
+                preparedStatement.executeUpdate();
+            }
+
+            //then delete them from url table
+            //url table on delete will also delete from status table
+            String deleteQuery = "DELETE FROM urls where harvestDate < ? AND collection = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
+                preparedStatement.setLong(1, date);
+                preparedStatement.setString(2, collection);
+
+                //affected rows
+                return preparedStatement.executeUpdate();
+            }
+        }
+    }
+    
+    @Override
+    public Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException {
+        try (Connection con = connectionProvider.getConnection()) {
+            String updateDateQuery = "UPDATE urls SET harvestDate = ? WHERE url = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(updateDateQuery)) {
+
+                for (String url : linksToBeUpdated) {
+                    preparedStatement.setLong(1, date);
+                    preparedStatement.setString(2, url);
+                    preparedStatement.addBatch();
+                }
+
+                //affected rows
+                int[] row = preparedStatement.executeBatch();
+
+                return row.length >= 1;
+            }
+        }
+    }
+
+
+}
