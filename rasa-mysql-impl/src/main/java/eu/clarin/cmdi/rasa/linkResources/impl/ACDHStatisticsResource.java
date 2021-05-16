@@ -23,8 +23,6 @@ import eu.clarin.cmdi.rasa.DAO.Statistics.StatusStatistics;
 import eu.clarin.cmdi.rasa.filters.StatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
-import org.jooq.Record;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -155,9 +153,8 @@ public class ACDHStatisticsResource implements StatisticsResource {
         try (Connection con = connectionProvider.getConnection()) {
             try (PreparedStatement statement = filter.getStatement(con)) {
                 try (ResultSet rs = statement.executeQuery()) {
-                    Record record = DSL.using(con).fetchOne(rs);
 
-                    return (Long) record.getValue("count");
+                    return rs.getLong("count");
                 }
             }
         }
