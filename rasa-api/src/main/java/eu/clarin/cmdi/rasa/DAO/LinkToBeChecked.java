@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.DAO;
 
+import java.sql.Timestamp;
 import java.util.Objects;
 
 /**
@@ -29,18 +30,23 @@ public class LinkToBeChecked {
     private String collection;
     //there is a known bug for dates: https://bugs.mysql.com/bug.php?id=93444
     //so this field became a Long for system.currenttimemillis
-    private Long harvestDate;
+    private Timestamp harvestTime;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
     }
 
-    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Long harvestDate) {
+    @Deprecated
+    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Long harvestTime) {
+        this(url, record, collection, expectedMimeType, harvestTime==null?null:new Timestamp(harvestTime));
+    }
+    
+    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Timestamp harvestTime) {
         this.url = url;
         this.record = record;
         this.collection = collection;
         this.expectedMimeType = expectedMimeType;
-        this.harvestDate = harvestDate;
+        this.harvestTime = harvestTime;
     }
 
 //    /**
@@ -87,13 +93,22 @@ public class LinkToBeChecked {
     public void setExpectedMimeType(String expectedMimeType) {
         this.expectedMimeType = expectedMimeType;
     }
-
+    @Deprecated
     public Long getHarvestDate() {
-        return harvestDate;
+        return harvestTime.getTime();
     }
-
+    
+    @Deprecated
     public void setHarvestDate(Long harvestDate) {
-        this.harvestDate = harvestDate;
+        this.harvestTime = harvestDate==null?null:new Timestamp(harvestDate);
+    }
+    
+    public void setHarvestTime(Timestamp harvestTime) {
+        this.harvestTime = harvestTime;
+    }
+    
+    public Timestamp getHarvestTime() {
+        return harvestTime;
     }
 
     @Override
@@ -104,13 +119,13 @@ public class LinkToBeChecked {
         return url.equals(that.url) &&
                 Objects.equals(record, that.record) &&
                 Objects.equals(collection, that.collection) &&
-                Objects.equals(harvestDate, that.harvestDate) &&
+                Objects.equals(harvestTime, that.harvestTime) &&
                 Objects.equals(expectedMimeType, that.expectedMimeType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, record, collection, harvestDate, expectedMimeType);
+        return Objects.hash(url, record, collection, harvestTime, expectedMimeType);
     }
 
     @Override
@@ -119,7 +134,7 @@ public class LinkToBeChecked {
                 "url='" + url + '\'' +
                 ", record='" + record + '\'' +
                 ", collection='" + collection + '\'' +
-                ", harvestDate=" + harvestDate +
+                ", harvestDate=" + harvestTime +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
                 '}';
     }

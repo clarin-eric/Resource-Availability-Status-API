@@ -22,6 +22,8 @@ import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHCheckedLinkFilter;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +78,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 		            		        rs.getInt("redirectCount"),
 		                        	rs.getString("record"),
 		            		        rs.getString("expectedMimeType"),
-		            		        rs.getString("category")
+		            		        Category.valueOf(rs.getString("category"))
         						)
 	        		        );
                 	}
@@ -113,7 +115,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 		            		        (Integer) rs.getObject("redirectCount"),
 		                        	rs.getString("record"),
 		            		        rs.getString("expectedMimeType"),
-		            		        rs.getString("category")
+		            		        Category.valueOf(rs.getString("category"))
         						)
 	        		        );
                 	}                    
@@ -148,7 +150,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 	            		        (Integer) rs.getObject("redirectCount"),
 	                        	rs.getString("record"),
 	            		        rs.getString("expectedMimeType"),
-	            		        rs.getString("category")
+	            		        Category.valueOf(rs.getString("category"))
 							)
 	    		        );
 	        	}                    
@@ -258,7 +260,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                             		        (Integer) rs.getObject("redirectCount"),
                                         	rs.getString("record"),
                             		        rs.getString("expectedMimeType"),
-                            		        rs.getString("category")
+                            		        Category.valueOf(rs.getString("category"))
                 						)
                     				);
                     	}
@@ -326,7 +328,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                 preparedStatement.setString(10, checkedLink.getRecord());
                 preparedStatement.setString(11, checkedLink.getExpectedMimeType());
                 preparedStatement.setString(12, checkedLink.getMessage());
-                preparedStatement.setString(13,checkedLink.getCategory());
+                preparedStatement.setString(13,checkedLink.getCategory().toString());
 
                 //affected rows
                 int row = preparedStatement.executeUpdate();
@@ -401,7 +403,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
                     		        (Integer) rs.getObject("redirectCount"),
                                 	rs.getString("record"),
                     		        rs.getString("expectedMimeType"),
-                    		        rs.getString("category")
+                    		        Category.valueOf(rs.getString("category"))
         						)
             		        );
                     }

@@ -55,7 +55,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
-        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "Ok", "NotGoogle", 0, "record", null, "Ok");
+        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "Ok", "NotGoogle", 0, "record", null, Category.Ok);
         Optional<CheckedLink> actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
@@ -247,7 +247,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
-        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, null, 0, null, null, "Broken")));
+        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0, 0, null, null, null, 0, null, null, Category.Broken)));
     }
 
     @Test
@@ -279,7 +279,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
         //save(first urls then status)
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType", System.currentTimeMillis()));
-        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType","Ok");
+        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
         checkedLinkResource.save(checkedLink);
 
         //after saving should be 4
@@ -298,9 +298,9 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void ZZ2getHistoryTestShouldReturnCorrectResults() throws SQLException {
         //add again but with time then2
-        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType", "Ok");
-        CheckedLink checkedLink1 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then1, "Ok", "Google", 0, "GoogleRecord", "mimeType","Ok");
-        CheckedLink checkedLink2 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then2, "Ok", "Google", 0, "GoogleRecord", "mimeType","Ok");
+        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType", Category.Ok);
+        CheckedLink checkedLink1 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then1, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
+        CheckedLink checkedLink2 = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then2, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
 
         checkedLinkResource.save(checkedLink1);
         assertEquals(checkedLink1, checkedLinkResource.get(testURL).get());

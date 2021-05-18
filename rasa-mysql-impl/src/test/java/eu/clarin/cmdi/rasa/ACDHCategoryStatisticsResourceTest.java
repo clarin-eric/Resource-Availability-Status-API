@@ -131,7 +131,7 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
         assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
 
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null, System.currentTimeMillis()));
-        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, "Ok"));
+        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
         acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.STATUS);
         assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));
