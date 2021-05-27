@@ -45,6 +45,7 @@ public interface RasaFactory {
      */
     CategoryStatisticsResource getStatisticsResource();
 
+
     /**
      * Close all opened connections
      */

@@ -23,7 +23,6 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.DAO.Statistics.CategoryStatistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
 import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
-import eu.clarin.cmdi.rasa.helpers.Table;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.junit.AfterClass;
 import org.junit.FixMethodOrder;
@@ -82,79 +81,74 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
 
     @Test
     public void CcountTestWithCategoriesShouldReturnCorrectResults() throws SQLException {
-        assertEquals(22, statisticsResource.countTable(new ACDHStatisticsCountFilter(Table.STATUS)));
+        assertEquals(22, statisticsResource.countTable(new ACDHStatisticsCountFilter(false)));
 
-        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Ok), Table.STATUS);
+        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Ok));
         assertEquals(16, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Undetermined), Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Undetermined));
         assertEquals(0, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Broken), Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Broken));
         assertEquals(6, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Ok), Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Ok));
         assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Broken), Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Broken));
         assertEquals(0, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Arrays.asList(Category.Ok, Category.Broken), Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Arrays.asList(Category.Ok, Category.Broken));
         assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
     }
 
     @Test
     public void DbasicCountTestShouldReturnCorrectResults() throws SQLException {
-        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.STATUS);//count everything
+        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(false);//count everything
         assertEquals(22, statisticsResource.countTable(acdhStatisticsFilter));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.URLS);//count everything
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(true);//count everything
         assertEquals(22, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, false);
         assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, true);
         assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", false);
         assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", Table.URLS);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", Table.STATUS);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", true);
         assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", false);
+        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", true);
+        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
+
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, false);
         assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, true);
         assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null, System.currentTimeMillis()));
-        checkedLinkResource.save(new CheckedLink(testURL, "GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, testURL, new Timestamp(System.currentTimeMillis()), "FacebookRecord", "Facebook", null, new Timestamp(System.currentTimeMillis())));
+        checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(false);
         assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter(true);
         assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, false);
         assertEquals(1, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, true);
         assertEquals(1, statisticsResource.countTable((acdhStatisticsFilter)));
 
         //this shouldn't have changed
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Table.STATUS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, false);
         assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Table.URLS);
+        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, true);
         assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
     }
 
-    @Test(expected = SQLException.class)
-    public void EcountUrlsTableWithCategoryShouldThrowException() throws SQLException {
-        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, null, Arrays.asList(Category.Ok, Category.Broken), Table.URLS);
-        statisticsResource.countTable((acdhStatisticsFilter));
-    }
 
     @AfterClass
     public static void tearDownClass() {

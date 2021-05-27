@@ -18,6 +18,7 @@
 
 package eu.clarin.cmdi.rasa.DAO;
 
+
 import java.sql.Timestamp;
 import java.util.Objects;
 
@@ -25,42 +26,46 @@ import java.util.Objects;
  * Corresponds to a tuple in the urls table
  */
 public class LinkToBeChecked {
+	Long linkId;
     private String url;
+    private String host;
+    private Timestamp nextFetchDate;
+    
     private String record;
-    private String collection;
-    //there is a known bug for dates: https://bugs.mysql.com/bug.php?id=93444
-    //so this field became a Long for system.currenttimemillis
-    private Timestamp harvestTime;
+    private String providerGroup;
+    private Timestamp harvestDate;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
     }
-
-    @Deprecated
-    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Long harvestTime) {
-        this(url, record, collection, expectedMimeType, harvestTime==null?null:new Timestamp(harvestTime));
+    
+    public LinkToBeChecked(String url, String host, Timestamp nextFetchDate) {
+    	this.url = url;
+    	this.host = host;
+    	this.nextFetchDate = nextFetchDate;
     }
     
-    public LinkToBeChecked(String url, String record, String collection, String expectedMimeType, Timestamp harvestTime) {
-        this.url = url;
-        this.record = record;
-        this.collection = collection;
-        this.expectedMimeType = expectedMimeType;
-        this.harvestTime = harvestTime;
+    public LinkToBeChecked(Long linkId, String url, String host, Timestamp nextFetchDate) {
+    	this(url, host, nextFetchDate);
+    	this.linkId = linkId;
+    	
     }
+    
+    public LinkToBeChecked(String url, String host, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
+    	this(url, host, nextFetchDate);
+        this.record = record;
+        this.providerGroup = providerGroup;
+        this.expectedMimeType = expectedMimeType;
+        this.harvestDate = harvestDate;
+    }
+    
 
-//    /**
-//     * Create linkToBeChecked from the necessary info in a given CheckedLink
-//     *
-//     * @param checkedLink CheckedLink to be copied
-//     */
-//    public LinkToBeChecked(CheckedLink checkedLink) {
-//        this.url = checkedLink.getUrl();
-//        this.record = checkedLink.getRecord();
-//        this.collection = checkedLink.getCollection();
-//        this.expectedMimeType = checkedLink.getExpectedMimeType();
-//    }
+    
+    public LinkToBeChecked(Long linkId, String url, String host, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
+        this(url, host, nextFetchDate, record, providerGroup, expectedMimeType, harvestDate);
+    	this.linkId = linkId;
 
+    }    
 
     public String getUrl() {
         return url;
@@ -68,22 +73,46 @@ public class LinkToBeChecked {
 
     public void setUrl(String url) {
         this.url = url;
-    }
+    }  
 
-    public String getRecord() {
+    public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public Timestamp getNextFetchDate() {
+		return nextFetchDate;
+	}
+
+	public void setNextFetchDate(Timestamp nextFetchDate) {
+		this.nextFetchDate = nextFetchDate;
+	}
+
+	public String getRecord() {
         return record;
     }
 
     public void setRecord(String record) {
         this.record = record;
     }
-
+    @Deprecated
     public String getCollection() {
-        return collection;
+        return providerGroup;
+    }
+    @Deprecated
+    public void setCollection(String providerGroup) {
+        this.providerGroup = providerGroup;
+    }
+    
+    public String getProviderGroup() {
+        return providerGroup;
     }
 
-    public void setCollection(String collection) {
-        this.collection = collection;
+    public void setProviderGroup(String providerGroup) {
+        this.providerGroup = providerGroup;
     }
 
     public String getExpectedMimeType() {
@@ -93,49 +122,58 @@ public class LinkToBeChecked {
     public void setExpectedMimeType(String expectedMimeType) {
         this.expectedMimeType = expectedMimeType;
     }
+    
     @Deprecated
     public Long getHarvestDate() {
-        return harvestTime.getTime();
-    }
-    
-    @Deprecated
-    public void setHarvestDate(Long harvestDate) {
-        this.harvestTime = harvestDate==null?null:new Timestamp(harvestDate);
-    }
-    
-    public void setHarvestTime(Timestamp harvestTime) {
-        this.harvestTime = harvestTime;
-    }
-    
-    public Timestamp getHarvestTime() {
-        return harvestTime;
+        return harvestDate.getTime();
     }
 
-    @Override
+    @Deprecated
+    public void setHarvestDate(Long harvestDate) {
+        this.harvestDate = harvestDate==null?null:new Timestamp(harvestDate);
+    }    
+    
+    public Timestamp getHarvestDate2() {
+        return harvestDate;
+    }
+
+    public void setHarvestDate(Timestamp harvestDate) {
+        this.harvestDate = harvestDate;
+    }    
+
+    public Long getLinkId() {
+		return linkId;
+	}
+
+	public void setLinkId(Long linkId) {
+		this.linkId = linkId;
+	}
+
+	@Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LinkToBeChecked that = (LinkToBeChecked) o;
         return url.equals(that.url) &&
-                Objects.equals(record, that.record) &&
-                Objects.equals(collection, that.collection) &&
-                Objects.equals(harvestTime, that.harvestTime) &&
-                Objects.equals(expectedMimeType, that.expectedMimeType);
+                Objects.equals(host, that.host) &&
+                Objects.equals(nextFetchDate, that.nextFetchDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, record, collection, harvestTime, expectedMimeType);
+        return Objects.hash(url, host, nextFetchDate);
     }
 
     @Override
     public String toString() {
         return "LinkToBeChecked{" +
                 "url='" + url + '\'' +
+                ", host='" + host + '\'' +
+                ", nextFetchDate='" + nextFetchDate + '\'' +
                 ", record='" + record + '\'' +
-                ", collection='" + collection + '\'' +
-                ", harvestDate=" + harvestTime +
+                ", providerGroup='" + providerGroup + '\'' +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
+                ", harvestDate=" + harvestDate + 
                 '}';
     }
 }

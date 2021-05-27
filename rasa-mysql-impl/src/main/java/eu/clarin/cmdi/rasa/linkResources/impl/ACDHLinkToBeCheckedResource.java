@@ -35,38 +35,24 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHLinkToBeCheckedResource.class);
 
-    private final String insertQuery = "INSERT IGNORE INTO urls(url,record,collection,expectedMimeType,harvestDate) VALUES (?,?,?,?,?)";
-    private final String deleteURLQuery = "DELETE FROM urls WHERE url=?";
-
     private final ConnectionProvider connectionProvider;
 
     public ACDHLinkToBeCheckedResource(ConnectionProvider connectionProvider) {
         this.connectionProvider = connectionProvider;
+
     }
 
     @Override
     public Optional<LinkToBeChecked> get(String url) throws SQLException {
         try (Connection con = connectionProvider.getConnection()) {
-            String urlQuery = "SELECT * FROM urls WHERE url=?";
-            try (PreparedStatement statement = con.prepareStatement(urlQuery)) {
+            String query = "SELECT * FROM link WHERE url_hash = MD5(?)";
+            try (PreparedStatement statement = con.prepareStatement(query)) {
 
                 statement.setString(1, url);
 
                 try (ResultSet rs = statement.executeQuery()) {
                 	
-                	if(rs.next()) {
-                		return Optional.of(
-                				new LinkToBeChecked(
-                				        rs.getString("url"),
-                				        rs.getString("record"),
-                				        rs.getString("collection"),
-                				        rs.getString("expectedMimeType"),
-                				        (Long) rs.getObject("harvestDate")
-            						)
-            				);
-                	}
-                	else
-                		return Optional.empty();
+                	return rs.next()?Optional.of(getLinkToBeChecked(rs)):Optional.empty();
                 }
             }
         }
@@ -75,39 +61,10 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     //call this method in a try with resources so that the underlying resources are closed after use
     @Override
     public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
-    	List<LinkToBeChecked> list = new ArrayList<LinkToBeChecked>();
     	
-    	try (Connection con = connectionProvider.getConnection()) {
-	        final String defaultQuery = "SELECT * FROM urls";
-	        try (PreparedStatement statement = getPreparedStatement(con, defaultQuery, filter)){
-		        try (ResultSet rs = statement.executeQuery()){
-		        	while(rs.next()) {
-			        	list.add(
-			        			new LinkToBeChecked(
-	            				        rs.getString("url"),
-	            				        rs.getString("record"),
-	            				        rs.getString("collection"),
-	            				        rs.getString("expectedMimeType"),
-	            				        (Long) rs.getObject("harvestDate")
-	        						)		        			
-		        			);
-		        	}
-		        }
-	        }
-    	}
+    	_logger.error("method \"Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter)\" not implemented");
 
-        return list.stream();
-    }
-
-
-    private PreparedStatement getPreparedStatement(Connection con, String defaultQuery, Optional<LinkToBeCheckedFilter> filter) throws SQLException {
-        PreparedStatement statement;
-        if (filter.isEmpty()) {
-            statement = con.prepareStatement(defaultQuery);
-        } else {
-            statement = filter.get().getStatement(con);
-        }
-        return statement;
+        return Stream.empty();
     }
 
     @Override
@@ -119,166 +76,213 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 
     @Override
     public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
-                preparedStatement.setString(1, linkToBeChecked.getUrl());
-                preparedStatement.setString(2, linkToBeChecked.getRecord());
-                preparedStatement.setString(3, linkToBeChecked.getCollection());
-                preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
-                preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
+    	String query = null;
+    	
+	        try (Connection con = connectionProvider.getConnection()) {
+	        	query = "SELECT id from link where url_hash=MD5(?)";
+	        	
+	        	
+	        	try (PreparedStatement statement = con.prepareStatement(query)){
+	        		statement.setString(1, linkToBeChecked.getUrl());
+	        		
+	        		try(ResultSet rs = statement.executeQuery()){
+	        			if(rs.next())
+	        				linkToBeChecked.setLinkId(rs.getLong("id"));
+	        		}
+	        	}
+	        	if(linkToBeChecked.getLinkId() == null) {//insert new link
+	        		query = "INSERT INTO link(url, url_hash, host, nextFetchDate)"
+		        			+ " VALUES(?,MD5(?),?,?)";
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		                statement.setString(1, linkToBeChecked.getUrl());
+		                statement.setString(2, linkToBeChecked.getUrl());
+		                statement.setString(3, linkToBeChecked.getHost());
+		                statement.setTimestamp(4, linkToBeChecked.getNextFetchDate());
+		                
+		                statement.execute();
+	        		
+		            }	
+		            
+	        		query = "SELECT LAST_INSERT_ID() AS id";
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		            	try(ResultSet rs = statement.executeQuery()){
+		        			if(rs.next())
+		        				linkToBeChecked.setLinkId(rs.getLong("id"));
+		        		}
+		            }	
+	            } //end insert link
+	        	
+	        	Long providerGroupId = null;
+	        	
+	        	query = "SELECT id FROM providerGroup where name_hash=MD5(?)";
 
-                //affected rows
-                int row = preparedStatement.executeUpdate();
-
-                return row == 1;
-            }
+	            
+	            if(providerGroupId == null) {//insert new providerGroup
+	            	query = "INSERT INTO providerGroup(name, name_hash) VALUES(?,?)";
+	            	
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		                statement.setString(1, linkToBeChecked.getProviderGroup());
+		                statement.setString(2, linkToBeChecked.getProviderGroup());
+		                
+		                statement.execute();	        		
+		            }	
+		            
+	        		query = "SELECT LAST_INSERT_ID() AS id";
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		            	try(ResultSet rs = statement.executeQuery()){
+		        			if(rs.next())
+		        				providerGroupId = rs.getLong("id");
+		        		}
+		            }	
+	            }// end insert providerGroup
+	            
+	            Long contextId = null;
+	            
+	            query = "SELECT id FROM context WHERE providerGroup_id=? AND record=? AND expectedMimeType=?";
+	            
+	            try (PreparedStatement statement = con.prepareStatement(query)) {
+	            	statement.setLong(1, providerGroupId);
+	            	statement.setString(2, linkToBeChecked.getRecord());
+	            	statement.setString(3, linkToBeChecked.getExpectedMimeType());
+	            	
+	        		try(ResultSet rs = statement.executeQuery()){
+	        			if(rs.next())
+	        				contextId = rs.getLong("id");
+	        		}        	
+	            }
+	            
+	            if(contextId == null) {//insert new context
+	            	query = "INSERT INTO context(providerGroup_id, record, expectedMimeType) VALUES(?,?,?)";
+	            	
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		            	statement.setLong(1, providerGroupId);
+		            	statement.setString(2, linkToBeChecked.getRecord());
+		            	statement.setString(3, linkToBeChecked.getExpectedMimeType());
+		                
+		                statement.execute();	        		
+		            }	
+		            
+	        		query = "SELECT LAST_INSERT_ID() AS id";
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		            	try(ResultSet rs = statement.executeQuery()){
+		        			if(rs.next())
+		        				contextId = rs.getLong("id");
+		        		}
+		            }	
+	            }// end insert context
+	            
+	            Long linkContextId = null;
+	            
+	            query = "SELECT id from link_context WHERE link_id=? AND context_id=?";
+	            
+	            try (PreparedStatement statement = con.prepareStatement(query)) {
+	                statement.setLong(1, linkToBeChecked.getLinkId());
+	                statement.setLong(2, contextId);
+	                
+	                try(ResultSet rs = statement.executeQuery()){
+	        			if(rs.next()) {
+	        				linkContextId = rs.getLong("id");
+	        			}	
+	        		}	
+	            }
+	            
+	            if(linkContextId == null) {
+	            	query = "INSERT INTO link_context(link_id, context_id, harvestDate) VALUES (?,?,?)";
+	            	
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		                statement.setLong(1, linkToBeChecked.getLinkId());
+		                statement.setLong(2, contextId);
+		                statement.setTimestamp(3, linkToBeChecked.getHarvestDate2());
+		                
+		                statement.execute();
+		            }
+	            }
+	            else {
+	            	query = "UPDATE link_context(harvestDate) VALUES (?) WHERE id=?";
+	            	
+		            try (PreparedStatement statement = con.prepareStatement(query)) {
+		                statement.setTimestamp(1, linkToBeChecked.getHarvestDate2());
+		                statement.setLong(2, linkContextId);
+		                
+		                statement.execute();
+		            }	            	
+	            }
         }
+    	
+    	return true;
     }
 
     @Override
     public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement preparedStatement = con.prepareStatement(insertQuery)) {
-
-                for (LinkToBeChecked linkToBeChecked : linksToBeChecked) {
-                    preparedStatement.setString(1, linkToBeChecked.getUrl());
-                    preparedStatement.setString(2, linkToBeChecked.getRecord());
-                    preparedStatement.setString(3, linkToBeChecked.getCollection());
-                    preparedStatement.setString(4, linkToBeChecked.getExpectedMimeType());
-                    preparedStatement.setLong(5, linkToBeChecked.getHarvestDate());
-                    preparedStatement.addBatch();
-                }
-
-                //affected rows
-                int[] row = preparedStatement.executeBatch();
-
-                return row.length >= 1;
-            }
-        }
+    	for(LinkToBeChecked linkToBeChecked:linksToBeChecked)
+    		save(linkToBeChecked);
+    	return true;
     }
 
     @Override
     public Boolean delete(String url) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
-
-                preparedStatement.setString(1, url);
-
-                //affected rows
-                int row = preparedStatement.executeUpdate();
-
-                return row == 1;
-            }
-        }
+    	_logger.error("method \"delete(String url)\" not implemented");
+    	return false;
     }
 
     @Override
     public Boolean delete(List<String> urls) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement preparedStatement = con.prepareStatement(deleteURLQuery)) {
-
-                for (String url : urls) {
-                    preparedStatement.setString(1, url);
-                    preparedStatement.addBatch();
-                }
-
-
-                //affected rows
-                int[] row = preparedStatement.executeBatch();
-
-                return row.length >= 1;
-            }
-        }
+    	_logger.error("method \"delete(List<String> urls)\" not implemented");
+    	return false;
     }
 
     @Override
     public List<String> getCollectionNames() throws SQLException {
+    	return getProviderGroupNames();
+    }
+    
+
+	@Override
+	public List<String> getProviderGroupNames() throws SQLException {
         try (Connection con = connectionProvider.getConnection()) {
             List<String> collectionNames = new ArrayList<>();
 
-            String collectionQuery = "SELECT DISTINCT collection from urls";
+            String collectionQuery = "SELECT name from providerGroup";
             try (PreparedStatement statement = con.prepareStatement(collectionQuery)) {
                 try (ResultSet rs = statement.executeQuery()) {
 
                     while (rs.next()) {
-                        collectionNames.add(rs.getString("collection"));
+                        collectionNames.add(rs.getString("name"));
                     }
 
                     return collectionNames;
                 }
             }
         }
-    }
+	}
 
     @Override
     public int deleteOldLinks(Long date) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-
-            //first copy them from status to history
-            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ?)";
-            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
-                preparedStatement.setLong(1, date);
-
-                preparedStatement.executeUpdate();
-            }
-
-            //then delete them from url table
-            //url table on delete will also delete from status table
-            String deleteQuery = "DELETE FROM urls where harvestDate < ?";
-            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
-                preparedStatement.setLong(1, date);
-
-                //affected rows
-                return preparedStatement.executeUpdate();
-            }
-        }
+    	_logger.error("method \"deleteOldLinks(Long date)\" not implemented");
+    	return -1;
     }
 
     @Override
     public int deleteOldLinks(Long date, String collection) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-
-            //first copy them from status to history
-            String moveToHistoryQuery = "INSERT INTO history SELECT * FROM status WHERE url IN (SELECT url FROM urls WHERE harvestDate < ? AND collection = ?)";
-            try (PreparedStatement preparedStatement = con.prepareStatement(moveToHistoryQuery)) {
-                preparedStatement.setLong(1, date);
-                preparedStatement.setString(2, collection);
-
-                preparedStatement.executeUpdate();
-            }
-
-            //then delete them from url table
-            //url table on delete will also delete from status table
-            String deleteQuery = "DELETE FROM urls where harvestDate < ? AND collection = ?";
-            try (PreparedStatement preparedStatement = con.prepareStatement(deleteQuery)) {
-                preparedStatement.setLong(1, date);
-                preparedStatement.setString(2, collection);
-
-                //affected rows
-                return preparedStatement.executeUpdate();
-            }
-        }
+    	_logger.error("method \"deleteOldLinks(Long date, String collection)\" not implemented");
+    	return -1;
     }
     
     @Override
     public Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
-            String updateDateQuery = "UPDATE urls SET harvestDate = ? WHERE url = ?";
-            try (PreparedStatement preparedStatement = con.prepareStatement(updateDateQuery)) {
-
-                for (String url : linksToBeUpdated) {
-                    preparedStatement.setLong(1, date);
-                    preparedStatement.setString(2, url);
-                    preparedStatement.addBatch();
-                }
-
-                //affected rows
-                int[] row = preparedStatement.executeBatch();
-
-                return row.length >= 1;
-            }
-        }
+    	_logger.error("method \"updateDate(List<String> linksToBeUpdated, Long date)\" not implemented");
+    	return false;
     }
+    
+    private LinkToBeChecked getLinkToBeChecked(ResultSet rs) throws SQLException {
+    	return new LinkToBeChecked(
+				rs.getLong("id"),
+		        rs.getString("url"),
+		        rs.getString("host"),
+		        rs.getTimestamp("nextFetchDate")
+			);
+    }
+
 
 
 }

@@ -27,16 +27,18 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.StringJoiner;
 import java.util.function.BiFunction;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
+	private Collection<String> urls;
     private Range<Integer> status;
     private LocalDateTime before;
     private LocalDateTime after;
     private ZoneId zone;
-    private String collection;
+    private String providerGroup;
     private String record;
     private Category category;
 
@@ -66,56 +68,65 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
      * @param before     urls checked before this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
      * @param after      urls checked after this will be in the result. It is suggested to be instantiated with ZoneId.systemDefault()
      * @param zone       the timezone of the user, it is suggested to use ZoneId.systemDefault() when calling this method
-     * @param collection collection of the links
+     * @param providerGroup providerGroup of the links
      */
-    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String collection) {
+    public ACDHCheckedLinkFilter(Range<Integer> status, LocalDateTime before, LocalDateTime after, ZoneId zone, String providerGroup) {
         this.status = status;
         this.before = before;
         this.after = after;
         this.zone = zone;
-        this.collection = collection;
+        this.providerGroup = providerGroup;
     }
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
      *
-     * @param collection collection of the links
+     * @param providerGroup providerGroup of the links
      */
-    public ACDHCheckedLinkFilter(String collection) {
-        this.collection = collection;
+    public ACDHCheckedLinkFilter(String providerGroup) {
+        this.providerGroup = providerGroup;
+    }
+    
+    /**
+     * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
+     *
+     * @param providerGroup providerGroup of the links
+     */
+    public ACDHCheckedLinkFilter(Collection<String> urls) {
+        this.urls = urls;
     }
 
     /**
      * Creates a checked link filter for the table status. Different constructors are for convenience. All values are nullable.
      *
      * @param status     a range of integers as statuses
-     * @param collection collection of the links
+     * @param providerGroup providerGroup of the links
      */
-    public ACDHCheckedLinkFilter(String collection, int status) {
-        this.collection = collection;
+    public ACDHCheckedLinkFilter(String providerGroup, int status) {
+        this.providerGroup = providerGroup;
         this.status = Range.between(status, status);
     }
 
     /**
      * Creates a checked link filter for table category. Different constructors are for convenience. All values are nullable.
      *
-     * @param collection collection of the links
+     * @param providerGroup providerGroup of the links
      * @param category   category requested
      */
-    public ACDHCheckedLinkFilter(String collection, Category category) {
-        this.collection = collection;
+    public ACDHCheckedLinkFilter(String providerGroup, Category category) {
+        this.providerGroup = providerGroup;
         this.category = category;
     }
 
     /**
      * Creates a checked link filter for table record. Different constructors are for convenience. All values are nullable.
      *
-     * @param collection collection of the links
+     * @param providerGroup providerGroup of the links
      * @param record     record of the links
      * @param category   category requested
      */
-    public ACDHCheckedLinkFilter(String collection, String record, Category category) {
-        this.collection = collection;
+    public ACDHCheckedLinkFilter(String providerGroup, String record, Category category) {
+        this.providerGroup = providerGroup;
         this.record = record;
         this.category = category;
     }
@@ -147,7 +158,12 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     @Override
     public String getCollection() {
-        return collection;
+        return providerGroup;
+    }
+    
+    @Override
+    public String getProviderGroup() {
+        return providerGroup;
     }
 
     @Override
@@ -157,8 +173,14 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     @Override
     public Category getCategory() {
-        return category;
+        return category;        
     }
+    
+	@Override
+	public CheckedLinkFilter setUrls(Collection urls) {
+		this.urls = urls;
+		return this;
+	}
 
     public ACDHCheckedLinkFilter setEnd(int limitEnd) {
         this.end = limitEnd;
@@ -170,47 +192,68 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
         return this;
     }
 
-    /**
+
+
+	/**
      * Prepares the query based on the variables
      *
      * @param inList filters out the results, only urls within this list can be
      *               in the results
      * @return prepared query to be used in preparing the statement
      */
-    private String prepareQuery(String inList) {
+    private String prepareQuery() {
         StringBuilder sb = new StringBuilder();
 
         //if it's here, that means there is something in the where clause.
         //because it is checked before if the filter variables are set
-        sb.append("SELECT * FROM status");
+        sb.append("SELECT s.id AS status_id, l.id AS link_id, l.url, s.method, s.statusCode, s.contentType, s.byteSize, s.duration, s.checkingDate, s.message, s.redirectCount, s.category"
+        		+ " FROM status s, link l");
+        
+        if(this.providerGroup != null  && !providerGroup.equals("Overall"))
+        	sb.append(", link_context lc, context c, providerGroup p");
+        else if(this.record != null)
+        	sb.append(", link_context lc, context c");
+ 
 
         StringJoiner sj = new StringJoiner(" AND ");
-
-        if (status != null) {
-            sj.add("statusCode>=? AND statusCode<=?");
-        }
-        if (category != null) {
-            sj.add("category=?");
-        }
-        if (before != null) {
-            sj.add("timestamp<?");
-        }
-        if (after != null) {
-            sj.add("timestamp>?");
-        }
-        if (collection != null && !collection.equals("Overall")) {
-            sj.add("collection=?");
+        
+        if (providerGroup != null && !providerGroup.equals("Overall")) {
+            sj.add("p.name=?");
+            sj.add("c.providerGroup_id=p.id");
         }
         if (record != null) {
-            sj.add("record=?");
+            sj.add("c.record=?");
         }
-        if (inList != null) {
-            sj.add(inList);
+        if((providerGroup != null && !providerGroup.equals("Overall")) || record != null) {
+        	sj.add("lc.context_id=c.id");
+        	sj.add("l.id = lc.link_id");
+        }
+        
+        if(this.urls != null) {
+        	StringJoiner queryInClauseJoiner = new StringJoiner(",", " url_hash IN (", ")");
+        	urls.forEach((url) -> queryInClauseJoiner.add("MD5(?)"));
+        	sj.add(queryInClauseJoiner.toString());
         }
 
-        if (sj.length() > 0) {
-            sb.append(" WHERE ").append(sj.toString());
+        if (status != null) {
+            sj.add("s.statusCode>=? AND s.statusCode<=?");
         }
+        if (category != null) {
+            sj.add("s.category=?");
+        }
+        if (before != null) {
+            sj.add("s.checkingDate<?");
+        }
+        if (after != null) {
+            sj.add("s.checkingDate>?");
+        }
+        
+        
+        sj.add("s.link_id=l.id");
+
+
+        sb.append(" WHERE ").append(sj.toString());
+
 
         if (start > 0 && end > 0) {
             sb.append(" LIMIT ? OFFSET ?");
@@ -233,52 +276,48 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
      * the caller can directly execute and read the results
      * @throws SQLException can occur during preparing the statement
      */
-    private PreparedStatement prepareStatement(Connection con, String query, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
+    private PreparedStatement prepareStatement(Connection con, String query) throws SQLException {
         PreparedStatement statement = con.prepareStatement(query);
 
         //query setting done, now fill it
         int i = 1;
-        if (status != null) {
-            statement.setInt(i, status.getMinimum());
-            statement.setInt(i + 1, status.getMaximum());
-            i += 2;
-        }
-        if (category != null) {
-            statement.setString(i, category.name());
-            i++;
-        }
-        if (before != null) {
-            statement.setTimestamp(i, Timestamp.valueOf(before));
-            i++;
-        }
-        if (after != null) {
-            statement.setTimestamp(i, Timestamp.valueOf(after));
-            i++;
-        }
-        if (collection != null && !collection.equals("Overall")) {
-            statement.setString(i, collection);
-            i++;
+        if (providerGroup != null && !providerGroup.equals("Overall")) {
+            statement.setString(i++, providerGroup);
         }
 
         if (record != null) {
-            statement.setString(i, record);
-            i++;
+            statement.setString(i++, record);
+        }
+        if(this.urls != null) {
+        	for(String url:this.urls)
+        		statement.setString(i++, url);
+        	
+        }
+        if (status != null) {
+            statement.setInt(i++, status.getMinimum());
+            statement.setInt(i++, status.getMaximum());
+        }
+        if (category != null) {
+            statement.setString(i++, category.name());
+        }
+        if (before != null) {
+            statement.setTimestamp(i++, Timestamp.valueOf(before));
+        }
+        if (after != null) {
+            statement.setTimestamp(i++, Timestamp.valueOf(after));
         }
 
-        if (addInListParams != null) {
-            i = addInListParams.apply(statement, i);
-        }
 
         if (start > 0 && end > 0) {
 //            sb.append("LIMIT ? OFFSET ?");
-            statement.setInt(i, end - start + 1);
-            statement.setInt(i + 1, start - 1);//start 1 would need offset 0
+            statement.setInt(i++, end - start + 1);
+            statement.setInt(i++, start - 1);//start 1 would need offset 0
         } else if (start > 0) {
 //            sb.append(" LIMIT 18446744073709551615 OFFSET ?");
-            statement.setInt(i, start - 1);//start 1 would need offset 0
+            statement.setInt(i++, start - 1);//start 1 would need offset 0
         } else if (end > 0) {
 //            sb.append(" LIMIT ?");
-            statement.setInt(i, end);
+            statement.setInt(i++, end);
         }
 
         return statement;
@@ -286,14 +325,9 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
     @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
-        String query = prepareQuery(null);
-        return prepareStatement(con, query, null);
+        String query = prepareQuery();
+        return prepareStatement(con, query);
     }
 
-    @Override
-    public PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException {
-        String query = prepareQuery(inList);
-        return prepareStatement(con, query, addInListParams);
-    }
 
 }

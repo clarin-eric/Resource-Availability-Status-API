@@ -20,13 +20,9 @@ package eu.clarin.cmdi.rasa.filters;
 
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.Collection;
 
 /**
  * This class creates a filter for the status table with the given values through the constructor
@@ -49,7 +45,10 @@ public interface CheckedLinkFilter extends Filter {
      * Gets the collection
      * @return collection
      */
+    @Deprecated
     String getCollection();
+    
+    String getProviderGroup();
 
     /**
      * Gets the zoneID
@@ -76,16 +75,7 @@ public interface CheckedLinkFilter extends Filter {
      * @return this
      */
     CheckedLinkFilter setEnd(int end);
-
-    /**
-     * Same as getStatement(Connection con) but only the urls within the inList will be returned if they match the filter variables.
-     * If a url matches the given variables in the filter but is not in inList, it won't be in the results
-     * @param con database connection
-     * @param inList filters out the results, only urls within this list can be in the results
-     * @param addInListParams function that adds parameters for the 'in list'; takes the next available parameter index and returns the parameter index to continue with
-     * @return fully prepared statement with filter variables set and ready to execute
-     * @throws SQLException can occur during preparing the statement
-     */
-    PreparedStatement getStatement(Connection con, String inList, BiFunction<PreparedStatement, Integer, Integer> addInListParams) throws SQLException;
+    
+    CheckedLinkFilter setUrls(Collection urls);
 
 }

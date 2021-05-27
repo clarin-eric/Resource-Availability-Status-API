@@ -25,7 +25,6 @@ import eu.clarin.cmdi.rasa.helpers.impl.ACDHRasaFactory;
 import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
-import eu.clarin.cmdi.rasa.linkResources.StatisticsResource;
 import org.apache.ibatis.jdbc.ScriptRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -60,18 +59,18 @@ public abstract class TestConfig {
 
 
         database.start();
-        database.createDB("stormychecker");
+        database.createDB("linkchecker");
 
 
         //create database and fill it with initDB.sql
-        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         ScriptRunner runner = new ScriptRunner(con);
         InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/initDB.sql"));
         runner.runScript(reader);
         reader.close();
         con.close();
 
-        rasaFactory = new ACDHRasaFactory("jdbc:mysql://localhost:3308/stormychecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
+        rasaFactory = new ACDHRasaFactory("jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         checkedLinkResource = rasaFactory.getCheckedLinkResource();
         linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
         statisticsResource = rasaFactory.getStatisticsResource();

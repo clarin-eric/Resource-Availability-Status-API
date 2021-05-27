@@ -20,12 +20,8 @@ package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
-
-import java.sql.Date;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -102,8 +98,11 @@ public interface LinkToBeCheckedResource {
      * @return List of all collection names
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
+    @Deprecated
     List<String> getCollectionNames() throws SQLException;
-
+    
+    
+    List<String> getProviderGroupNames() throws SQLException;
 
     /**
      * delete any urls that have the harvestDate column older than the given one.

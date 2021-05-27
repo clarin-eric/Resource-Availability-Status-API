@@ -46,15 +46,24 @@ public class ACDHStatisticsResource implements StatisticsResource {
 
     //avgDuration, maxDuration, countStatus should be named so, because in Statistics constructor, they are called as such.
     @Override
-    public List<StatusStatistics> getStatusStatistics(String collection) throws SQLException {
+    public List<StatusStatistics> getStatusStatistics(String providerGroup) throws SQLException {
     	List<StatusStatistics> list = new ArrayList<StatusStatistics>();
     	
-        if (collection == null || collection.equals("Overall")) {
+        if (providerGroup == null || providerGroup.equals("Overall")) {
             return getStatusStatistics();
         }
-        String query = "SELECT statusCode, AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=? GROUP BY statusCode";
+        String query = 
+        		"SELECT s.statusCode, AVG(s.duration) AS avgDuration, MAX(s.duration) AS maxDuration, COUNT(s.duration) AS count" + 
+    	        		" FROM status s, link l, link_context lk, context c, providerGroup p" + 
+    	        		" WHERE p.name_hash=MD5(?)" + 
+    	        		" AND c.providerGroup_id = p.id" + 
+    	        		" AND lc.context_id = c.id" + 
+    	        		" AND l.id = lc.link_id" + 
+    	        		" AND s.link_id = l.id" + 
+    	        		" GROUP BY s.statusCode";
         try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+            	statement.setString(1, providerGroup);
                 try (ResultSet rs = statement.executeQuery()) {
                 	while(rs.next()) {
                 		list.add(new StatusStatistics(
@@ -96,13 +105,22 @@ public class ACDHStatisticsResource implements StatisticsResource {
     }
 
     @Override
-    public Statistics getOverallStatistics(String collection) throws SQLException {
-        if (collection == null || collection.equals("Overall")) {
+    public Statistics getOverallStatistics(String providerGroup) throws SQLException {
+        if (providerGroup == null || providerGroup.equals("Overall")) {
             return getOverallStatistics();
         }
-        String query = "SELECT AVG(duration) AS avgDuration, MAX(duration) AS maxDuration, COUNT(duration) AS count FROM status WHERE collection=?";
+        String query = 
+        		"SELECT AVG(s.duration) AS avgDuration, MAX(s.duration) AS maxDuration, COUNT(s.duration) AS count" + 
+    	        		" FROM status s, link l, link_context lk, context c, providerGroup p" + 
+    	        		" WHERE p.name_hash=MD5(?)" + 
+    	        		" AND c.providerGroup_id = p.id" + 
+    	        		" AND lc.context_id = c.id" + 
+    	        		" AND l.id = lc.link_id" + 
+    	        		" AND s.link_id = l.id";
+        		
         try (Connection con = connectionProvider.getConnection()) {
-            try (PreparedStatement statement = getPreparedStatement(con, collection, query)) {
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+            	statement.setString(1, providerGroup);
                 try (ResultSet rs = statement.executeQuery()) {
                 	if(rs.next() && rs.getLong("count") > 0L) {
                 		return new StatusStatistics(
@@ -142,21 +160,16 @@ public class ACDHStatisticsResource implements StatisticsResource {
         }
     }
 
-    private PreparedStatement getPreparedStatement(Connection con, String collection, String query) throws SQLException {
-        PreparedStatement statement = con.prepareStatement(query);
-        statement.setString(1, collection);
-        return statement;
-    }
-
-    @Override
-    public long countTable(StatisticsCountFilter filter) throws SQLException {
-        try (Connection con = connectionProvider.getConnection()) {
+	@Override
+	public long countTable(StatisticsCountFilter filter) throws SQLException {
+		try (Connection con = connectionProvider.getConnection()) {
             try (PreparedStatement statement = filter.getStatement(con)) {
-                try (ResultSet rs = statement.executeQuery()) {
-
-                    return rs.getLong("count");
-                }
+            	try (ResultSet rs = statement.executeQuery()){
+            		if(rs.next())
+            			return rs.getLong("count");
+            	}
             }
-        }
-    }
+		}
+		return -1L;
+	}
 }

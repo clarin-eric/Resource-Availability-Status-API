@@ -30,14 +30,15 @@ import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
  */
 
 public class CheckedLink{
-
+	private Long linkId;
+	private Long statusId;
 	private String url;
 	private String method;
 	private Integer status;
 	private String contentType;
 	private Integer byteSize;
 	private Integer duration;
-	private Timestamp checkingTime;
+	private Timestamp checkingDate;
 	private String message;
 	private Integer redirectCount;
 	private Category category;
@@ -50,7 +51,7 @@ public class CheckedLink{
 
 	@Deprecated
 	public CheckedLink(String url, String method, Integer status, String contentType, Integer byteSize,
-			Integer duration, Timestamp timestamp, String message, String collection, Integer redirectCount,
+			Integer duration, Timestamp checkingDate, String message, String collection, Integer redirectCount,
 			String record, String expectedMimeType, Category category) {
 		this();
 
@@ -60,17 +61,14 @@ public class CheckedLink{
 		this.contentType = contentType;
 		this.byteSize = byteSize;
 		this.duration = duration;
-		this.checkingTime= timestamp;
+		this.checkingDate = checkingDate;
 		this.message = message;
-		setCollection(collection);
 		this.redirectCount = redirectCount;
-		this.setRecord(record);
-		this.setExpectedMimeType(expectedMimeType);
 		this.category = category;
 	}
 
-	public CheckedLink(String url, String method, Integer status, String contentType, Integer byteSize,
-			Integer duration, Timestamp checkingTime, String message, Integer redirectCount,
+	public CheckedLink(Long linkId, Long statusId, String url, String method, Integer status, String contentType, Integer byteSize,
+			Integer duration, Timestamp checkingDate, String message, Integer redirectCount,
 			Category category) {
 		this();
 
@@ -80,7 +78,7 @@ public class CheckedLink{
 		this.contentType = contentType;
 		this.byteSize = byteSize;
 		this.duration = duration;
-		this.checkingTime = checkingTime;
+		this.checkingDate = checkingDate;
 		this.message = message;
 		this.redirectCount = redirectCount;
 		this.category = category;
@@ -135,11 +133,19 @@ public class CheckedLink{
 	}
 	@Deprecated
 	public Timestamp getTimestamp() {
-		return checkingTime;
+		return checkingDate;
 	}
 	@Deprecated
 	public void setTimestamp(Timestamp timestamp) {
-		this.checkingTime = timestamp;
+		this.checkingDate = timestamp;
+	}
+
+	public Timestamp getCheckingDate() {
+		return checkingDate;
+	}
+
+	public void setCheckingDate(Timestamp checkingDate) {
+		this.checkingDate = checkingDate;
 	}
 
 	public Integer getRedirectCount() {
@@ -152,7 +158,7 @@ public class CheckedLink{
 
 	@Deprecated
 	public String getCollection() {
-		return this.contexts.size() > 0? this.contexts.get(0).getCollection():null;
+		return this.contexts.size() > 0? this.contexts.get(0).getProviderGroup():null;
 	}
 	@Deprecated
 	public void setCollection(String collection) {
@@ -200,6 +206,22 @@ public class CheckedLink{
 		this.category = category;
 	}
 	
+	public Long getLinkId() {
+		return linkId;
+	}
+
+	public void setLinkId(Long linkId) {
+		this.linkId = linkId;
+	}
+
+	public Long getStatusId() {
+		return statusId;
+	}
+
+	public void setStatusId(Long statusId) {
+		this.statusId = statusId;
+	}
+
 	public void addContext(String record, String collection, String expectedMimeType, Timestamp harvestDate) {
 		this.contexts.add(new Context(record, collection, expectedMimeType, harvestDate));
 	}
@@ -217,42 +239,35 @@ public class CheckedLink{
 		CheckedLink that = (CheckedLink) o;
 		return url.equals(that.url) && Objects.equals(method, that.method) && Objects.equals(status, that.status)
 				&& Objects.equals(contentType, that.contentType) && Objects.equals(byteSize, that.byteSize)
-				&& Objects.equals(duration, that.duration) && Objects.equals(checkingTime, that.checkingTime)
+				&& Objects.equals(duration, that.duration) && Objects.equals(checkingDate, that.checkingDate)
 				&& Objects.equals(message, that.message) && Objects.equals(contexts, that.contexts)
 				&& Objects.equals(redirectCount, that.redirectCount) && Objects.equals(category, that.category);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(url, method, status, contentType, byteSize, duration, checkingTime, message, contexts,
-				redirectCount, category);
+		return Objects.hash(url, method, status, contentType, byteSize, duration, checkingDate, message, contexts,
+				redirectCount, category, contexts);
 	}
 
 	@Override
-	public String toString() {
-		
-
-		
-		this.contexts.stream().map(context -> {
-			return "{collection=\'" + context.getCollection() + "\', record='" + context.getRecord() + "\', expectedMimeType='"
-			+ context.getExpectedMimeType() + "\'}";
-		}).collect(Collectors.joining(", "));
-		
+	public String toString() {	
 		return "CheckedLink{" + "url='" + url + '\'' + ", method='" + method + '\'' + ", status=" + status
 				+ ", contentType='" + contentType + '\'' + ", byteSize=" + byteSize + ", duration=" + duration
-				+ ", timestamp=" + checkingTime + ", message='" + message + '\'' 
-				+ ", redirectCount=" + redirectCount + ", category='" + category + '\'' + '}';
+				+ ", timestamp=" + checkingDate + ", message='" + message + '\'' 
+				+ ", redirectCount=" + redirectCount + ", category='" + category + "\', Contexts{[" 
+				+ this.contexts.stream().map(Context::toString).collect(Collectors.joining(", "))
+				+ "]}}";
 		
 		
 
 	}
-
+	
 	public class Context {
 
 
-
 		private String record;
-		private String collection;
+		private String providerGroup;
 		private String expectedMimeType;
 		private Timestamp harvestDate;
 		
@@ -260,10 +275,10 @@ public class CheckedLink{
 			
 		}
 		
-		public Context(String record, String collection, String expectedMimeType, Timestamp harvestDate) {
+		public Context(String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
 
 			this.record = record;
-			this.collection = collection;
+			this.providerGroup = providerGroup;
 			this.expectedMimeType = expectedMimeType;
 			this.harvestDate = harvestDate;
 		}
@@ -276,12 +291,12 @@ public class CheckedLink{
 			this.record = record;
 		}
 
-		public String getCollection() {
-			return collection;
+		public String getProviderGroup() {
+			return providerGroup;
 		}
 
 		public void setCollection(String collection) {
-			this.collection = collection;
+			this.providerGroup = providerGroup;
 		}
 
 		public String getExpectedMimeType() {
@@ -307,12 +322,26 @@ public class CheckedLink{
 			if (obj == null || getClass() != obj.getClass())
 				return false;
 			Context that = (Context) obj;
-			return Objects.equals(this.collection, that.collection) 
+			return Objects.equals(this.providerGroup, that.providerGroup) 
 					&& Objects.equals(this.record,that.record)
 					&& Objects.equals(this.expectedMimeType,that.expectedMimeType)
 					&& Objects.equals(this.harvestDate,that.harvestDate);
 		}
-		
+
+		@Override
+		public String toString() {
+			// TODO Auto-generated method stub
+			return "Context{record='" + record + '\'' +
+	                ", collection='" + providerGroup + '\'' +
+	                ", harvestDate=" + harvestDate +
+	                ", expectedMimeType='" + expectedMimeType + "\'}";
+		}
+
+		@Override
+		public int hashCode() {
+			
+			return Objects.hash(record, providerGroup, harvestDate, expectedMimeType);
+		}
 		
 	}
 }

@@ -60,6 +60,7 @@ public interface CheckedLinkResource {
      * @return Checked link for the given url from the given collection
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
+    @Deprecated
     Optional<CheckedLink> get(String url, String collection) throws SQLException;
 
     /*

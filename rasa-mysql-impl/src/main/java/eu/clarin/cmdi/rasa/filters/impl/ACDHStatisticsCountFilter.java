@@ -19,7 +19,6 @@
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import eu.clarin.cmdi.rasa.filters.StatisticsCountFilter;
-import eu.clarin.cmdi.rasa.helpers.Table;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
 import java.sql.Connection;
@@ -29,10 +28,9 @@ import java.util.List;
 import java.util.StringJoiner;
 
 public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
-
+	private boolean overAll;
     private String collection;
     private String record;
-    private final Table tableName;
     private List<Category> categories;
 
     /**
@@ -40,9 +38,8 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
      *
      * @param tableName database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(Table tableName) throws SQLException {
-        this.tableName = tableName;
-        checkTable();
+    public ACDHStatisticsCountFilter(boolean overAll) throws SQLException {
+    	this.overAll = overAll;
     }
 
     /**
@@ -53,12 +50,10 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
      * @param categories determines which categories should be counted
      * @param tableName  database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(String collection, String record, List<Category> categories, Table tableName) throws SQLException {
+    public ACDHStatisticsCountFilter(String collection, String record, List<Category> categories) throws SQLException {
         this.collection = collection;
         this.record = record;
         this.categories = categories;
-        this.tableName = tableName;
-        checkTable();
     }
 
     /**
@@ -67,10 +62,8 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
      * @param categories determines which categories should be counted
      * @param tableName  database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(List<Category> categories, Table tableName) throws SQLException {
+    public ACDHStatisticsCountFilter(List<Category> categories) throws SQLException {
         this.categories = categories;
-        this.tableName = tableName;
-        checkTable();
     }
 
     /**
@@ -80,21 +73,10 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
      * @param record     record of the statistics
      * @param tableName  database table to count, only allowed values: URLS, STATUS
      */
-    public ACDHStatisticsCountFilter(String collection, String record, Table tableName) throws SQLException {
+    public ACDHStatisticsCountFilter(String collection, String record, boolean overAll) throws SQLException {
+    	this.overAll = overAll;
         this.collection = collection;
         this.record = record;
-        this.tableName = tableName;
-        checkTable();
-    }
-
-    private void checkTable() throws SQLException {
-        String table = tableName.toString().toLowerCase();
-        if (!table.equals("urls") && !table.equals("status")) {
-            throw new SQLException("Table name not known. Possible values are status and urls.");
-        }
-        if (categories != null && !categories.isEmpty() && table.equals("urls")) {
-            throw new SQLException("Categories filter can not be used on the urls table. Use status instead.");
-        }
     }
 
     @Override
@@ -108,25 +90,31 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
     }
 
     @Override
-    public String getTable() {
-        return tableName.toString().toLowerCase();
-    }
-
-    @Override
     public PreparedStatement getStatement(Connection con) throws SQLException {
         StringBuilder sb = new StringBuilder();
+        
+        sb.append("SELECT COUNT(*) as count FROM ");
+        sb.append(overAll?"link l":"status s");
 
-        //if it's here, that means there is something in the where clause.
-        //because it is checked before if the filter variables are set
-        sb.append("SELECT COUNT(*) as count FROM ").append(tableName.toString().toLowerCase());
+        if(this.collection != null)
+        	sb.append(", link_context lc, context c, providerGroup p");
+        else if(this.record != null)
+        	sb.append(", link_context lc, context c");
+
 
         StringJoiner sj = new StringJoiner(" AND ");
 
         if (collection != null) {
-            sj.add("collection=?");
+            sj.add("p.name=?");
+            sj.add("c.providerGroup_id=p.id");
         }
         if (record != null) {
-            sj.add("record=?");
+            sj.add("c.record=?");
+
+        }
+        if(collection != null || record != null) {
+            sj.add("lc.context_id = c.id");
+            sj.add((overAll?"l.id":"s.link_id") + "=lc.link_id");
         }
         if (categories != null && !categories.isEmpty()) {
             StringJoiner sjOR = new StringJoiner(" OR ");
@@ -160,7 +148,6 @@ public class ACDHStatisticsCountFilter implements StatisticsCountFilter {
                 i++;
             }
         }
-
 
         return statement;
     }

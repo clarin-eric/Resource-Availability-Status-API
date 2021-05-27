@@ -33,9 +33,5 @@ public interface StatisticsCountFilter extends Filter {
      */
     String getRecord();
 
-    /**
-     * @return table name
-     */
-    String getTable();
 
 }
