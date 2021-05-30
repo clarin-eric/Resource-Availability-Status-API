@@ -46,9 +46,11 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     private String testHost = "maps.google.com";
 
     //2019-10-11 00:00:00, same as initDB
-    private static final LocalDateTime thenDateTime = LocalDateTime.of(2019, 10, 11, 2, 0, 0);
+    private static final LocalDateTime nowDateTime = LocalDateTime.of(2019, 10, 11, 0, 0, 0);
+    private static final LocalDateTime thenDateTime = LocalDateTime.of(2019, 10, 11, 12, 0, 0);
     private static final LocalDateTime thenDateTime1 = LocalDateTime.of(2019, 10, 12, 0, 0, 0);
     private static final LocalDateTime thenDateTime2 = LocalDateTime.of(2019, 10, 13, 0, 0, 0);
+    private static final Timestamp now = Timestamp.valueOf(nowDateTime);
     private static final Timestamp then = Timestamp.valueOf(thenDateTime);
     private static final Timestamp then1 = Timestamp.valueOf(thenDateTime1);
     private static final Timestamp then2 = Timestamp.valueOf(thenDateTime2);
@@ -56,7 +58,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
-        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, then, "Ok", "NotGoogle", 0, "record", null, Category.Ok);
+        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100, 132, now, "Ok", "NotGoogle", 0, "record", null, Category.Ok);
         Optional<CheckedLink> actual = checkedLinkResource.get("http://www.ailla.org/waiting.html");
         assertTrue(actual.isPresent());
         assertEquals(expected, actual.get());
@@ -158,10 +160,10 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void dateFiltersShouldReturnCorrectResults() throws SQLException {
-        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), thenDateTime.minusDays(1), ZoneId.systemDefault());
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(2), thenDateTime.minusDays(2), ZoneId.systemDefault());
         try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
             long count = links.count();
-            assertEquals(21, count);
+            assertEquals(22, count);
         }
 
         filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(1), null, ZoneId.systemDefault());

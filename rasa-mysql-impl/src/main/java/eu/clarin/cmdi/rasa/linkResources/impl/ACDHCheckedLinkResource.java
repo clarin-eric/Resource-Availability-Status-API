@@ -219,7 +219,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
 	    			
 	    		}
 	    		else {
-	    			query = "INSERT INTO history(status_id, link_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
+	    			query = "INSERT IGNORE INTO history(status_id, link_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
 	    					+ " SELECT * FROM status WHERE id=?";	    			
 	    			try (PreparedStatement statement = con.prepareStatement(query)) {
 	    				statement.setLong(1, checkedLink.getStatusId());
@@ -303,7 +303,7 @@ public class ACDHCheckedLinkResource implements CheckedLinkResource {
     public List<CheckedLink> getHistory(String url, Order order) throws SQLException {
     	List<CheckedLink> list = new ArrayList<CheckedLink>();
         //not requested much, so no need to optimize
-        final String query = "SELECT h.*, l.url FROM history h, link l WHERE l.url=? AND l.id=h.link_id ORDER BY checkingDate " + order.name();
+        final String query = "SELECT h.*, l.url FROM history h, link l WHERE l.url=? AND l.id=h.link_id ORDER BY h.checkingDate " + order.name();
         try (Connection con = connectionProvider.getConnection()) {
             try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
                 preparedStatement.setString(1, url);

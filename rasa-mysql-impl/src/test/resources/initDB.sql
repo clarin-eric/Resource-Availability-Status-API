@@ -1,3 +1,5 @@
+SET @@global.time_zone = '+00:00';
+
 CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
@@ -161,5 +163,5 @@ VALUES
 ((SELECT id FROM link WHERE url_hash=MD5('http://www.deutschestextarchiv.de/rem/?d=M048P-N1.xml')), 'HEAD',  200, 'text/html; charset=utf-8', 0, 599, '2019-10-11 00:00:00', 'Ok', 0,  'Ok'),
 ((SELECT id FROM link WHERE url_hash=MD5('http://www.deutschestextarchiv.de/rem/?d=M112-G1.xml')), 'HEAD',  200, 'text/html; charset=utf-8', 0, 591, '2019-10-11 00:00:00', 'Ok', 0,  'Ok'),
 ((SELECT id FROM link WHERE url_hash=MD5('https://www.google.com')), 'HEAD',  200, 'text/html; charset=ISO-8859-1', 0, 222, '2019-10-11 00:00:00', 'Ok', 0,  'Ok'),
-((SELECT id FROM link WHERE url_hash=MD5('https://maps.google.com')), 'HEAD',  200, 'text/html; charset=UTF-8', 0, 440, '2019-10-10 00:00:00', 'Ok', 2,  'Ok'),
+((SELECT id FROM link WHERE url_hash=MD5('https://maps.google.com')), 'HEAD',  200, 'text/html; charset=UTF-8', 0, 440, '2019-10-11 00:00:00', 'Ok', 2,  'Ok'),
 ((SELECT id FROM link WHERE url_hash=MD5('https://drive.google.com')), 'HEAD',  200, 'text/html; charset=UTF-8', 73232, 413, '2019-10-11 00:00:00', 'Ok', 1, 'Ok');

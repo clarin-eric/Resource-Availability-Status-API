@@ -55,7 +55,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         //same as the first entry in initDB.sql
         String url = "http://www.ailla.org/waiting.html";
         String host = "www.ailla.org";
-        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(url, host,  Timestamp.valueOf("2000-01-01 01:00:00"), "record", "NotGoogle", null, (Timestamp) null);
+        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(url, host,  Timestamp.valueOf("2000-01-01 00:00:00"), "record", "NotGoogle", null, (Timestamp) null);
 
         assertEquals(linkToBeChecked, linkToBeCheckedResource.get(url).get());
     }
