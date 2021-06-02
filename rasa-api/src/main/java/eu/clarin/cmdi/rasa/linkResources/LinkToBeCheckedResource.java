@@ -21,6 +21,7 @@ package eu.clarin.cmdi.rasa.linkResources;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -133,5 +134,6 @@ public interface LinkToBeCheckedResource {
      * @return if at least one link was updated
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException;
+    Boolean updateHarvestDate(LinkToBeChecked linktoBeChecked, Timestamp harvestDate) throws SQLException;
+
 }

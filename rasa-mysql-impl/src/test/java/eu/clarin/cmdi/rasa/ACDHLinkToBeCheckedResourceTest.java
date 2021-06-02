@@ -40,7 +40,6 @@ import static org.junit.Assert.*;
 public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
     private final String testURL = "https://mail.google.com";
-    private final String testHost = "mail.google.com";
     private final String testURL1 = "https://scholar.google.com";
     private static long now;
 
@@ -54,8 +53,8 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
     public void AAbasicSimpleGETTestShouldReturnCorrectly() throws SQLException {
         //same as the first entry in initDB.sql
         String url = "http://www.ailla.org/waiting.html";
-        String host = "www.ailla.org";
-        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(url, host,  Timestamp.valueOf("2000-01-01 00:00:00"), "record", "NotGoogle", null, (Timestamp) null);
+
+        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(url, Timestamp.valueOf("2000-01-01 00:00:00"), "record", "NotGoogle", null, (Timestamp) null);
 
         assertEquals(linkToBeChecked, linkToBeCheckedResource.get(url).get());
     }
@@ -74,7 +73,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
     public void IdeleteOldLinksTestShouldDeleteCorrectly() throws SQLException {
 
         //save with 86400000 milliseconds before which is one day less
-        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, testHost, new Timestamp(now - 86400000), "GoogleRecord", "Google", "mimeType", new Timestamp(now - 86400000));
+        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, new Timestamp(now - 86400000), "GoogleRecord", "Google", "mimeType", new Timestamp(now - 86400000));
         linkToBeCheckedResource.save(linkToBeChecked);
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());

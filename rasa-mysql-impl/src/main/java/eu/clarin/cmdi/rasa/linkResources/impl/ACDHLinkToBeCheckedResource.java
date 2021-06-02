@@ -21,6 +21,9 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
+
+import org.jooq.Record;
+import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,11 +64,25 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     //call this method in a try with resources so that the underlying resources are closed after use
     @Override
     public Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
-    	
-    	_logger.error("method \"Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter)\" not implemented");
+        final Connection con = connectionProvider.getConnection();
+        final String defaultQuery = "SELECT * FROM link ORDER BY nextFetchDate DESC";
+        final PreparedStatement statement = con.prepareStatement(defaultQuery);
+        final ResultSet rs = statement.executeQuery();
 
-        return Stream.empty();
+        Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
+        recordStream.onClose(() -> {
+            try {
+                rs.close();
+                statement.close();
+                con.close();
+            } catch (SQLException e) {
+                _logger.error("Can't close prepared statement or resultset or connection.");
+            }
+        });
+
+        return recordStream.map(this::getLinkToBeChecked);
     }
+
 
     @Override
     public List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException {
@@ -91,13 +108,12 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 	        		}
 	        	}
 	        	if(linkToBeChecked.getLinkId() == null) {//insert new link
-	        		query = "INSERT INTO link(url, url_hash, host, nextFetchDate)"
-		        			+ " VALUES(?,MD5(?),?,?)";
+	        		query = "INSERT INTO link(url, url_hash, nextFetchDate)"
+		        			+ " VALUES(?,MD5(?),?)";
 		            try (PreparedStatement statement = con.prepareStatement(query)) {
 		                statement.setString(1, linkToBeChecked.getUrl());
 		                statement.setString(2, linkToBeChecked.getUrl());
-		                statement.setString(3, linkToBeChecked.getHost());
-		                statement.setTimestamp(4, linkToBeChecked.getNextFetchDate());
+		                statement.setTimestamp(3, linkToBeChecked.getNextFetchDate());
 		                
 		                statement.execute();
 	        		
@@ -198,7 +214,7 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
 		            }
 	            }
 	            else {
-	            	query = "UPDATE link_context(harvestDate) VALUES (?) WHERE id=?";
+	            	query = "UPDATE link_context SET harvestDate=? WHERE id=?";
 	            	
 		            try (PreparedStatement statement = con.prepareStatement(query)) {
 		                statement.setTimestamp(1, linkToBeChecked.getHarvestDate2());
@@ -269,8 +285,9 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
     
     @Override
-    public Boolean updateDate(List<String> linksToBeUpdated, Long date) throws SQLException {
-    	_logger.error("method \"updateDate(List<String> linksToBeUpdated, Long date)\" not implemented");
+    public Boolean updateHarvestDate(LinkToBeChecked linkToBeChecked, Timestamp harvestDate) throws SQLException {
+    	_logger.error("method \"updateHarvestDate(LinkToBeChecked linkToBeChecked, Timestamp harvestDate)\" not implemented");
+    	
     	return false;
     }
     
@@ -278,11 +295,14 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     	return new LinkToBeChecked(
 				rs.getLong("id"),
 		        rs.getString("url"),
-		        rs.getString("host"),
 		        rs.getTimestamp("nextFetchDate")
 			);
     }
-
-
-
+    private LinkToBeChecked getLinkToBeChecked(Record rec){
+    	return new LinkToBeChecked(
+				(Long) rec.get("id"),
+		        (String) rec.get("url"),
+		        (Timestamp) rec.get("nextFetchDate")
+			);
+    }
 }

@@ -76,6 +76,6 @@ public interface CheckedLinkFilter extends Filter {
      */
     CheckedLinkFilter setEnd(int end);
     
-    CheckedLinkFilter setUrls(Collection urls);
+    CheckedLinkFilter setUrls(Collection<String> urls);
 
 }

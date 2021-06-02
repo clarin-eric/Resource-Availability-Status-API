@@ -29,7 +29,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.StringJoiner;
-import java.util.function.BiFunction;
 
 public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
 
@@ -177,7 +176,7 @@ public class ACDHCheckedLinkFilter implements CheckedLinkFilter {
     }
     
 	@Override
-	public CheckedLinkFilter setUrls(Collection urls) {
+	public CheckedLinkFilter setUrls(Collection<String> urls) {
 		this.urls = urls;
 		return this;
 	}

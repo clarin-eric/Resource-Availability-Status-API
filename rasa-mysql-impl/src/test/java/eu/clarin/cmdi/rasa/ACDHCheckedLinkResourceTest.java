@@ -43,7 +43,6 @@ import static org.junit.Assert.*;
 public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     private String testURL = "https://maps.google.com";
-    private String testHost = "maps.google.com";
 
     //2019-10-11 00:00:00, same as initDB
     private static final LocalDateTime nowDateTime = LocalDateTime.of(2019, 10, 11, 0, 0, 0);
@@ -160,7 +159,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void dateFiltersShouldReturnCorrectResults() throws SQLException {
-        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(2), thenDateTime.minusDays(2), ZoneId.systemDefault());
+        CheckedLinkFilter filter = new ACDHCheckedLinkFilter(null, thenDateTime.plusDays(2), thenDateTime.minusDays(1), ZoneId.systemDefault());
         try (Stream<CheckedLink> links = checkedLinkResource.get(Optional.of(filter))) {
             long count = links.count();
             assertEquals(22, count);
@@ -280,7 +279,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         }
 
         //save(first urls then status)
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, testHost, new Timestamp(System.currentTimeMillis()), "GoogleRecord", "Google", "mimeType", new Timestamp(System.currentTimeMillis())));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, new Timestamp(System.currentTimeMillis()), "GoogleRecord", "Google", "mimeType", new Timestamp(System.currentTimeMillis())));
         CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100, 100, then, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
         checkedLinkResource.save(checkedLink);
 

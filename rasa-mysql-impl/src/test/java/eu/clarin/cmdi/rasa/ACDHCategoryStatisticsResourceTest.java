@@ -129,7 +129,7 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
         acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, true);
         assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, testURL, new Timestamp(System.currentTimeMillis()), "FacebookRecord", "Facebook", null, new Timestamp(System.currentTimeMillis())));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, new Timestamp(System.currentTimeMillis()), "FacebookRecord", "Facebook", null, new Timestamp(System.currentTimeMillis())));
         checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
         acdhStatisticsFilter = new ACDHStatisticsCountFilter(false);
