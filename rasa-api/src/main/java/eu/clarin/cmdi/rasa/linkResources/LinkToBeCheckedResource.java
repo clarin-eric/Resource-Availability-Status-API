@@ -128,12 +128,11 @@ public interface LinkToBeCheckedResource {
      * Updates the harvestDate for the given links. This way the report generation date is persisted and
      * if there are old links in the database which are not part of the current report generation (not in the clarin records anymore)
      * they can be deleted with the deleteOldLinks() method.
-     *
-     * @param linksToBeUpdated a list of urls
-     * @param date             current report generation date
-     * @return if at least one link was updated
+     * @param linkId identifier of the link
+     * @param nextFetchDate next (earliest) date the link is fetched for link checking
+     * @return
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
-    Boolean updateHarvestDate(LinkToBeChecked linktoBeChecked, Timestamp harvestDate) throws SQLException;
+    Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException;
 
 }

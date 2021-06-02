@@ -285,10 +285,16 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
     
     @Override
-    public Boolean updateHarvestDate(LinkToBeChecked linkToBeChecked, Timestamp harvestDate) throws SQLException {
-    	_logger.error("method \"updateHarvestDate(LinkToBeChecked linkToBeChecked, Timestamp harvestDate)\" not implemented");
-    	
-    	return false;
+    public Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException {
+    	try(Connection con = connectionProvider.getConnection()){
+    		String query = "UPDATE link SET nextFectDate=? WHERE id=?";
+    		try(PreparedStatement statement = con.prepareStatement(query)){
+    			statement.setTimestamp(1, nextFetchDate);
+    			statement.setLong(2, linkId);
+    			
+    			return statement.execute();
+    		}
+    	}
     }
     
     private LinkToBeChecked getLinkToBeChecked(ResultSet rs) throws SQLException {
