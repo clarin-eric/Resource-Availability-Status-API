@@ -306,9 +306,9 @@ public class ACDHLinkToBeCheckedResource implements LinkToBeCheckedResource {
     }
     private LinkToBeChecked getLinkToBeChecked(Record rec){
     	return new LinkToBeChecked(
-				(Long) rec.get("id"),
-		        (String) rec.get("url"),
-		        (Timestamp) rec.get("nextFetchDate")
+				rec.get("id", Long.class),
+		        rec.get("url", String.class),
+		        rec.get("nextFetchDate", Timestamp.class)
 			);
     }
 }

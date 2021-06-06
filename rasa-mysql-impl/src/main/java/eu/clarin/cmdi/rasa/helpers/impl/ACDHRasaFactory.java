@@ -40,6 +40,7 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     /**
      * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
      * Different resources can be obtained with their respective get methods.
+     * 
      *
      * @param prpperties database properties (see https://github.com/brettwooldridge/HikariCP)
      * @param userName    username for the database
@@ -58,6 +59,9 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     /**
      * Create ACDH Rasa Factory with given database parameters. It handles the connection by itself afterwards.
      * Different resources can be obtained with their respective get methods.
+     * 
+     * @deprecated
+     * please use ACDHRasaFactory(Properties properties) with an explicit setting for the connection pool size instead
      *
      * @param databaseURI uri of the database
      * @param userName    username for the database
