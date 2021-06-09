@@ -31,6 +31,13 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.util.Properties;
 
+
+/**
+ * @deprecated
+ * please use RasaFactoryBuilderImpl instead
+ *
+ */
+@Deprecated(forRemoval = true)
 public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory {
 
     private final static Logger _logger = LoggerFactory.getLogger(ACDHRasaFactory.class);
