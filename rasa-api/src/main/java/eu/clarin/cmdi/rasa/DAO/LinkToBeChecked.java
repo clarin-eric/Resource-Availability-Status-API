@@ -32,7 +32,7 @@ public class LinkToBeChecked {
     
     private String record;
     private String providerGroup;
-    private Timestamp harvestDate;
+    private Timestamp injectionDate;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
@@ -49,18 +49,18 @@ public class LinkToBeChecked {
     	
     }
     
-    public LinkToBeChecked(String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
+    public LinkToBeChecked(String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
     	this(url, nextFetchDate);
         this.record = record;
         this.providerGroup = providerGroup;
         this.expectedMimeType = expectedMimeType;
-        this.harvestDate = harvestDate;
+        this.injectionDate = injectionDate;
     }
     
 
     
-    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
-        this(url, nextFetchDate, record, providerGroup, expectedMimeType, harvestDate);
+    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
+        this(url, nextFetchDate, record, providerGroup, expectedMimeType, injectionDate);
     	this.linkId = linkId;
 
     }    
@@ -111,24 +111,14 @@ public class LinkToBeChecked {
 
     public void setExpectedMimeType(String expectedMimeType) {
         this.expectedMimeType = expectedMimeType;
-    }
+    }   
     
-    @Deprecated
-    public Long getHarvestDate() {
-        return harvestDate.getTime();
+    public Timestamp getInjectionDate() {
+        return injectionDate;
     }
 
-    @Deprecated
-    public void setHarvestDate(Long harvestDate) {
-        this.harvestDate = harvestDate==null?null:new Timestamp(harvestDate);
-    }    
-    
-    public Timestamp getHarvestDate2() {
-        return harvestDate;
-    }
-
-    public void setHarvestDate(Timestamp harvestDate) {
-        this.harvestDate = harvestDate;
+    public void setInjectionDate(Timestamp injectionDate) {
+        this.injectionDate = injectionDate;
     }    
 
     public Long getLinkId() {
@@ -161,7 +151,7 @@ public class LinkToBeChecked {
                 ", record='" + record + '\'' +
                 ", providerGroup='" + providerGroup + '\'' +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
-                ", harvestDate=" + harvestDate + 
+                ", injectionDate=" + injectionDate + 
                 '}';
     }
 }

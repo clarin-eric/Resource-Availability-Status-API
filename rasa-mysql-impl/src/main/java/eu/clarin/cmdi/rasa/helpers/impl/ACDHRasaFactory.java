@@ -21,10 +21,8 @@ package eu.clarin.cmdi.rasa.helpers.impl;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
-import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCategoryStatisticsResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.CheckedLinkResourceImpl;
+import eu.clarin.cmdi.rasa.linkResources.impl.LinkToBeCheckedResourceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,18 +82,13 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     }
 
     @Override
-    public ACDHCheckedLinkResource getCheckedLinkResource() {
-        return new ACDHCheckedLinkResource(connectionProvider);
+    public CheckedLinkResourceImpl getCheckedLinkResource() {
+        return new CheckedLinkResourceImpl(connectionProvider);
     }
 
     @Override
-    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-        return new ACDHLinkToBeCheckedResource(connectionProvider);
-    }
-
-    @Override
-    public CategoryStatisticsResource getStatisticsResource() {
-        return new ACDHCategoryStatisticsResource(connectionProvider);
+    public LinkToBeCheckedResourceImpl getLinkToBeCheckedResource() {
+        return new LinkToBeCheckedResourceImpl(connectionProvider);
     }
     
     private void connectDatabase(Properties properties) throws SQLException {

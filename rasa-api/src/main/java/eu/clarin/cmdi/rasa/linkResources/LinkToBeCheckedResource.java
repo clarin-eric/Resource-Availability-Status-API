@@ -20,43 +20,20 @@ package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
+import eu.clarin.cmdi.rasa.DAO.Statistics.CategoryStatistics;
+
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface LinkToBeCheckedResource {
-
-    /**
-     * Retrieve LinkToBeChecked for single url
-     *
-     * @param url url of the row
-     * @return found LinkToBeChecked
-     * @throws SQLException occurs if there was an error during statement preparation or execution
-     */
-    Optional<LinkToBeChecked> get(String url) throws SQLException;
-
-    /**
-     * Get all urls that match a filter as a stream.
-     * Returned stream needs to be closed after use, so use it with try with resources.
-     * Recommended to use, so it closes automatically: try(Stream<LinkToBeChecked links=linkToBeCheckedResource.get(Optional.of(filter))){...}
-     *
-     * @param filter filter to apply on the query
-     * @return A Stream of LinkToBeChecked elements. It needs to be closed after use.
-     * @throws SQLException occurs if there was an error during statement preparation or execution
-     */
-    Stream<LinkToBeChecked> get(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
-
-    /**
-     * Get all urls that match a filter as a list
-     *
-     * @param filter filter to apply on the query
-     * @return A List of LinkToBeChecked elements
-     * @throws SQLException occurs if there was an error during statement preparation or execution
-     */
-    List<LinkToBeChecked> getList(Optional<LinkToBeCheckedFilter> filter) throws SQLException;
-
+	
+    Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException;    
+    
+    int getCount(LinkToBeCheckedFilter filter) throws SQLException;
+    
+    
     /**
      * Save a link to be checked into urls table, if it already exists in the collection, it fails but is ignored
      *
@@ -74,6 +51,17 @@ public interface LinkToBeCheckedResource {
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException;
+    
+    /**
+     * Updates the harvestDate for the given links. This way the report generation date is persisted and
+     * if there are old links in the database which are not part of the current report generation (not in the clarin records anymore)
+     * they can be deleted with the deleteOldLinks() method.
+     * @param linkId identifier of the link
+     * @param nextFetchDate next (earliest) date the link is fetched for link checking
+     * @return
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+    Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException;
 
     /**
      * Delete an element from urls table
@@ -92,6 +80,15 @@ public interface LinkToBeCheckedResource {
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     Boolean delete(List<String> urls) throws SQLException;
+
+    /**
+     * Retrieve LinkToBeChecked for single url
+     *
+     * @param url url of the row
+     * @return found LinkToBeChecked
+     * @throws SQLException occurs if there was an error during statement preparation or execution
+     */
+
 
     /**
      * Retrieve all the names of all collections in the database(urls table)
@@ -123,16 +120,6 @@ public interface LinkToBeCheckedResource {
      * @throws SQLException occurs if there was an error during statement preparation or execution
      */
     int deleteOldLinks(Long date, String collection) throws SQLException;
-
-    /**
-     * Updates the harvestDate for the given links. This way the report generation date is persisted and
-     * if there are old links in the database which are not part of the current report generation (not in the clarin records anymore)
-     * they can be deleted with the deleteOldLinks() method.
-     * @param linkId identifier of the link
-     * @param nextFetchDate next (earliest) date the link is fetched for link checking
-     * @return
-     * @throws SQLException occurs if there was an error during statement preparation or execution
-     */
-    Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException;
-
+    
+    LinkToBeCheckedFilter getLinkToBeCheckedFilter();
 }

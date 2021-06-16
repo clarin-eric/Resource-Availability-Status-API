@@ -131,14 +131,6 @@ public class CheckedLink{
 	public void setDuration(Integer duration) {
 		this.duration = duration;
 	}
-	@Deprecated
-	public Timestamp getTimestamp() {
-		return checkingDate;
-	}
-	@Deprecated
-	public void setTimestamp(Timestamp timestamp) {
-		this.checkingDate = timestamp;
-	}
 
 	public Timestamp getCheckingDate() {
 		return checkingDate;
@@ -222,8 +214,8 @@ public class CheckedLink{
 		this.statusId = statusId;
 	}
 
-	public void addContext(String record, String collection, String expectedMimeType, Timestamp harvestDate) {
-		this.contexts.add(new Context(record, collection, expectedMimeType, harvestDate));
+	public void addContext(String record, String collection, String expectedMimeType, Timestamp injectionDate) {
+		this.contexts.add(new Context(record, collection, expectedMimeType, injectionDate));
 	}
 	
 	public List<Context> getContexts(){
@@ -254,7 +246,7 @@ public class CheckedLink{
 	public String toString() {	
 		return "CheckedLink{" + "url='" + url + '\'' + ", method='" + method + '\'' + ", status=" + status
 				+ ", contentType='" + contentType + '\'' + ", byteSize=" + byteSize + ", duration=" + duration
-				+ ", timestamp=" + checkingDate + ", message='" + message + '\'' 
+				+ ", checkingDate=" + checkingDate + ", message='" + message + '\'' 
 				+ ", redirectCount=" + redirectCount + ", category='" + category + "\', Contexts{[" 
 				+ this.contexts.stream().map(Context::toString).collect(Collectors.joining(", "))
 				+ "]}}";
@@ -269,18 +261,18 @@ public class CheckedLink{
 		private String record;
 		private String providerGroup;
 		private String expectedMimeType;
-		private Timestamp harvestDate;
+		private Timestamp injectionDate;
 		
 		public Context() {
 			
 		}
 		
-		public Context(String record, String providerGroup, String expectedMimeType, Timestamp harvestDate) {
+		public Context(String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
 
 			this.record = record;
 			this.providerGroup = providerGroup;
 			this.expectedMimeType = expectedMimeType;
-			this.harvestDate = harvestDate;
+			this.injectionDate = injectionDate;
 		}
 
 		public String getRecord() {
@@ -307,12 +299,12 @@ public class CheckedLink{
 			this.expectedMimeType = expectedMimeType;
 		}
 
-		public Timestamp getHarvestDate() {
-			return harvestDate;
+		public Timestamp getInjectionDate() {
+			return injectionDate;
 		}
 
-		public void setHarvestDate(Timestamp harvestDate) {
-			this.harvestDate = harvestDate;
+		public void setInjectionDate(Timestamp injectionDate) {
+			this.injectionDate = injectionDate;
 		}
 		
 		@Override
@@ -325,7 +317,7 @@ public class CheckedLink{
 			return Objects.equals(this.providerGroup, that.providerGroup) 
 					&& Objects.equals(this.record,that.record)
 					&& Objects.equals(this.expectedMimeType,that.expectedMimeType)
-					&& Objects.equals(this.harvestDate,that.harvestDate);
+					&& Objects.equals(this.injectionDate,that.injectionDate);
 		}
 
 		@Override
@@ -333,14 +325,14 @@ public class CheckedLink{
 			// TODO Auto-generated method stub
 			return "Context{record='" + record + '\'' +
 	                ", collection='" + providerGroup + '\'' +
-	                ", harvestDate=" + harvestDate +
+	                ", injectionDate=" + injectionDate +
 	                ", expectedMimeType='" + expectedMimeType + "\'}";
 		}
 
 		@Override
 		public int hashCode() {
 			
-			return Objects.hash(record, providerGroup, harvestDate, expectedMimeType);
+			return Objects.hash(record, providerGroup, injectionDate, expectedMimeType);
 		}
 		
 	}

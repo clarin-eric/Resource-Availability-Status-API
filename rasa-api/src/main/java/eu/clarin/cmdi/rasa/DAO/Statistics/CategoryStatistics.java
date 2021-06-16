@@ -9,9 +9,9 @@ import java.util.Objects;
  * Category statistics: general statistics specific to one category
  */
 public class CategoryStatistics extends Statistics {
-    private String category;
+    private Category category;
 
-    public CategoryStatistics(String category, long count, double avgRespTime, long maxRespTime) {
+    public CategoryStatistics(Category category, long count, double avgRespTime, long maxRespTime) {
         super(count, avgRespTime, maxRespTime);
         this.category = category;
     }
@@ -21,11 +21,11 @@ public class CategoryStatistics extends Statistics {
 	 * Category.valueOf((String) record.getValue("category")); }
 	 */
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
 
@@ -46,7 +46,7 @@ public class CategoryStatistics extends Statistics {
     @Override
     public String toString() {
         return "CategoryStatistics{" +
-                "category=" + category +
+                "category=" + category.name() +
                 '}';
     }
 }

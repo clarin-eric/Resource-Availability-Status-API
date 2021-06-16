@@ -11,10 +11,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.RasaFactoryBuilder;
-import eu.clarin.cmdi.rasa.linkResources.CategoryStatisticsResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCategoryStatisticsResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHCheckedLinkResource;
-import eu.clarin.cmdi.rasa.linkResources.impl.ACDHLinkToBeCheckedResource;
+import eu.clarin.cmdi.rasa.linkResources.impl.CheckedLinkResourceImpl;
+import eu.clarin.cmdi.rasa.linkResources.impl.LinkToBeCheckedResourceImpl;
 
 public class RasaFactoryBuilderImpl extends RasaFactoryBuilder {
 
@@ -38,18 +36,13 @@ public class RasaFactoryBuilderImpl extends RasaFactoryBuilder {
 		    }
 		    
 		    @Override
-		    public ACDHCheckedLinkResource getCheckedLinkResource() {
-		        return new ACDHCheckedLinkResource(connectionProvider);
+		    public CheckedLinkResourceImpl getCheckedLinkResource() {
+		        return new CheckedLinkResourceImpl(connectionProvider);
 		    }
 
 		    @Override
-		    public ACDHLinkToBeCheckedResource getLinkToBeCheckedResource() {
-		        return new ACDHLinkToBeCheckedResource(connectionProvider);
-		    }
-
-		    @Override
-		    public CategoryStatisticsResource getStatisticsResource() {
-		        return new ACDHCategoryStatisticsResource(connectionProvider);
+		    public LinkToBeCheckedResourceImpl getLinkToBeCheckedResource() {
+		        return new LinkToBeCheckedResourceImpl(connectionProvider);
 		    }
 		    
 		    @Override

@@ -22,19 +22,19 @@ import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.DAO.Statistics.CategoryStatistics;
 import eu.clarin.cmdi.rasa.DAO.Statistics.Statistics;
-import eu.clarin.cmdi.rasa.filters.impl.ACDHStatisticsCountFilter;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import org.junit.AfterClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
@@ -46,22 +46,33 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
 
     @Test
     public void AbasicCategoryStatisticsTestShouldReturnCorrectResults() throws SQLException {
-        CategoryStatistics googleStatistics = new CategoryStatistics("Ok", 3L, 358.3333, 440L);
-        CategoryStatistics statisticsOk = new CategoryStatistics("Ok", 16L, 355.625, 613L);
-        CategoryStatistics statisticsBroken = new CategoryStatistics("Broken", 6L, 48.3333, 56L);
+        CategoryStatistics googleStatistics = new CategoryStatistics(Category.Ok, 3L, 358.3333, 440L);
+        CategoryStatistics statisticsOk = new CategoryStatistics(Category.Ok, 16L, 355.625, 613L);
+        CategoryStatistics statisticsBroken = new CategoryStatistics(Category.Broken, 6L, 48.3333, 56L);
 
-        List<CategoryStatistics> googleList = statisticsResource.getCategoryStatistics("Google");
-        assertEquals(1, googleList.size());
-        assertEquals(googleStatistics, googleList.get(0));
+        try(Stream<CategoryStatistics> stream = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google"))){
+        		List<CategoryStatistics> googleList = stream.collect(Collectors.toList());
+        		assertEquals(1, googleList.size());
+        		assertEquals(googleStatistics, googleList.get(0));
+        }
 
-        List<CategoryStatistics> overallList = statisticsResource.getCategoryStatistics(null);
-        assertEquals(2, overallList.size());
-        assertTrue(overallList.contains(statisticsOk));
-        assertTrue(overallList.contains(statisticsBroken));
-
-        assertEquals(statisticsResource.getCategoryStatistics(null), statisticsResource.getCategoryStatistics("Overall"));
-        assertEquals(statisticsResource.getCategoryStatistics(), statisticsResource.getCategoryStatistics("Overall"));
-        assertNotEquals(statisticsResource.getCategoryStatistics("Something"), statisticsResource.getCategoryStatistics("Overall"));
+        try(Stream<CategoryStatistics> stream = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter())){
+	        List<CategoryStatistics> overallList = stream.collect(Collectors.toList());
+	        assertEquals(2, overallList.size());
+	        assertTrue(overallList.contains(statisticsOk));
+	        assertTrue(overallList.contains(statisticsBroken));
+        }
+        
+        try(
+    		Stream<CategoryStatistics> stream1 = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter());
+    		Stream<CategoryStatistics> stream2 = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall"))){
+    	        assertEquals(stream1.collect(Collectors.toList()), stream2.collect(Collectors.toList()));        			
+		}
+        try(
+    		Stream<CategoryStatistics> stream1 = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Something"));
+    		Stream<CategoryStatistics> stream2 = checkedLinkResource.getCategoryStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall"))){
+    	        assertNotEquals(stream1.collect(Collectors.toList()), stream2.collect(Collectors.toList()));        			
+		}	
     }
 
     @Test
@@ -69,84 +80,73 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
         Statistics googleStatistics = new Statistics(3L, 358.3333, 440L);
         Statistics overallStatistics = new Statistics(22L, 271.8182, 613L);
 
-        Statistics googleStatisticsActual = statisticsResource.getOverallStatistics("Google");
+        Statistics googleStatisticsActual = checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google"));
         assertEquals(googleStatistics, googleStatisticsActual);
 
-        Statistics overallStatisticsActual = statisticsResource.getOverallStatistics(null);
+        Statistics overallStatisticsActual = checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter());
         assertEquals(overallStatistics, overallStatisticsActual);
 
-        assertEquals(statisticsResource.getOverallStatistics(null), statisticsResource.getOverallStatistics("Overall"));
-        assertNotEquals(statisticsResource.getOverallStatistics("Something"), statisticsResource.getOverallStatistics("Overall"));
+        assertEquals(checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter()), checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall")));
+        assertNotEquals(checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Something")), checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall")));
     }
 
     @Test
     public void CcountTestWithCategoriesShouldReturnCorrectResults() throws SQLException {
-        assertEquals(22, statisticsResource.countTable(new ACDHStatisticsCountFilter(false)));
+        assertEquals(22, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter()));
 
-        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Ok));
-        assertEquals(16, statisticsResource.countTable(acdhStatisticsFilter));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Undetermined));
-        assertEquals(0, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(16, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIs(Category.Ok)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(Collections.singletonList(Category.Broken));
-        assertEquals(6, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(0, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIs(Category.Undetermined)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Ok));
-        assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(6, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIs(Category.Broken)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Collections.singletonList(Category.Broken));
-        assertEquals(0, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIs(Category.Ok).setProviderGroupIs("Google")));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, Arrays.asList(Category.Ok, Category.Broken));
-        assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(0, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIs(Category.Broken).setProviderGroupIs("Google")));
+
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setCategoryIn(Category.Ok, Category.Broken).setProviderGroupIs("Google")));
     }
 
     @Test
     public void DbasicCountTestShouldReturnCorrectResults() throws SQLException {
-        ACDHStatisticsCountFilter acdhStatisticsFilter = new ACDHStatisticsCountFilter(false);//count everything
-        assertEquals(22, statisticsResource.countTable(acdhStatisticsFilter));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(true);//count everything
-        assertEquals(22, statisticsResource.countTable(acdhStatisticsFilter));
+        assertEquals(22, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter()));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, false);
-        assertEquals(3, statisticsResource.countTable(acdhStatisticsFilter));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, true);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
+        linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter());
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", false);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", "GoogleRecord", true);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", false);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(null, "GoogleRecord", true);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google")));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, false);
-        assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("NotGoogle", null, true);
-        assertEquals(19, statisticsResource.countTable((acdhStatisticsFilter)));
+        assertEquals(3, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("Google")));
 
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, new Timestamp(System.currentTimeMillis()), "FacebookRecord", "Facebook", null, new Timestamp(System.currentTimeMillis())));
-        checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100, 100, Timestamp.valueOf(LocalDateTime.now()), "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google").setRecordIs("GoogleRecord")));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(false);
-        assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter(true);
-        assertEquals(23, statisticsResource.countTable((acdhStatisticsFilter)));
+        assertEquals(3, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("Google").setRecordIs("GoogleRecord")));
 
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, false);
-        assertEquals(1, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Facebook", null, true);
-        assertEquals(1, statisticsResource.countTable((acdhStatisticsFilter)));
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setRecordIs("GoogleRecord")));
+
+        assertEquals(3, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setRecordIs("GoogleRecord")));
+
+        assertEquals(19, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("NotGoogle")));
+
+        assertEquals(19, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("NotGoogle")));
+
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, today, "FacebookRecord", "Facebook", null, today));
+        checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100, 100, today, "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
+
+
+        assertEquals(23, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter()));
+
+        assertEquals(23, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter()));
+
+        assertEquals(1, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Facebook")));
+
+        assertEquals(1, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("Facebook")));
 
         //this shouldn't have changed
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, false);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
-        acdhStatisticsFilter = new ACDHStatisticsCountFilter("Google", null, true);
-        assertEquals(3, statisticsResource.countTable((acdhStatisticsFilter)));
+        assertEquals(3, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google")));
+
+        assertEquals(3, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("Google")));
     }
 
 

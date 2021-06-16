@@ -20,62 +20,20 @@ package eu.clarin.cmdi.rasa.filters;
 
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Collection;
+import java.sql.Timestamp;
 
 /**
  * This class creates a filter for the status table with the given values through the constructor
  */
-public interface CheckedLinkFilter extends Filter {
-
-    /**
-     *
-     * @return the date set for checkedBefore
-     */
-    LocalDateTime getCheckedBeforeDate();
-
-    /**
-     *
-     * @return the date set for checkedAfter
-     */
-    LocalDateTime getCheckedAfterDate();
-
-    /**
-     * Gets the collection
-     * @return collection
-     */
-    @Deprecated
-    String getCollection();
+public interface CheckedLinkFilter extends Filter<CheckedLinkFilter>{
+	
+	public CheckedLinkFilter setStatusIs(Integer status);
     
-    String getProviderGroup();
-
-    /**
-     * Gets the zoneID
-     * @return zone id for the filter
-     */
-    ZoneId getZone();
-
-    /**
-     * gets the category
-     * @return category for this filter
-     */
-    Category getCategory();
-
-    /**
-     * Sets the start.If there are 20 results and start is set to 10, it will start from the 10th and go until 20.
-     * @param start starting line to read from the database
-     * @return this
-     */
-    CheckedLinkFilter setStart(int start);
-
-    /**
-     * Sets the end.If there are 20 results and end is set to 10, it will start from the 0 and go until 10.
-     * @param end last line to read from the database
-     * @return this
-     */
-    CheckedLinkFilter setEnd(int end);
+    public CheckedLinkFilter setStatusBetween(Integer statusFrom, Integer statusTo);
     
-    CheckedLinkFilter setUrls(Collection<String> urls);
-
+    public CheckedLinkFilter setCheckedBetween(Timestamp checkedAfter, Timestamp checkedBefore);
+    
+    public CheckedLinkFilter setCategoryIs(Category category);
+    
+    public CheckedLinkFilter setCategoryIn(Category... categories);    
 }
