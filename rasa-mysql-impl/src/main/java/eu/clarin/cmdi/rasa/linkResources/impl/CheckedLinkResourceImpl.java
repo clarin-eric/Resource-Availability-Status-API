@@ -225,7 +225,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	@Override
 	public Statistics getStatistics(CheckedLinkFilter filter) throws SQLException {
 	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement statement = con.prepareStatement("SELECT ifnull(AVG(s.duration), 0.0) AS avgDuration, ifnull(MAX(s.duration), 0) AS maxDuration, COUNT(s.duration) AS count " + filter);
+	    final PreparedStatement statement = con.prepareStatement("SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(s.duration) AS count " + filter);
 	    final ResultSet rs = statement.executeQuery();
 	    return DSL.using(con)
 	            .fetchStream(rs)
@@ -257,7 +257,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	@Override
 	public Stream<CategoryStatistics> getCategoryStatistics(CheckedLinkFilter filter) throws SQLException {
 	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement statement = con.prepareStatement("SELECT s.category, AVG(s.duration) AS avgDuration, MAX(s.duration) AS maxDuration, COUNT(s.duration) AS count " + filter + " GROUP BY s.category ORDER BY s.category");
+	    final PreparedStatement statement = con.prepareStatement("SELECT s.category, IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(s.duration) AS count " + filter + " GROUP BY s.category ORDER BY s.category");
 	    final ResultSet rs = statement.executeQuery();
 	    return DSL.using(con)
 	            .fetchStream(rs)

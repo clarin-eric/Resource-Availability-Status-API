@@ -80,7 +80,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 	}
 
     @Override
-    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
+    public synchronized Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
     	String query = null;
     	
         try (Connection con = connectionProvider.getConnection()) {

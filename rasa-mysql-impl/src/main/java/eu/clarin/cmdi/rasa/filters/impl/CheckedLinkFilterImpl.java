@@ -56,7 +56,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 			super.from.add("providerGroup p");
 			super.from.add("context c");
 			super.from.add("link_context lc");
-			super.condition.put("p.name", "p.name_hash = MD5('" + providerGroup + "')");
+			super.condition.put("p.hash_name", "p.name_hash = MD5('" + providerGroup + "')");
 			super.condition.put("c-p", "c.providerGroup_id=p.id");
 			super.condition.put("lc-c","lc.context_id=c.id");
 			super.condition.put("l-lc", "l.id=lc.link_id");
@@ -93,7 +93,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 	@Override
 	public CheckedLinkFilter setInjectionDateIs(Timestamp injectionDate) {
 		super.from.add("link_context lc");
-		super.condition.put("lc.injectionDate", "lc.injectionDate = '" + injectionDate + "')");
+		super.condition.put("lc.injectionDate", "lc.injectionDate = '" + injectionDate + "'");
 		super.condition.put("l-lc", "l.id=lc.link_id");
 		
 		return this; 

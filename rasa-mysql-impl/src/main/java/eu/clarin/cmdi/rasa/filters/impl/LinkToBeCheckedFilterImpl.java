@@ -50,7 +50,7 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
 	@Override
 	public LinkToBeCheckedFilter setInjectionDateIs(Timestamp injectionDate) {
 		super.from.add("link_context lc");
-		super.condition.put("lc.injectionDate", "lc.injectionDate = '" + injectionDate + "')");
+		super.condition.put("lc.injectionDate", "lc.injectionDate = '" + injectionDate + "'");
 		super.condition.put("l-lc","l.id=lc.link_id");
 		
 		return this; 
