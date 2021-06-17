@@ -1,4 +1,4 @@
-SET @@global.time_zone = '+01:00';
+SET @@global.time_zone = '+00:00';
 
 CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
