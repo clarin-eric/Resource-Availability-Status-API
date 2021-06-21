@@ -199,21 +199,21 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             }
             
             if(linkContextId == null) {
-            	query = "INSERT INTO link_context(link_id, context_id, injectionDate) VALUES (?,?,?)";
+            	query = "INSERT INTO link_context(link_id, context_id, ingestionDate) VALUES (?,?,?)";
             	
 	            try (PreparedStatement statement = con.prepareStatement(query)) {
 	                statement.setLong(1, linkToBeChecked.getLinkId());
 	                statement.setLong(2, contextId);
-	                statement.setTimestamp(3, linkToBeChecked.getInjectionDate());
+	                statement.setTimestamp(3, linkToBeChecked.getIngestionDate());
 	                
 	                statement.execute();
 	            }
             }
             else {
-            	query = "UPDATE link_context SET harvestDate=? WHERE id=?";
+            	query = "UPDATE link_context SET ingestionDate=? WHERE id=?";
             	
 	            try (PreparedStatement statement = con.prepareStatement(query)) {
-	                statement.setTimestamp(1, linkToBeChecked.getInjectionDate());
+	                statement.setTimestamp(1, linkToBeChecked.getIngestionDate());
 	                statement.setLong(2, linkContextId);
 	                
 	                statement.execute();
@@ -283,7 +283,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
     @Override
     public Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException {
     	try(Connection con = connectionProvider.getConnection()){
-    		String query = "UPDATE link SET nextFectDate=? WHERE id=?";
+    		String query = "UPDATE link SET nextFetchDate=? WHERE id=?";
     		try(PreparedStatement statement = con.prepareStatement(query)){
     			statement.setTimestamp(1, nextFetchDate);
     			statement.setLong(2, linkId);

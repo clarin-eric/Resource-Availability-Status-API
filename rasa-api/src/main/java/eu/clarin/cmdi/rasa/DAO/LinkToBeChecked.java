@@ -32,7 +32,7 @@ public class LinkToBeChecked {
     
     private String record;
     private String providerGroup;
-    private Timestamp injectionDate;
+    private Timestamp ingestionDate;
     private String expectedMimeType;
 
     public LinkToBeChecked() {
@@ -49,18 +49,18 @@ public class LinkToBeChecked {
     	
     }
     
-    public LinkToBeChecked(String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
+    public LinkToBeChecked(String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
     	this(url, nextFetchDate);
         this.record = record;
         this.providerGroup = providerGroup;
         this.expectedMimeType = expectedMimeType;
-        this.injectionDate = injectionDate;
+        this.ingestionDate = ingestionDate;
     }
     
 
     
-    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
-        this(url, nextFetchDate, record, providerGroup, expectedMimeType, injectionDate);
+    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
+        this(url, nextFetchDate, record, providerGroup, expectedMimeType, ingestionDate);
     	this.linkId = linkId;
 
     }    
@@ -113,12 +113,12 @@ public class LinkToBeChecked {
         this.expectedMimeType = expectedMimeType;
     }   
     
-    public Timestamp getInjectionDate() {
-        return injectionDate;
+    public Timestamp getIngestionDate() {
+        return ingestionDate;
     }
 
-    public void setInjectionDate(Timestamp injectionDate) {
-        this.injectionDate = injectionDate;
+    public void setInjectionDate(Timestamp ingestionDate) {
+        this.ingestionDate = ingestionDate;
     }    
 
     public Long getLinkId() {
@@ -151,7 +151,7 @@ public class LinkToBeChecked {
                 ", record='" + record + '\'' +
                 ", providerGroup='" + providerGroup + '\'' +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
-                ", injectionDate=" + injectionDate + 
+                ", injectionDate=" + ingestionDate + 
                 '}';
     }
 }

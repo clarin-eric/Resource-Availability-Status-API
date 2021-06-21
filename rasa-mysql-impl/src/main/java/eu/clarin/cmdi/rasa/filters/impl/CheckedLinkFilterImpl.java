@@ -91,9 +91,9 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 	}
 	
 	@Override
-	public CheckedLinkFilter setInjectionDateIs(Timestamp injectionDate) {
+	public CheckedLinkFilter setIngestionDateIs(Timestamp ingestionDate) {
 		super.from.add("link_context lc");
-		super.condition.put("lc.injectionDate", "lc.injectionDate = '" + injectionDate + "'");
+		super.condition.put("lc.ingestionDate", "lc.ingestionDate = '" + ingestionDate + "'");
 		super.condition.put("l-lc", "l.id=lc.link_id");
 		
 		return this; 

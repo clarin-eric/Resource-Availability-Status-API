@@ -1,4 +1,8 @@
 SET @@global.time_zone = '+00:00';
+DROP DATABASE IF EXISTS linkchecker; 
+
+CREATE DATABASE linkchecker;
+USE linkchecker;
 
 CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
@@ -14,9 +18,9 @@ CREATE TABLE `context` (
   `source` varchar(256) DEFAULT NULL,
   `record` varchar(256) DEFAULT NULL,
   `providerGroup_id` int DEFAULT NULL,
-  `expectedMimeType` varchar(25) DEFAULT NULL,
+  `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_providerGroup_id_record_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `idx_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
 );
 
 
@@ -35,7 +39,7 @@ CREATE TABLE `link_context` (
   `id` int NOT NULL AUTO_INCREMENT,
   `link_id` int NOT NULL,
   `context_id` int NOT NULL,
-  `injectionDate` datetime NOT NULL,
+  `ingestionDate` datetime NOT NULL DEFAULT NOW(),
   `active` boolean NOT NULL DEFAULT false,
   PRIMARY KEY (`id`),
   KEY `fk_link_context_1_idx` (`link_id`),
@@ -55,7 +59,7 @@ CREATE TABLE `status` (
   `contentType` varchar(256) DEFAULT NULL,
   `byteSize` int DEFAULT NULL,
   `duration` int DEFAULT NULL,
-  `checkingDate` datetime NOT NULL,
+  `checkingDate` timestamp NOT NULL,
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_link_id` (`link_id`),
@@ -70,7 +74,7 @@ CREATE TABLE `history` (
   `link_id` int DEFAULT NULL,
   `statusCode` int DEFAULT NULL,
   `message` varchar(256),
-  `category` varchar(25) NOT NULL DEFAULT 'Undeterminded',
+  `category` varchar(25) NOT NULL,
   `method` varchar(10) NOT NULL,
   `contentType` varchar(256) DEFAULT NULL,
   `byteSize` int DEFAULT NULL,

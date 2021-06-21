@@ -71,7 +71,7 @@ public abstract class TestConfig {
         //create database and fill it with initDB.sql
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         ScriptRunner runner = new ScriptRunner(con);
-        InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/initDB.sql"));
+        InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/createDB.sql"));
         runner.runScript(reader);
         reader.close();
         con.close();

@@ -12,7 +12,7 @@ public interface Filter<T>{
 	
 	public T setRecordIs(String record);
 	
-	public T setInjectionDateIs(Timestamp injectionDate);
+	public T setIngestionDateIs(Timestamp ingestionDate);
 	
     public T setLimit(int offset, int limit);
 }
