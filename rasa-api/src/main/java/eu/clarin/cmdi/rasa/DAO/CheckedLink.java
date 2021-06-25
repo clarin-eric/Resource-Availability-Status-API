@@ -30,7 +30,7 @@ import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
  */
 
 public class CheckedLink{
-	private Long linkId;
+	private Long urlId;
 	private Long statusId;
 	private String url;
 	private String method;
@@ -198,12 +198,12 @@ public class CheckedLink{
 		this.category = category;
 	}
 	
-	public Long getLinkId() {
-		return linkId;
+	public Long getUrlId() {
+		return urlId;
 	}
 
-	public void setLinkId(Long linkId) {
-		this.linkId = linkId;
+	public void setUrlId(Long urlId) {
+		this.urlId = urlId;
 	}
 
 	public Long getStatusId() {

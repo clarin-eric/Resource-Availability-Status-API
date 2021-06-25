@@ -26,7 +26,7 @@ import java.util.Objects;
  * Corresponds to a tuple in the urls table
  */
 public class LinkToBeChecked {
-	Long linkId;
+	Long urlId;
     private String url;
     private Timestamp nextFetchDate;
     
@@ -43,9 +43,9 @@ public class LinkToBeChecked {
     	this.nextFetchDate = nextFetchDate;
     }
     
-    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate) {
+    public LinkToBeChecked(Long urlId, String url, Timestamp nextFetchDate) {
     	this(url, nextFetchDate);
-    	this.linkId = linkId;
+    	this.urlId = urlId;
     	
     }
     
@@ -59,9 +59,9 @@ public class LinkToBeChecked {
     
 
     
-    public LinkToBeChecked(Long linkId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
+    public LinkToBeChecked(Long urlId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
         this(url, nextFetchDate, record, providerGroup, expectedMimeType, ingestionDate);
-    	this.linkId = linkId;
+    	this.urlId = urlId;
 
     }    
 
@@ -121,12 +121,12 @@ public class LinkToBeChecked {
         this.ingestionDate = ingestionDate;
     }    
 
-    public Long getLinkId() {
-		return linkId;
+    public Long getUrlId() {
+		return urlId;
 	}
 
 	public void setLinkId(Long linkId) {
-		this.linkId = linkId;
+		this.urlId = linkId;
 	}
 
 	@Override

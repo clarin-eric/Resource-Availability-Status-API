@@ -35,5 +35,7 @@ public interface CheckedLinkFilter extends Filter<CheckedLinkFilter>{
     
     public CheckedLinkFilter setCategoryIs(Category category);
     
-    public CheckedLinkFilter setCategoryIn(Category... categories);    
+    public CheckedLinkFilter setCategoryIn(Category... categories);  
+    
+    public CheckedLinkFilter setIsActive(boolean active);
 }

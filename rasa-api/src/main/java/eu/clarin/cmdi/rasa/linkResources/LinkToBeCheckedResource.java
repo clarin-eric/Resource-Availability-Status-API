@@ -20,7 +20,6 @@ package eu.clarin.cmdi.rasa.linkResources;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
-import eu.clarin.cmdi.rasa.DAO.Statistics.CategoryStatistics;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;

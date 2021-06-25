@@ -54,13 +54,13 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     @Override
     public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException{     	
 	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement stmt = con.prepareStatement("SELECT DISTINCT s.*, l.url " + filter);
+	    final PreparedStatement stmt = con.prepareStatement("SELECT DISTINCT s.*, u.url " + filter);
 	    final ResultSet rs = stmt.executeQuery();
 	    return DSL.using(con)
 	            .fetchStream(rs)
 	            .map(rec -> new CheckedLink(   
 	    				rec.get("id", Long.class),
-	    				rec.get("link_id", Long.class),
+	    				rec.get("url_id", Long.class),
 	    		        rec.get("url", String.class),
 	    		        rec.get("method", String.class),
 	    		        rec.get("statusCode", Integer.class),           		        
@@ -126,16 +126,16 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     public Boolean save(CheckedLink checkedLink) throws SQLException {
     	String query = null;
 
-    	if(checkedLink.getLinkId() == null) {
+    	if(checkedLink.getUrlId() == null) {
 	    	try (Connection con = connectionProvider.getConnection()) {
 	    		
-	    		query = "SELECT id FROM link where url_hash=MD5(?)";
+	    		query = "SELECT id FROM url where url_hash=MD5(?)";
 	    		try(PreparedStatement statement = con.prepareStatement(query)){
 	    			statement.setString(1, checkedLink.getUrl());
 	    			
 	    			try(ResultSet rs = statement.executeQuery()){
 	    				if(rs.next()) {
-	    					checkedLink.setLinkId(rs.getLong("id"));
+	    					checkedLink.setUrlId(rs.getLong("id"));
 	    				}
 	    				else {
 	    					return false;
@@ -143,9 +143,9 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	    			}
 	    		}
 	    		
-	    		query = "SELECT id FROM status WHERE link_id=?";
+	    		query = "SELECT id FROM status WHERE url_id=?";
 	    		try(PreparedStatement statement = con.prepareStatement(query)){
-	    			statement.setLong(1, checkedLink.getLinkId());
+	    			statement.setLong(1, checkedLink.getUrlId());
 	    			
 	    			try(ResultSet rs = statement.executeQuery()){
 	    				if(rs.next()) {
@@ -155,11 +155,11 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	    		}
 	    		
 	    		if(checkedLink.getStatusId() == null) {//insert
-	    			query = "INSERT INTO status(link_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
+	    			query = "INSERT INTO status(url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
             		+ " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
 	    			
 	    	           try (PreparedStatement statement = con.prepareStatement(query)) {
-	    	                statement.setLong(1, checkedLink.getLinkId());
+	    	                statement.setLong(1, checkedLink.getUrlId());
 	    	                statement.setInt(2,  checkedLink.getStatus());
 	    	                statement.setString(3, checkedLink.getMessage());
 	    	                statement.setString(4, checkedLink.getCategory().toString());
@@ -175,7 +175,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	    			
 	    		}
 	    		else {
-	    			query = "INSERT IGNORE INTO history(status_id, link_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
+	    			query = "INSERT IGNORE INTO history(status_id, url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
 	    					+ " SELECT * FROM status WHERE id=?";	    			
 	    			try (PreparedStatement statement = con.prepareStatement(query)) {
 	    				statement.setLong(1, checkedLink.getStatusId());

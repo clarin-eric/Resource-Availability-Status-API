@@ -15,4 +15,6 @@ public interface Filter<T>{
 	public T setIngestionDateIs(Timestamp ingestionDate);
 	
     public T setLimit(int offset, int limit);
+    
+    public T setIsActive(boolean active);
 }
