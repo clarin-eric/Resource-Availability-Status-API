@@ -60,7 +60,7 @@ public abstract class TestConfig {
     private static DB database;
 
     @BeforeClass
-    public static void setUp() throws SQLException, IOException, ManagedProcessException {
+    public static void setUp() throws SQLException, IOException, ManagedProcessException, InterruptedException {
         database = DB.newEmbeddedDB(3308);
 
 
@@ -131,6 +131,8 @@ public abstract class TestConfig {
         checkedLinkResource.save(new CheckedLink(null, null, "https://www.google.com", "HEAD",  200, "text/html; charset=ISO-8859-1", 0, 222, today, "Ok", 0, Category.Ok));
         checkedLinkResource.save(new CheckedLink(null, null, "https://maps.google.com", "HEAD",  200, "text/html; charset=UTF-8", 0, 440, today, "Ok", 2, Category.Ok));
         checkedLinkResource.save(new CheckedLink(null, null, "https://drive.google.com", "HEAD",  200, "text/html; charset=UTF-8", 73232, 413, today, "Ok", 1, Category.Ok));
+    
+        Thread.sleep(5000);
     }
 
     @AfterClass
