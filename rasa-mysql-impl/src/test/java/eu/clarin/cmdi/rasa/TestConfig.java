@@ -78,7 +78,7 @@ public abstract class TestConfig {
 
         Properties properties = new Properties();
         properties.setProperty("driverClassName", "com.mysql.cj.jdbc.Driver");       
-        properties.setProperty("jdbcUrl", "jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC");
+        properties.setProperty("jdbcUrl", "jdbc:mysql://localhost:3308/linkchecker?useUnicode=true");
         properties.setProperty("username", "root");
         properties.setProperty("password", "");
         
