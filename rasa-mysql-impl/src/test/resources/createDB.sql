@@ -55,7 +55,7 @@ CREATE TABLE `status` (
   `contentType` varchar(256) DEFAULT NULL,
   `byteSize` int DEFAULT NULL,
   `duration` int DEFAULT NULL,
-  `checkingDate` timestamp NOT NULL,
+  `checkingDate` datetime NOT NULL,
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_url_id` (`url_id`),
@@ -75,7 +75,7 @@ CREATE TABLE `history` (
   `contentType` varchar(256) DEFAULT NULL,
   `byteSize` int DEFAULT NULL,
   `duration` int DEFAULT NULL,
-  `checkingDate` timestamp NOT NULL,
+  `checkingDate` datetime NOT NULL,
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_url_id_ceckingDate` (`url_id`,`checkingDate`)
