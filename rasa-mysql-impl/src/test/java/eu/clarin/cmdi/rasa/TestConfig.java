@@ -44,7 +44,7 @@ import java.util.Properties;
 
 public abstract class TestConfig {
 
-    private static RasaFactory rasaFactory;
+    static RasaFactory rasaFactory;
 
     static CheckedLinkResource checkedLinkResource;
     static LinkToBeCheckedResource linkToBeCheckedResource;
@@ -71,7 +71,7 @@ public abstract class TestConfig {
         //create database and fill it with initDB.sql
         Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "");
         ScriptRunner runner = new ScriptRunner(con);
-        InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/createDB.sql"));
+        InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/createTables.sql"));
         runner.runScript(reader);
         reader.close();
         con.close();
@@ -131,8 +131,6 @@ public abstract class TestConfig {
         checkedLinkResource.save(new CheckedLink(null, null, "https://www.google.com", "HEAD",  200, "text/html; charset=ISO-8859-1", 0, 222, today, "Ok", 0, Category.Ok));
         checkedLinkResource.save(new CheckedLink(null, null, "https://maps.google.com", "HEAD",  200, "text/html; charset=UTF-8", 0, 440, today, "Ok", 2, Category.Ok));
         checkedLinkResource.save(new CheckedLink(null, null, "https://drive.google.com", "HEAD",  200, "text/html; charset=UTF-8", 73232, 413, today, "Ok", 1, Category.Ok));
-    
-        Thread.sleep(5000);
     }
 
     @AfterClass

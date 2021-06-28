@@ -18,9 +18,7 @@
 
 package eu.clarin.cmdi.rasa;
 
-import eu.clarin.cmdi.rasa.DAO.CheckedLink;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
-import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -28,8 +26,8 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -38,65 +36,107 @@ import static org.junit.Assert.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
 
-    private final String testURL = "https://mail.google.com";
-    private final String testURL1 = "https://scholar.google.com";
-    private static long now;
-
     @BeforeClass
     public static void setup() {
-        //set it once and only once
-        now = System.currentTimeMillis();
+
     }
 
     @Test
     public void AAbasicSimpleGETTestShouldReturnCorrectly() throws SQLException {
         //same as the first entry in initDB.sql
-        String url = "http://www.ailla.org/waiting.html";
+        String urlA = "http://www.ailla.org/waiting.html";
+        String urlB = "https://www.google.com";
+        
+        LinkToBeChecked linkToBeCheckedA = new LinkToBeChecked(urlA, today, null, null, null, null);
+        LinkToBeChecked linkToBeCheckedB = new LinkToBeChecked(urlB, today, null, null, null, null);
 
-        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(url, today, null, null, null, null);
+        // test UrlIs
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIs(urlA))){
+        	assertEquals(linkToBeCheckedA, stream.findFirst().get());
+        }
 
-        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIs(url))){
-        	assertEquals(linkToBeChecked, stream.findFirst().get());
+        // test UrlIn
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIn(urlA, urlB))){
+        	List<LinkToBeChecked> list = stream.collect(Collectors.toList());
+        	assertEquals(2, list.size());
+        	assertTrue(list.contains(linkToBeCheckedA));
+        	assertTrue(list.contains(linkToBeCheckedB));
+        }  
+        
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIn(urlA, urlB).setProviderGroupIs("Google"))){
+        	List<LinkToBeChecked> list = stream.collect(Collectors.toList());
+        	assertEquals(1, list.size());
+        	assertFalse(list.contains(linkToBeCheckedA));
+        	assertTrue(list.contains(linkToBeCheckedB));
+        }  
+        
+        // test record
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setRecordIs("GoogleRecord"))){        	
+        	assertEquals(3, stream.count());
+        } 
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setRecordIs("GoogleRecord").setProviderGroupIs("NotGoogle"))){        	
+        	assertEquals(0, stream.count());
+        } 
+        
+        // test limit
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setLimit(0, 10))){        	
+        	assertEquals(10, stream.count());
+        } 
+        
+        // test limit
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setLimit(20, 10))){        	
+        	assertEquals(2, stream.count());
+        } 
+    }
+    
+    @Test
+    public void BTestProviderGroupDeactivation() throws SQLException {
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter())){
+        	assertEquals(22, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true))){
+        	assertEquals(22, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true).setProviderGroupIs("NotGoogle"))){
+        	assertEquals(19, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true).setProviderGroupIs("Google"))){
+        	assertEquals(3, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(false))){
+        	assertEquals(0, stream.count());
+        }
+        
+        // this shouldn't deactivate any links since the providerGroupMap contains the name 'NotGoogle'
+        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", today, "record", "NotGoogle", null, tomorrow));
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(false))){
+        	assertEquals(0, stream.count());
+        }
+        
+        // creates a new linkToCheckedRessource with empty providerGroupMap
+        linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
+        // deactivates all links of providerGroup 'NotGoogle' and activates the saved link
+        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", today, "record", "NotGoogle", null, tomorrow));
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter())){
+        	assertEquals(22, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true))){
+        	assertEquals(4, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true).setProviderGroupIs("NotGoogle"))){
+        	assertEquals(1, stream.count());
+        }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true).setProviderGroupIs("Google"))){
+        	assertEquals(3, stream.count());
         }
     }
 
 
     @Test
-    public void GgetCollectionNamesTestShouldReturnCorrectNames() throws SQLException {
+    public void CgetProviderGroupNamesTestShouldReturnCorrectNames() throws SQLException {
         List<String> collectionNames = linkToBeCheckedResource.getProviderGroupNames();
         assertEquals(2, collectionNames.size());
         assertTrue(collectionNames.contains("Google"));
         assertTrue(collectionNames.contains("NotGoogle"));
     }
-
-
-    //@Test
-    public void IdeleteOldLinksTestShouldDeleteCorrectly() throws SQLException {
-
-        //save with 86400000 milliseconds before which is one day less
-        LinkToBeChecked linkToBeChecked = new LinkToBeChecked(testURL, yesterday, "GoogleRecord", "Google", "mimeType", yesterday);
-        linkToBeCheckedResource.save(linkToBeChecked);
-
-
-        CheckedLink checkedLink = new CheckedLink(testURL, null, null, null, null, 0, tomorrow, null, "Google", 0, "GoogleRecord", "mimeType", Category.Broken);
-        checkedLinkResource.save(checkedLink);
-
-        long allCount;
-        try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter())) {
-            allCount = stream.count();
-        }
-
-        //and should contain with the new harvestDate
-        try (Stream<LinkToBeChecked> stream = linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIs(testURL))) {
-	        Optional<LinkToBeChecked> linkToBeCheckedReturned = stream.findFirst();
-	        assertEquals(linkToBeChecked, linkToBeCheckedReturned.get());
-        }
-        //and should contain in status table
-        try (Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setUrlIs(testURL))) {
-	        Optional<CheckedLink> checkedLinkReturned = stream.findFirst();
-	        assertEquals(checkedLink, checkedLinkReturned.get());
-        }
-
-    }
-
 }

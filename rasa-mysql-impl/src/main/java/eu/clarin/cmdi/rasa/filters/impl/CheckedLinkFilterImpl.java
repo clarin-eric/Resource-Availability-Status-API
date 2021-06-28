@@ -45,7 +45,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 
 	@Override
 	public CheckedLinkFilter setCheckedBetween(Timestamp checkedAfter, Timestamp checkedBefore) {
-		super.condition.put("s.checkingDate", "s.checkingDate > '" + checkedAfter + "' AND s.checkingDate < '" + checkedBefore + "'");
+		super.condition.put("s.checkingDate", "s.checkingDate BETWEEN '" + checkedAfter + "' AND '" + checkedBefore + "'");
 		
 		return this;
 	}

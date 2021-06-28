@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -41,13 +42,13 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
     private final ConnectionProvider connectionProvider;
     
-    private Map.Entry<String, Long> lastProviderGroupId;
+    private Map<String, Long> providerGroupIdMap; //since the deactivation depends on this we need a map here
     private Map.Entry<String, Long> lastContextId;
 
     public LinkToBeCheckedResourceImpl(ConnectionProvider connectionProvider) {
         this.connectionProvider = connectionProvider;
         
-        this.lastProviderGroupId = new AbstractMap.SimpleEntry<String, Long>("", null);
+        this.providerGroupIdMap = new HashMap<String, Long>();
         this.lastContextId = new AbstractMap.SimpleEntry<String, Long>("", null);
     }
 
@@ -56,6 +57,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
         final Connection con = connectionProvider.getConnection();
 
         final PreparedStatement statement = con.prepareStatement("SELECT DISTINCT u.* " + filter);
+        LOG.debug("sql-statement:\n" + statement);
         final ResultSet rs = statement.executeQuery();
 
         Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
@@ -169,7 +171,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 	@Override
 	public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
 		try(Connection con = this.connectionProvider.getConnection()){
-			try(PreparedStatement stmt = con.prepareStatement("SELECT count(*) AS count " + filter)){
+			try(PreparedStatement stmt = con.prepareStatement("SELECT count(DISTINCT u.id) AS count " + filter)){
 				try(ResultSet rs = stmt.executeQuery()){
 					if(rs.next())
 						return rs.getInt("count");
@@ -217,9 +219,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 	private synchronized Long getProviderGroupId(LinkToBeChecked linkToBeChecked) throws SQLException {
 		if(linkToBeChecked.getProviderGroup() == null)
 			return null;
-		if(!this.lastProviderGroupId.getKey().equals(linkToBeChecked.getProviderGroup())) {
-			
-			this.lastProviderGroupId = new AbstractMap.SimpleEntry<String, Long>(linkToBeChecked.getProviderGroup(), null);
+		if(!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {
 			
 			try (Connection con = connectionProvider.getConnection()) {
 	        	try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name_hash=MD5(?)")){
@@ -227,12 +227,12 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 	        		
 	        		try(ResultSet rs = statement.executeQuery()){
 	        			if(rs.next())
-	        				this.lastProviderGroupId.setValue(rs.getLong("id"));
+	        				this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), rs.getLong("id"));
 	        		}
 	        	}
 
 	            
-	            if(this.lastProviderGroupId.getValue() == null) {//insert new providerGroup
+	            if(!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {//insert new providerGroup
 	            	
 		            try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name, name_hash) VALUES(?,MD5(?))")) {
 		                statement.setString(1, linkToBeChecked.getProviderGroup());
@@ -244,16 +244,17 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 		            try (PreparedStatement statement = con.prepareStatement("SELECT LAST_INSERT_ID() AS id")) {
 		            	try(ResultSet rs = statement.executeQuery()){
 		        			if(rs.next())
-		        				this.lastProviderGroupId.setValue(rs.getLong("id"));
+		        				this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), rs.getLong("id"));
 		        		}
 		            }	
 	            }
 	            else {//deactivate all links of the provider group
 	    			try(PreparedStatement statement = con.prepareStatement(
 	    					"UPDATE url_context uc, context c SET uc.active = false"
-	    					+ " WHERE c.providerGroup_id = ?")){
+	    					+ " WHERE c.providerGroup_id = ?"
+	    					+ " AND uc.context_id = c.id")){
 	    				
-	    				statement.setLong(1, this.lastProviderGroupId.getValue());
+	    				statement.setLong(1, this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()));
 	    				
 	    				statement.execute();
 	    			}	            	
@@ -261,7 +262,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 			}
 		}
 		
-		return this.lastProviderGroupId.getValue();
+		return this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup());
 	}
 	private synchronized long getContextId(LinkToBeChecked linkToBeChecked, long providerGroupId) throws SQLException {
 		String key = linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();

@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
-    private final static Logger _logger = LoggerFactory.getLogger(CheckedLinkResourceImpl.class);
+    private final static Logger LOG = LoggerFactory.getLogger(CheckedLinkResourceImpl.class);
 
     private final ConnectionProvider connectionProvider;
 
@@ -55,6 +55,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException{     	
 	    final Connection con = connectionProvider.getConnection();
 	    final PreparedStatement stmt = con.prepareStatement("SELECT DISTINCT s.*, u.url " + filter);
+	    LOG.debug("sql-statement:\n" + stmt);
 	    final ResultSet rs = stmt.executeQuery();
 	    return DSL.using(con)
 	            .fetchStream(rs)
@@ -76,17 +77,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                try {
 	                    rs.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close resultset.");
+	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
 	                    stmt.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close prepared statement.");
+	                    LOG.error("Can't close prepared statement.");
 	                }
 	                try {
 	                    con.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close connection.");
+	                    LOG.error("Can't close connection.");
 	                }
 	            });
     }
@@ -125,10 +126,10 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     @Override
     public Boolean save(CheckedLink checkedLink) throws SQLException {
     	String query = null;
-
-    	if(checkedLink.getUrlId() == null) {
-	    	try (Connection con = connectionProvider.getConnection()) {
-	    		
+    	
+    	try (Connection con = connectionProvider.getConnection()) {
+    		//look up urlId if not set in checkedLink
+    		if(checkedLink.getUrlId() == null) {
 	    		query = "SELECT id FROM url where url_hash=MD5(?)";
 	    		try(PreparedStatement statement = con.prepareStatement(query)){
 	    			statement.setString(1, checkedLink.getUrl());
@@ -142,67 +143,65 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	    				}
 	    			}
 	    		}
-	    		
-	    		query = "SELECT id FROM status WHERE url_id=?";
-	    		try(PreparedStatement statement = con.prepareStatement(query)){
-	    			statement.setLong(1, checkedLink.getUrlId());
-	    			
-	    			try(ResultSet rs = statement.executeQuery()){
-	    				if(rs.next()) {
-	    					checkedLink.setStatusId(rs.getLong("id"));
-	    				}
-	    			}
-	    		}
-	    		
-	    		if(checkedLink.getStatusId() == null) {//insert
-	    			query = "INSERT INTO status(url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
-            		+ " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
-	    			
-	    	           try (PreparedStatement statement = con.prepareStatement(query)) {
-	    	                statement.setLong(1, checkedLink.getUrlId());
-	    	                statement.setInt(2,  checkedLink.getStatus());
-	    	                statement.setString(3, checkedLink.getMessage());
-	    	                statement.setString(4, checkedLink.getCategory().toString());
-	    	                statement.setString(5, checkedLink.getMethod());
-	    	                statement.setString(6, checkedLink.getContentType());
-	    	                statement.setInt(7, checkedLink.getByteSize());
-	    	                statement.setInt(8, checkedLink.getDuration());
-	    	                statement.setTimestamp(9, checkedLink.getCheckingDate());
-	    	                statement.setInt(10, checkedLink.getRedirectCount());
-	    	                
-	    	                statement.execute();
-	    	            }
-	    			
-	    		}
-	    		else {
-	    			query = "INSERT IGNORE INTO history(status_id, url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
-	    					+ " SELECT * FROM status WHERE id=?";	    			
-	    			try (PreparedStatement statement = con.prepareStatement(query)) {
-	    				statement.setLong(1, checkedLink.getStatusId());
-	    				
-	    				statement.execute();
-	    			}
-	    			
-	    			query = "UPDATE status SET statusCode=?, message=?, category=?, method=?, contentType=?, byteSize=?, duration=?, checkingDate=?, redirectCount=? WHERE id=?";	    			
-	    			try (PreparedStatement statement = con.prepareStatement(query)) {
-	    				statement.setInt(1,  checkedLink.getStatus());
-    	                statement.setString(2, checkedLink.getMessage());
-    	                statement.setString(3, checkedLink.getCategory().toString());
-    	                statement.setString(4, checkedLink.getMethod());
-    	                statement.setString(5, checkedLink.getContentType());
-    	                statement.setInt(6, checkedLink.getByteSize());
-    	                statement.setInt(7, checkedLink.getDuration());
-    	                statement.setTimestamp(8, checkedLink.getCheckingDate());
-    	                statement.setInt(9, checkedLink.getRedirectCount());
-    	                statement.setLong(10, checkedLink.getStatusId());
+    		}
+	    	// look up status record for urlId	
+    		query = "SELECT id FROM status WHERE url_id=?";
+    		try(PreparedStatement statement = con.prepareStatement(query)){
+    			statement.setLong(1, checkedLink.getUrlId());
+    			
+    			try(ResultSet rs = statement.executeQuery()){
+    				if(rs.next()) {
+    					checkedLink.setStatusId(rs.getLong("id"));
+    				}
+    			}
+    		}
+	    	// insert status record if no record exists for the urlId	
+    		if(checkedLink.getStatusId() == null) {//insert
+    			query = "INSERT INTO status(url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
+        		+ " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
+    			
+    	           try (PreparedStatement statement = con.prepareStatement(query)) {
+    	                statement.setLong(1, checkedLink.getUrlId());
+    	                statement.setInt(2,  checkedLink.getStatus());
+    	                statement.setString(3, checkedLink.getMessage());
+    	                statement.setString(4, checkedLink.getCategory().toString());
+    	                statement.setString(5, checkedLink.getMethod());
+    	                statement.setString(6, checkedLink.getContentType());
+    	                statement.setInt(7, checkedLink.getByteSize());
+    	                statement.setInt(8, checkedLink.getDuration());
+    	                statement.setTimestamp(9, checkedLink.getCheckingDate());
+    	                statement.setInt(10, checkedLink.getRedirectCount());
     	                
-	    				statement.execute();
-	    			}
-	    		}
-
-	    	}   	
-    	}
-    	
+    	                statement.execute();
+    	            }
+    			
+    		}
+    		else { // otherwise copy existing status record to history and update status record
+    			query = "INSERT IGNORE INTO history(status_id, url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
+    					+ " SELECT * FROM status WHERE id=?";	    			
+    			try (PreparedStatement statement = con.prepareStatement(query)) {
+    				statement.setLong(1, checkedLink.getStatusId());
+    				
+    				statement.execute();
+    			}
+    			
+    			query = "UPDATE status SET statusCode=?, message=?, category=?, method=?, contentType=?, byteSize=?, duration=?, checkingDate=?, redirectCount=? WHERE id=?";	    			
+    			try (PreparedStatement statement = con.prepareStatement(query)) {
+    				statement.setInt(1,  checkedLink.getStatus());
+	                statement.setString(2, checkedLink.getMessage());
+	                statement.setString(3, checkedLink.getCategory().toString());
+	                statement.setString(4, checkedLink.getMethod());
+	                statement.setString(5, checkedLink.getContentType());
+	                statement.setInt(6, checkedLink.getByteSize());
+	                statement.setInt(7, checkedLink.getDuration());
+	                statement.setTimestamp(8, checkedLink.getCheckingDate());
+	                statement.setInt(9, checkedLink.getRedirectCount());
+	                statement.setLong(10, checkedLink.getStatusId());
+	                
+    				statement.execute();
+    			}
+    		} 	
+    	}  	
     	
     	return true;
     }
@@ -211,7 +210,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	@Override
 	public int getCount(CheckedLinkFilter filter) throws SQLException {
 		try(Connection con = this.connectionProvider.getConnection()){
-			try(PreparedStatement stmt = con.prepareStatement("SELECT count(*) AS count " + filter)){
+			try(PreparedStatement stmt = con.prepareStatement("SELECT count(DISTINCT u.id) AS count " + filter)){
 				try(ResultSet rs = stmt.executeQuery()){
 					if(rs.next())
 						return rs.getInt("count");
@@ -238,17 +237,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                try {
 	                    rs.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close resultset.");
+	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
 	                    statement.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close prepared statement.");
+	                    LOG.error("Can't close prepared statement.");
 	                }
 	                try {
 	                    con.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close connection.");
+	                    LOG.error("Can't close connection.");
 	                }
 	            }).findFirst().orElseGet(() -> new Statistics(0L, 0.0, 0L));
 	}
@@ -271,17 +270,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                try {
 	                    rs.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close resultset.");
+	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
 	                    statement.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close prepared statement.");
+	                    LOG.error("Can't close prepared statement.");
 	                }
 	                try {
 	                    con.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close connection.");
+	                    LOG.error("Can't close connection.");
 	                }
 	            });
 	}
@@ -304,17 +303,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                try {
 	                    rs.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close resultset.");
+	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
 	                    statement.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close prepared statement.");
+	                    LOG.error("Can't close prepared statement.");
 	                }
 	                try {
 	                    con.close();
 	                } catch (SQLException e) {
-	                    _logger.error("Can't close connection.");
+	                    LOG.error("Can't close connection.");
 	                }
 	            });
 	}

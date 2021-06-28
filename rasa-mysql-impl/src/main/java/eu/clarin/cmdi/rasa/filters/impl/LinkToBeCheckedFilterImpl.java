@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 
 public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToBeCheckedFilter {

@@ -135,6 +135,11 @@ public class CheckedLink{
 	public Timestamp getCheckingDate() {
 		return checkingDate;
 	}
+	
+	@Deprecated
+	public Timestamp getTimestamp() {
+		return checkingDate;
+	}
 
 	public void setCheckingDate(Timestamp checkingDate) {
 		this.checkingDate = checkingDate;
