@@ -129,6 +129,9 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(true).setProviderGroupIs("Google"))){
         	assertEquals(3, stream.count());
         }
+        try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(false))){
+        	assertEquals(18, stream.count());
+        }
     }
 
 
