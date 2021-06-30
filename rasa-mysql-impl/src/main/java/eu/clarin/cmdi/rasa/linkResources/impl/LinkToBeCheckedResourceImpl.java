@@ -54,11 +54,12 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
 	@Override
 	public Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException {
-        final Connection con = connectionProvider.getConnection();
-
-        final PreparedStatement statement = con.prepareStatement("SELECT DISTINCT u.* " + filter);
-        LOG.debug("sql-statement:\n" + statement);
-        final ResultSet rs = statement.executeQuery();
+        String query = "SELECT DISTINCT u.* " + filter;
+        LOG.debug("query: {}", query);
+		final Connection con = connectionProvider.getConnection();
+        final Statement stmt = con.createStatement();
+        
+        final ResultSet rs = stmt.executeQuery(query);
 
         Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
         recordStream.onClose(() -> {
@@ -68,7 +69,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                 LOG.error("Can't close resultset.");
             }
             try {
-                statement.close();
+                stmt.close();
             } catch (SQLException e) {
                 LOG.error("Can't close prepared statement.");
             }
@@ -170,8 +171,10 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
 	@Override
 	public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
+		String query = "SELECT count(DISTINCT u.id) AS count " + filter;
+		LOG.debug("query: {}", query);
 		try(Connection con = this.connectionProvider.getConnection()){
-			try(PreparedStatement stmt = con.prepareStatement("SELECT count(DISTINCT u.id) AS count " + filter)){
+			try(PreparedStatement stmt = con.prepareStatement(query)){
 				try(ResultSet rs = stmt.executeQuery()){
 					if(rs.next())
 						return rs.getInt("count");

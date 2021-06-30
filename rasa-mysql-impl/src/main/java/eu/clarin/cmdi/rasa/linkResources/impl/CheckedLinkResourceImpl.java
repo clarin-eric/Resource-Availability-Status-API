@@ -52,11 +52,13 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     
 
     @Override
-    public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException{     	
+    public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException{   
+    	String query = "SELECT DISTINCT s.*, u.url " + filter;
+    	LOG.debug("query: {}", query);
 	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement stmt = con.prepareStatement("SELECT DISTINCT s.*, u.url " + filter);
-	    LOG.debug("sql-statement:\n" + stmt);
-	    final ResultSet rs = stmt.executeQuery();
+	    final Statement stmt = con.createStatement();
+	    
+	    final ResultSet rs = stmt.executeQuery(query);
 	    return DSL.using(con)
 	            .fetchStream(rs)
 	            .map(rec -> new CheckedLink(   
