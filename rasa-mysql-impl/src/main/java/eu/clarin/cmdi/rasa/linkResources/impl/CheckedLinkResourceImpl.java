@@ -211,9 +211,11 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
 	@Override
 	public int getCount(CheckedLinkFilter filter) throws SQLException {
+		String query = "SELECT count(DISTINCT u.id) AS count " + filter;
+		LOG.debug("query: {}", query);
 		try(Connection con = this.connectionProvider.getConnection()){
-			try(PreparedStatement stmt = con.prepareStatement("SELECT count(DISTINCT u.id) AS count " + filter)){
-				try(ResultSet rs = stmt.executeQuery()){
+			try(Statement stmt = con.createStatement()){
+				try(ResultSet rs = stmt.executeQuery(query)){
 					if(rs.next())
 						return rs.getInt("count");
 				}
@@ -225,41 +227,34 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
 	@Override
 	public Statistics getStatistics(CheckedLinkFilter filter) throws SQLException {
-	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement statement = con.prepareStatement("SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(s.duration) AS count " + filter);
-	    final ResultSet rs = statement.executeQuery();
-	    return DSL.using(con)
-	            .fetchStream(rs)
-	            .map(rec -> new Statistics(   
-	    				rec.get("count", Long.class),
-	    		        rec.get("avgDuration", Double.class),
-	    		        rec.get("maxDuration", Long.class)	
-	    	        ))
-	            .onClose(() -> {
-	                try {
-	                    rs.close();
-	                } catch (SQLException e) {
-	                    LOG.error("Can't close resultset.");
-	                }
-	                try {
-	                    statement.close();
-	                } catch (SQLException e) {
-	                    LOG.error("Can't close prepared statement.");
-	                }
-	                try {
-	                    con.close();
-	                } catch (SQLException e) {
-	                    LOG.error("Can't close connection.");
-	                }
-	            }).findFirst().orElseGet(() -> new Statistics(0L, 0.0, 0L));
+		String query = "SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(DISTINCT s.id) AS count " + filter;
+	    LOG.debug("query: {}", query);
+		try(Connection con = this.connectionProvider.getConnection()){
+			try(Statement stmt = con.createStatement()){
+				try(ResultSet rs = stmt.executeQuery(query)){
+					if(rs.next()) {
+						return new Statistics(   
+			    				rs.getLong("count"),
+			    		        rs.getDouble("avgDuration"),
+			    		        rs.getLong("maxDuration")	
+			    	        );
+					}
+					else {
+						return new Statistics(0L, 0.0, 0L);
+					}
+				}
+			}
+		}
 	}
 
 
 	@Override
 	public Stream<CategoryStatistics> getCategoryStatistics(CheckedLinkFilter filter) throws SQLException {
-	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement statement = con.prepareStatement("SELECT s.category, IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(s.duration) AS count " + filter + " GROUP BY s.category ORDER BY s.category");
-	    final ResultSet rs = statement.executeQuery();
+		String query = "SELECT s.category, IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(Distinct s.id) AS count " + filter + " GROUP BY s.category ORDER BY s.category";
+	    LOG.debug("query: {}", query);
+		final Connection con = connectionProvider.getConnection();
+	    final Statement stmt = con.createStatement();
+	    final ResultSet rs = stmt.executeQuery(query);
 	    return DSL.using(con)
 	            .fetchStream(rs)
 	            .map(rec -> new CategoryStatistics(   
@@ -275,7 +270,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
-	                    statement.close();
+	                    stmt.close();
 	                } catch (SQLException e) {
 	                    LOG.error("Can't close prepared statement.");
 	                }
@@ -290,9 +285,11 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
 	@Override
 	public Stream<StatusStatistics> getStatusStatistics(CheckedLinkFilter filter) throws SQLException {
-	    final Connection con = connectionProvider.getConnection();
-	    final PreparedStatement statement = con.prepareStatement("SELECT s.status, AVG(s.duration) AS avgDuration, MAX(s.duration) AS maxDuration, COUNT(s.duration) AS count " + filter);
-	    final ResultSet rs = statement.executeQuery();
+		String query = "SELECT s.status, AVG(s.duration) AS avgDuration, MAX(s.duration) AS maxDuration, COUNT(s.duration) AS count " + filter;
+	    LOG.debug("query: {}", query);
+		final Connection con = connectionProvider.getConnection();
+	    final Statement stmt = con.createStatement();
+	    final ResultSet rs = stmt.executeQuery(query);
 	    return DSL.using(con)
 	            .fetchStream(rs)
 	            .map(rec -> new StatusStatistics(   
@@ -308,7 +305,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                    LOG.error("Can't close resultset.");
 	                }
 	                try {
-	                    statement.close();
+	                    stmt.close();
 	                } catch (SQLException e) {
 	                    LOG.error("Can't close prepared statement.");
 	                }

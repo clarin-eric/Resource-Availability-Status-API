@@ -131,9 +131,9 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
         try (Connection con = connectionProvider.getConnection()) {
             List<String> collectionNames = new ArrayList<>();
 
-            String collectionQuery = "SELECT name from providerGroup";
-            try (PreparedStatement statement = con.prepareStatement(collectionQuery)) {
-                try (ResultSet rs = statement.executeQuery()) {
+            String query = "SELECT name from providerGroup";
+            try (Statement stmt = con.prepareStatement(query)) {
+                try (ResultSet rs = stmt.executeQuery(query)) {
 
                     while (rs.next()) {
                         collectionNames.add(rs.getString("name"));
@@ -176,8 +176,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 		String query = "SELECT count(DISTINCT u.id) AS count " + filter;
 		LOG.debug("query: {}", query);
 		try(Connection con = this.connectionProvider.getConnection()){
-			try(PreparedStatement stmt = con.prepareStatement(query)){
-				try(ResultSet rs = stmt.executeQuery()){
+			try(Statement stmt = con.createStatement()){
+				try(ResultSet rs = stmt.executeQuery(query)){
 					if(rs.next())
 						return rs.getInt("count");
 				}
