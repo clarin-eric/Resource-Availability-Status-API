@@ -1,3 +1,7 @@
+# the script creates a relational linkchecker database
+# and transfers data from the former stomychecker datase to the linkchecker database
+# author: Wolfgang Walter SAUER (wolfgang.sauer@oeaw.ac.at)
+
 DROP DATABASE  IF EXISTS `linkchecker`;
 CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `linkchecker`;
@@ -110,8 +114,9 @@ SELECT u.id, s.statusCode, s.message, s.category, s.method, s.contentType, s.byt
 WHERE s.url=u.url;
 
 # transfer history
-INSERT INTO linkchecker.history(url_id, status_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)
-SELECT DISTINCT u.id, s.id, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.timestamp, h.redirectCount
+CREATE INDEX idx_history_url ON stormychecker.history(url);
+INSERT IGNORE INTO linkchecker.history(url_id, status_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)
+SELECT u.id, s.id, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.timestamp, h.redirectCount
 FROM stormychecker.history h, linkchecker.url u, linkchecker.status s
 WHERE h.category IS NOT NULL
 AND h.url=u.url
