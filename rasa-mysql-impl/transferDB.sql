@@ -10,7 +10,7 @@ CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_name_hash` (`name`)
+  UNIQUE KEY `idx_name` (`name`)
 );
 
 
@@ -31,7 +31,7 @@ CREATE TABLE `url` (
   `url` varchar(1024) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `nextFetchDate` datetime NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url_hash` (`url`)
+  UNIQUE KEY `idx_url` (`url`)
 );
 
 
