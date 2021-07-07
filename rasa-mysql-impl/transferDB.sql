@@ -1,10 +1,12 @@
-SET @@global.time_zone = '+00:00';
+DROP DATABASE  IF EXISTS `linkchecker`;
+CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `linkchecker`;
+
 CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
-  `name_hash` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_name_hash` (`name_hash`)
+  UNIQUE KEY `idx_name_hash` (`name`)
 );
 
 
@@ -22,11 +24,10 @@ CREATE TABLE `context` (
 
 CREATE TABLE `url` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `url` varchar(1024) NOT NULL,
-  `url_hash` char(32) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `url` varchar(1024) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `nextFetchDate` datetime NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url_hash` (`url_hash`)
+  UNIQUE KEY `idx_url_hash` (`url`)
 );
 
 
@@ -79,3 +80,39 @@ CREATE TABLE `history` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_url_id_ceckingDate` (`url_id`,`checkingDate`)
 );
+
+# transfer urls
+INSERT IGNORE INTO linkchecker.url(url, nextFetchDate)
+SELECT url, nextFetchDate FROM stormychecker.urls;
+
+# transfer provider groups
+INSERT INTO linkchecker.providerGroup(name)
+SELECT DISTINCT collection FROM stormychecker.urls;
+
+# transfer contexts
+INSERT INTO linkchecker.context(record, providerGroup_id, expectedMimeType)
+SELECT DISTINCT u.record, p.id, u.expectedMimeType FROM stormychecker.urls u, linkchecker.providerGroup p
+WHERE u.collection=p.name;
+
+# link contexts to urls
+INSERT INTO url_context(url_id, context_id)
+SELECT lu.id, lc.id
+FROM linkchecker.url lu, linkchecker.context lc, linkchecker.providerGroup lp, stormychecker.urls su
+WHERE su.url=lu.url
+AND su.record=lc.record
+AND su.collection=lp.name
+AND lc.providerGroup_id=lp.id
+AND su.expectedMimeType=lc.expectedMimeType;
+
+# transfer status
+INSERT INTO linkchecker.status(url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)
+SELECT u.id, s.statusCode, s.message, s.category, s.method, s.contentType, s.byteSize, s.duration, s.timestamp, s.redirectCount FROM stormychecker.status s, linkchecker.url u
+WHERE s.url=u.url;
+
+# transfer history
+INSERT INTO linkchecker.history(url_id, status_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)
+SELECT DISTINCT u.id, s.id, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.timestamp, h.redirectCount
+FROM stormychecker.history h, linkchecker.url u, linkchecker.status s
+WHERE h.category IS NOT NULL
+AND h.url=u.url
+AND u.id=s.url_id;

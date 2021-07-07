@@ -20,13 +20,13 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 	@Override
 	public CheckedLinkFilter setUrlIs(String url) {
 
-		super.condition.put("u.url_hash", "u.url_hash = MD5('" + url +"')");
+		super.condition.put("u.url", "u.url = '" + url +"'");
 		return this;
 	}
 
 	@Override
 	public CheckedLinkFilter setUrlIn(String... urls) {
-		super.condition.put("u.url_hash", "u.url_hash IN(" + Arrays.stream(urls).collect(Collectors.joining("'), MD5('", "MD5('", "')")) + ")");
+		super.condition.put("u.url", "u.url IN " + Arrays.stream(urls).collect(Collectors.joining("', '", "('", "')")));
 		return this;
 	}
 	
@@ -56,7 +56,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 			super.from.add("providerGroup p");
 			super.from.add("context c");
 			super.from.add("url_context uc");
-			super.condition.put("p.hash_name", "p.name_hash = MD5('" + providerGroup + "')");
+			super.condition.put("p.name", "p.name = '" + providerGroup + "'");
 			super.condition.put("c-p", "c.providerGroup_id=p.id");
 			super.condition.put("uc-c","uc.context_id=c.id");
 			super.condition.put("u-uc", "u.id=uc.url_id");

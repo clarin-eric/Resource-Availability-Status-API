@@ -194,7 +194,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 	
 	private synchronized void saveLink(Connection con, LinkToBeChecked linkToBeChecked) throws SQLException{
 
-    	try (PreparedStatement statement = con.prepareStatement("SELECT id from url where url_hash=MD5(?)")){
+    	try (PreparedStatement statement = con.prepareStatement("SELECT id from url where url=?")){
     		statement.setString(1, linkToBeChecked.getUrl());
     		
     		try(ResultSet rs = statement.executeQuery()){
@@ -203,10 +203,9 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
     		}
     	}
     	if(linkToBeChecked.getUrlId() == null) {//insert new link
-            try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, url_hash, nextFetchDate) VALUES(?,MD5(?),?)")) {
+            try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, nextFetchDate) VALUES(?,?)")) {
                 statement.setString(1, linkToBeChecked.getUrl());
-                statement.setString(2, linkToBeChecked.getUrl());
-                statement.setTimestamp(3, linkToBeChecked.getNextFetchDate());
+                statement.setTimestamp(2, linkToBeChecked.getNextFetchDate());
                 
                 statement.execute();
             }	
@@ -224,7 +223,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 			return null;
 		if(!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {
 			
-        	try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name_hash=MD5(?)")){
+        	try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")){
         		statement.setString(1, linkToBeChecked.getProviderGroup());
         		
         		try(ResultSet rs = statement.executeQuery()){
@@ -236,9 +235,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             
             if(!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {//insert new providerGroup
             	
-	            try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name, name_hash) VALUES(?,MD5(?))")) {
+	            try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name) VALUES(?)")) {
 	                statement.setString(1, linkToBeChecked.getProviderGroup());
-	                statement.setString(2, linkToBeChecked.getProviderGroup());
 	                
 	                statement.execute();	        		
 	            }	

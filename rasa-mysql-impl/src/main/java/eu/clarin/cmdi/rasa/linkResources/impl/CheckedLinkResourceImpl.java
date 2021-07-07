@@ -132,7 +132,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     	try (Connection con = connectionProvider.getConnection()) {
     		//look up urlId if not set in checkedLink
     		if(checkedLink.getUrlId() == null) {
-	    		query = "SELECT id FROM url where url_hash=MD5(?)";
+	    		query = "SELECT id FROM url where url=?";
 	    		try(PreparedStatement statement = con.prepareStatement(query)){
 	    			statement.setString(1, checkedLink.getUrl());
 	    			
