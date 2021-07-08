@@ -115,4 +115,16 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 		
 		return this;
 	}
+
+
+  @Override
+  public CheckedLinkFilter setDoOrder(boolean doOrder) {
+    if(doOrder) {
+    	this.orderBy.add("u.nextFetchDate");
+    }
+    else {
+    	this.orderBy.clear();
+    }
+    return this;
+  }
 }

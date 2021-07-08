@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractFilter {
 	protected Set<String> from = new HashSet<String>();
 	protected Map<String, String> condition = new HashMap<String, String>();
+	protected Set<String> orderBy = new HashSet<String>();
 	protected String limit = "";
 
 	public String toString() {
@@ -16,6 +17,7 @@ public abstract class AbstractFilter {
 				+ this.from.stream().collect(Collectors.joining(", ")) 
 				+ (condition.size() > 0? " WHERE ":"") 
 				+ condition.values().stream().collect(Collectors.joining(" AND ")) 
+				+ (orderBy.size() > 0?" ORDER BY " + orderBy.stream().collect(Collectors.joining(" ,")):"")
 				+ limit;
 	}
 }

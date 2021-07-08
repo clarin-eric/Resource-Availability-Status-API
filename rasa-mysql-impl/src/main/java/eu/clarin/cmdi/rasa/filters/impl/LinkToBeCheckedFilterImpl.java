@@ -71,5 +71,11 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
 		return this;
 	}
 
+  @Override
+  public LinkToBeCheckedFilter setDoOrder(boolean doOrder) {
+    // TODO Auto-generated method stub
+    return this;
+  }
+
 
 }

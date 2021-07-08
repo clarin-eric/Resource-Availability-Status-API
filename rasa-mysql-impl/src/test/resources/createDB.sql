@@ -1,4 +1,3 @@
-SET @@global.time_zone = '+00:00';
 DROP DATABASE  IF EXISTS `linkchecker`;
 CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `linkchecker`;
@@ -7,7 +6,7 @@ CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_name_hash` (`name`)
+  UNIQUE KEY `idx_name` (`name`)
 );
 
 
@@ -28,7 +27,7 @@ CREATE TABLE `url` (
   `url` varchar(1024) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `nextFetchDate` datetime NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url_hash` (`url`)
+  UNIQUE KEY `idx_url` (`url`)
 );
 
 

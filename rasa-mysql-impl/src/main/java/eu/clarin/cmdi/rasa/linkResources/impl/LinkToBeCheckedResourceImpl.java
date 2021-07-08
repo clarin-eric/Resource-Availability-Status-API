@@ -90,12 +90,16 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
     @Override
     public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
     	try(Connection con = this.connectionProvider.getConnection()){
+    		con.setAutoCommit(false);
 			saveLink(con, linkToBeChecked);
 			
 			Long providerGroupId = getProviderGroupId(con, linkToBeChecked);
 			Long contextId = getContextId(con, linkToBeChecked, providerGroupId);
 			
 			saveUrlContext(con, linkToBeChecked, providerGroupId, contextId);
+			
+			con.commit();
+			con.setAutoCommit(true);
     	}
     	
     	return true;

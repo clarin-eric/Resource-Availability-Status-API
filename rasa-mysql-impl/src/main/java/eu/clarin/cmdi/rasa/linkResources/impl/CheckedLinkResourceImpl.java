@@ -130,6 +130,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     	String query = null;
     	
     	try (Connection con = connectionProvider.getConnection()) {
+    		con.setAutoCommit(false);
     		//look up urlId if not set in checkedLink
     		if(checkedLink.getUrlId() == null) {
 	    		query = "SELECT id FROM url where url=?";
@@ -202,7 +203,9 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 	                
     				statement.execute();
     			}
-    		} 	
+    		}
+    		con.commit();
+    		con.setAutoCommit(true);
     	}  	
     	
     	return true;
