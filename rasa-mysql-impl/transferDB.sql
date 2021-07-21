@@ -29,7 +29,6 @@ CREATE TABLE `context` (
 CREATE TABLE `url` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url` varchar(1024) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  `nextFetchDate` datetime NOT NULL DEFAULT NOW(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_url` (`url`)
 );
@@ -86,8 +85,8 @@ CREATE TABLE `history` (
 );
 
 # transfer urls
-INSERT IGNORE INTO linkchecker.url(url, nextFetchDate)
-SELECT url, nextFetchDate FROM stormychecker.urls;
+INSERT IGNORE INTO linkchecker.url(url)
+SELECT url FROM stormychecker.urls;
 
 # transfer provider groups
 INSERT INTO linkchecker.providerGroup(name)
@@ -114,7 +113,7 @@ SELECT u.id, s.statusCode, s.message, s.category, s.method, s.contentType, s.byt
 WHERE s.url=u.url;
 
 # transfer history
-CREATE INDEX idx_history_url ON stormychecker.history(url);
+CREATE INDEX IF NOT EXISTS idx_history_url ON stormychecker.history(url);
 INSERT IGNORE INTO linkchecker.history(url_id, status_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)
 SELECT u.id, s.id, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.timestamp, h.redirectCount
 FROM stormychecker.history h, linkchecker.url u, linkchecker.status s

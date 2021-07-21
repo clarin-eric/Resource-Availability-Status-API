@@ -165,15 +165,15 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
     			
     	           try (PreparedStatement statement = con.prepareStatement(query)) {
     	                statement.setLong(1, checkedLink.getUrlId());
-    	                statement.setInt(2,  checkedLink.getStatus());
+    	                statement.setObject(2,  checkedLink.getStatus(), Types.INTEGER);
     	                statement.setString(3, checkedLink.getMessage());
     	                statement.setString(4, checkedLink.getCategory().toString());
     	                statement.setString(5, checkedLink.getMethod());
     	                statement.setString(6, checkedLink.getContentType());
-    	                statement.setInt(7, checkedLink.getByteSize());
-    	                statement.setInt(8, checkedLink.getDuration());
+    	                statement.setObject(7, checkedLink.getByteSize(), Types.INTEGER);
+    	                statement.setObject(8, checkedLink.getDuration(), Types.INTEGER);
     	                statement.setTimestamp(9, checkedLink.getCheckingDate());
-    	                statement.setInt(10, checkedLink.getRedirectCount());
+    	                statement.setObject(10, checkedLink.getRedirectCount(), Types.INTEGER);
     	                
     	                statement.execute();
     	            }

@@ -28,7 +28,6 @@ import java.util.Objects;
 public class LinkToBeChecked {
 	Long urlId;
     private String url;
-    private Timestamp nextFetchDate;
     
     private String record;
     private String providerGroup;
@@ -38,19 +37,18 @@ public class LinkToBeChecked {
     public LinkToBeChecked() {
     }
     
-    public LinkToBeChecked(String url, Timestamp nextFetchDate) {
+    public LinkToBeChecked(String url) {
     	this.url = url;
-    	this.nextFetchDate = nextFetchDate;
     }
     
-    public LinkToBeChecked(Long urlId, String url, Timestamp nextFetchDate) {
-    	this(url, nextFetchDate);
+    public LinkToBeChecked(Long urlId, String url) {
+    	this(url);
     	this.urlId = urlId;
     	
     }
     
-    public LinkToBeChecked(String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
-    	this(url, nextFetchDate);
+    public LinkToBeChecked(String url, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
+    	this(url);
         this.record = record;
         this.providerGroup = providerGroup;
         this.expectedMimeType = expectedMimeType;
@@ -59,8 +57,8 @@ public class LinkToBeChecked {
     
 
     
-    public LinkToBeChecked(Long urlId, String url, Timestamp nextFetchDate, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
-        this(url, nextFetchDate, record, providerGroup, expectedMimeType, ingestionDate);
+    public LinkToBeChecked(Long urlId, String url, String record, String providerGroup, String expectedMimeType, Timestamp ingestionDate) {
+        this(url, record, providerGroup, expectedMimeType, ingestionDate);
     	this.urlId = urlId;
 
     }    
@@ -72,14 +70,6 @@ public class LinkToBeChecked {
     public void setUrl(String url) {
         this.url = url;
     }  
-
-	public Timestamp getNextFetchDate() {
-		return nextFetchDate;
-	}
-
-	public void setNextFetchDate(Timestamp nextFetchDate) {
-		this.nextFetchDate = nextFetchDate;
-	}
 
 	public String getRecord() {
         return record;
@@ -134,20 +124,18 @@ public class LinkToBeChecked {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LinkToBeChecked that = (LinkToBeChecked) o;
-        return url.equals(that.url) &&
-                Objects.equals(nextFetchDate, that.nextFetchDate);
+        return url.equals(that.url);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(url, nextFetchDate);
+        return Objects.hash(url);
     }
 
     @Override
     public String toString() {
         return "LinkToBeChecked{" +
                 "url='" + url + '\'' +
-                ", nextFetchDate='" + nextFetchDate + '\'' +
                 ", record='" + record + '\'' +
                 ", providerGroup='" + providerGroup + '\'' +
                 ", expectedMimeType='" + expectedMimeType + '\'' +
