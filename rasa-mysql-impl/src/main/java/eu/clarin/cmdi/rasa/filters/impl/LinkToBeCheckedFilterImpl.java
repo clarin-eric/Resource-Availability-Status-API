@@ -68,7 +68,7 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
    public LinkToBeCheckedFilter setDoOrder(boolean doOrder) {
       if (doOrder) {
          this.join.add("LEFT JOIN status s ON u.id=s.url_id");
-         this.orderBy = "s.lastCheckDate";
+         this.orderBy = "s.checkingDate";
       } else {
          this.join.remove("LEFT JOIN status s ON u.id=s.url_id");
          this.orderBy = null;

@@ -1,6 +1,6 @@
 # the script creates a relational linkchecker database
 # and transfers data from the former stomychecker datase to the linkchecker database
-# author: Wolfgang Walter SAUER (wolfgang.sauer@oeaw.ac.at)
+# author: Wolfgang Walter SAUER (wowasa) <wolfgang.sauer@oeaw.ac.at>
 
 DROP DATABASE  IF EXISTS `linkchecker`;
 CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;

@@ -1,3 +1,7 @@
+# This script creates a linkchecker database as it is assumed by this mysql implementation of the rasa-api
+# author: Wolfgang Walter SAUER (wowasa) <wolfgang.sauer@oeaw.ac.at>
+# date: July 2021
+
 DROP DATABASE  IF EXISTS `linkchecker`;
 CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `linkchecker`;
