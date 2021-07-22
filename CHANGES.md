@@ -1,4 +1,4 @@
-# version 3.1.0
+# version 4.0.0
 - separation of API and mysql implementation in sub-projects rasa-api and rasa-mysql-impl
 - reduction and simplification of data access methods in resource classes
 - dropping statistics resource classes and assigning their methods to the remaining resource classes
