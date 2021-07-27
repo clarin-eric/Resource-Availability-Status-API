@@ -20,6 +20,8 @@ package eu.clarin.cmdi.rasa.helpers;
 
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
+import java.io.IOException;
+import java.io.Writer;
 
 public interface RasaFactory {
 
@@ -36,6 +38,8 @@ public interface RasaFactory {
      * @return checkedLinkResource to query and update the status table
      */
     LinkToBeCheckedResource getLinkToBeCheckedResource();
+    
+    void writeStatusSummary(Writer writer) throws IOException;
 
 
     /**
