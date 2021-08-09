@@ -19,11 +19,11 @@ package eu.clarin.cmdi.rasa.linkResources.impl;
 
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
+import eu.clarin.cmdi.rasa.filters.impl.AbstractFilter;
 import eu.clarin.cmdi.rasa.filters.impl.LinkToBeCheckedFilterImpl;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 
-import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,33 +54,47 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException {
-      String query = "SELECT DISTINCT u.* " + filter;
-      LOG.debug("query: {}", query);
+      AbstractFilter aFilter = AbstractFilter.class.cast(filter);
+      
       final Connection con = connectionProvider.getConnection();
-      final Statement stmt = con.createStatement();
-
-      final ResultSet rs = stmt.executeQuery(query);
-
-      Stream<Record> recordStream = DSL.using(con).fetchStream(rs);
-      recordStream.onClose(() -> {
-         try {
-            rs.close();
-         } catch (SQLException e) {
-            LOG.error("Can't close resultset.");
-         }
-         try {
-            stmt.close();
-         } catch (SQLException e) {
-            LOG.error("Can't close prepared statement.");
-         }
+      
+      try {
+         final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT u.*");
+         final ResultSet rs = stmt.executeQuery();
+         
+         return DSL.using(con).fetchStream(rs)
+               .onClose(() -> {
+                  try {
+                     rs.close();
+                  } 
+                  catch (SQLException e) {
+                     LOG.error("Can't close resultset.");
+                  }
+                  try {
+                     stmt.close();
+                  } 
+                  catch (SQLException e) {
+                     LOG.error("Can't close prepared statement.");
+                  }
+                  try {
+                     con.close();
+                  } 
+                  catch (SQLException e) {
+                     LOG.error("Can't close connection.");
+                  }
+               })
+               .map(rec -> new LinkToBeChecked(rec.get("id", Long.class), rec.get("url", String.class)));
+         
+      }
+      catch(SQLException ex) {
          try {
             con.close();
-         } catch (SQLException e) {
+         } 
+         catch (SQLException e) {
             LOG.error("Can't close connection.");
          }
-      });
-
-      return recordStream.map(rec -> new LinkToBeChecked(rec.get("id", Long.class), rec.get("url", String.class)));
+      }
+      return Stream.empty();
    }
 
    @Override
@@ -171,11 +185,11 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
-      String query = "SELECT count(DISTINCT u.id) AS count " + filter;
-      LOG.debug("query: {}", query);
+      AbstractFilter aFilter = AbstractFilter.class.cast(filter);
+      
       try (Connection con = this.connectionProvider.getConnection()) {
-         try (Statement stmt = con.createStatement()) {
-            try (ResultSet rs = stmt.executeQuery(query)) {
+         try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
+            try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
                   return rs.getInt("count");
             }

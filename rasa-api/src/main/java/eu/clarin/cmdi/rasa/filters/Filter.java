@@ -18,5 +18,5 @@ public interface Filter<T>{
     
     public T setIsActive(boolean active);
     
-    public T setDoOrder(boolean doOrder);
+    public T setOrderByCheckingDate(boolean isAscending);
 }

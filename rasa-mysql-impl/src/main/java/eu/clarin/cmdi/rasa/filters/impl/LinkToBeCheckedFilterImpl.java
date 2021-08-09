@@ -1,8 +1,6 @@
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 
@@ -14,38 +12,33 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
 
    @Override
    public LinkToBeCheckedFilter setUrlIs(String url) {
-      super.where.put("u.url", "u.url = '" + url + "'");
+      super.setUrlIs(url);
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setUrlIn(String... urls) {
-      super.where.put("u.url", "u.url IN " + Arrays.stream(urls).collect(Collectors.joining("', '", "('", "')")));
+      super.setUrlIn(urls);
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setProviderGroupIs(String providerGroup) {
-      super.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
-      super.join.add("INNER JOIN context c ON uc.context_id=c.id");
-      super.join.add("INNER JOIN providerGroup p ON c.providerGroup_id=p.id");
-      super.where.put("p.name", "p.name = '" + providerGroup + "'");
+      super.setProviderGroupIs(providerGroup);
+      
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setRecordIs(String record) {
-      super.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
-      super.join.add("INNER JOIN context c ON uc.context_id=c.id");
-      super.where.put("c.record", "c.record = '" + record + "'");
-
+      super.setRecordIs(record);
+      
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setIngestionDateIs(Timestamp ingestionDate) {
-      super.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
-      super.where.put("uc.ingestionDate", "uc.ingestionDate = '" + ingestionDate + "'");
+      super.setIngestionDateIs(ingestionDate);
 
       return this;
    }
@@ -53,26 +46,22 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
    @Override
    public LinkToBeCheckedFilter setLimit(int offset, int limit) {
       this.limit = offset + ", " + limit;
+      
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setIsActive(boolean active) {
-      super.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
-      super.where.put("uc.active", "uc.active = " + active);
+      super.setIsActive(active);
 
       return this;
    }
 
    @Override
-   public LinkToBeCheckedFilter setDoOrder(boolean doOrder) {
-      if (doOrder) {
-         this.join.add("LEFT JOIN status s ON u.id=s.url_id");
-         this.orderBy = "s.checkingDate";
-      } else {
-         this.join.remove("LEFT JOIN status s ON u.id=s.url_id");
-         this.orderBy = null;
-      }
+   public LinkToBeCheckedFilter setOrderByCheckingDate(boolean isAscending) {
+      this.join.add("LEFT JOIN status s ON u.id=s.url_id");
+      this.orderBy = "s.checkingDate" + (isAscending?"":" DESC"); 
+      
       return this;
    }
 }
