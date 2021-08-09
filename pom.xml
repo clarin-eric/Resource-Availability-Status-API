@@ -6,7 +6,7 @@
 
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>4.0.0-alpha-SNAPSHOT</version>
+    <version>4.0.0-alpha_2</version>
     <distributionManagement>
         <snapshotRepository>
             <id>CLARIN-Snapshot</id>
