@@ -23,6 +23,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.linkResources.impl.CheckedLinkResourceImpl;
 import eu.clarin.cmdi.rasa.linkResources.impl.LinkToBeCheckedResourceImpl;
+import java.io.IOException;
+import java.io.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,5 +131,10 @@ public class ACDHRasaFactory implements eu.clarin.cmdi.rasa.helpers.RasaFactory 
     @Override
     public void tearDown() {
         this.ds.close();
+    }
+
+    @Override
+    public void writeStatusSummary(Writer writer) throws IOException {
+        writer.write(getClass().getName());
     }
 }

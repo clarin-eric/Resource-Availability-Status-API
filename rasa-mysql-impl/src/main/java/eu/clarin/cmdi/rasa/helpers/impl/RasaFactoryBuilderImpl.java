@@ -7,14 +7,17 @@ import org.slf4j.LoggerFactory;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariPoolMXBean;
 
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
 import eu.clarin.cmdi.rasa.helpers.RasaFactoryBuilder;
 import eu.clarin.cmdi.rasa.linkResources.impl.CheckedLinkResourceImpl;
 import eu.clarin.cmdi.rasa.linkResources.impl.LinkToBeCheckedResourceImpl;
+import java.io.IOException;
+import java.io.Writer;
 
-public class RasaFactoryBuilderImpl extends RasaFactoryBuilder {
+public class RasaFactoryBuilderImpl implements RasaFactoryBuilder {
 
 	@Override
 	public RasaFactory getRasaFactory(Properties properties) {		
@@ -49,6 +52,17 @@ public class RasaFactoryBuilderImpl extends RasaFactoryBuilder {
 		    public void tearDown() {
 		        this.ds.close();
 		    }
+                    
+                    @Override
+                    public void writeStatusSummary(Writer writer) throws IOException {
+                        final HikariPoolMXBean hikariPoolMXBean = ds.getHikariPoolMXBean();
+                        writer.write(String.format("HikariDataSource <active connections: %d, idle connections: %d, threads awaiting connection: %d, total connections: %d>",
+                                hikariPoolMXBean.getActiveConnections(),
+                                hikariPoolMXBean.getIdleConnections(), 
+                                hikariPoolMXBean.getThreadsAwaitingConnection(),
+                                hikariPoolMXBean.getTotalConnections()));
+                        writer.flush();
+                    }
 		};
 	}
 }
