@@ -3,7 +3,7 @@
   <parent>
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>4.0.0-alpha_2</version>
+    <version>4.0.0-beta_1</version>
   </parent>
   <artifactId>rasa-mysql-impl</artifactId>
     <build>
@@ -81,7 +81,7 @@
         <dependency>
         	<groupId>eu.clarin.cmdi</groupId>
         	<artifactId>rasa-api</artifactId>
-        	<version>4.0.0-alpha_2</version>
+        	<version>4.0.0-beta_1</version>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>

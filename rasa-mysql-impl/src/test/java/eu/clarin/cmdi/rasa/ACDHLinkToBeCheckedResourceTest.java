@@ -142,4 +142,24 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         assertTrue(collectionNames.contains("Google"));
         assertTrue(collectionNames.contains("NotGoogle"));
     }
+    
+    @Test
+    public void DTestNullInFilter() throws SQLException {
+       
+       try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIs(null))){
+          assertEquals(0, stream.count());
+       }
+       
+       try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIn(null, null))){
+          assertEquals(0, stream.count());
+       }
+       
+       try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIngestionDateIs(null))){
+          assertEquals(0, stream.count());
+       }
+       
+       try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setRecordIs(null))){
+          assertEquals(0, stream.count());
+       } 
+    }   
 }

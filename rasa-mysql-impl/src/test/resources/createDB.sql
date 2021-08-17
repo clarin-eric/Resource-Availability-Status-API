@@ -10,7 +10,7 @@ CREATE TABLE `providerGroup` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(256) NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_name` (`name`)
+  UNIQUE KEY `ukey_providerGroup_name` (`name`)
 );
 
 
@@ -21,7 +21,7 @@ CREATE TABLE `context` (
   `providerGroup_id` int DEFAULT NULL,
   `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `ukey_context_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
 );
 
 
@@ -30,7 +30,7 @@ CREATE TABLE `url` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url` varchar(1024) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url` (`url`)
+  UNIQUE KEY `ukey_url_url` (`url`)
 );
 
 
@@ -41,10 +41,11 @@ CREATE TABLE `url_context` (
   `ingestionDate` datetime NOT NULL DEFAULT NOW(),
   `active` boolean NOT NULL DEFAULT false,
   PRIMARY KEY (`id`),
-  KEY `fk_url_context_1_idx` (`url_id`),
-  KEY `fk_url_context_2_idx` (`context_id`),
-  CONSTRAINT `fk_url_context_1` FOREIGN KEY (`url_id`) REFERENCES `url` (`id`),
-  CONSTRAINT `fk_url_context_2` FOREIGN KEY (`context_id`) REFERENCES `context` (`id`)
+  KEY `key_url_context_url_id` (`url_id`),
+  KEY `key_url_context_context_id` (`context_id`),
+  KEY `key_url_context_url_id_active` (`url_id`, `active`),
+  CONSTRAINT `fkey_url_context_url_id` FOREIGN KEY `key_url_context_url_id` (`url_id`) REFERENCES `url` (`id`),
+  CONSTRAINT `fkey_url_context_context_id` FOREIGN KEY `key_url_context_context_id` (`context_id`) REFERENCES `context` (`id`)
 );
 
 
@@ -61,9 +62,9 @@ CREATE TABLE `status` (
   `checkingDate` datetime NOT NULL,
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url_id` (`url_id`),
-  KEY `fk_status_1_idx` (`url_id`),
-  CONSTRAINT `fk_status_1` FOREIGN KEY (`url_id`) REFERENCES `url` (`id`)
+  UNIQUE KEY `ukey_status_url_id` (`url_id`),
+  KEY `key_status_statusCode` (`statusCode`),
+  CONSTRAINT `fkey_status_url_id` FOREIGN KEY `ukey_status_url_id` (`url_id`) REFERENCES `url` (`id`)
 );
 
 
@@ -81,5 +82,5 @@ CREATE TABLE `history` (
   `checkingDate` datetime NOT NULL,
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_url_id_ceckingDate` (`url_id`,`checkingDate`)
+  UNIQUE KEY `ukey_history_url_id_ceckingDate` (`url_id`,`checkingDate`)
 );

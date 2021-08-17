@@ -232,6 +232,25 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
             assertEquals(9, linksOneOffset.size());
         }
     }
+    
+    @Test
+    public void testNullInFilter() throws SQLException {
+       try (Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setUrlIs(null))) {
+          assertEquals(0, stream.count());
+       }
+       
+       try (Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setUrlIn(null, null))) {
+          assertEquals(0, stream.count());
+       }
+       
+       try (Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setIngestionDateIs(null))) {
+          assertEquals(0, stream.count());
+       }
+       
+       try (Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setRecordIs(null))) {
+          assertEquals(0, stream.count());
+       }
+    }
 
     //the next two methods should be run in order
     @Test
