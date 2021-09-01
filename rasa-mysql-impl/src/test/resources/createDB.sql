@@ -53,7 +53,7 @@ CREATE TABLE `status` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url_id` int DEFAULT NULL,
   `statusCode` int DEFAULT NULL,
-  `message` varchar(256),
+  `message` varchar(1024),
   `category` varchar(25) NOT NULL,
   `method` varchar(10) NOT NULL,
   `contentType` varchar(256) DEFAULT NULL,
