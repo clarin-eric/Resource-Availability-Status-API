@@ -57,7 +57,7 @@ CREATE TABLE `status` (
   `category` varchar(25) NOT NULL,
   `method` varchar(10) NOT NULL,
   `contentType` varchar(256) DEFAULT NULL,
-  `byteSize` int DEFAULT NULL,
+  `byteSize` bigint DEFAULT NULL,
   `duration` int DEFAULT NULL,
   `checkingDate` datetime NOT NULL,
   `redirectCount` int DEFAULT NULL,
