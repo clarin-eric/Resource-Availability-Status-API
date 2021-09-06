@@ -1,3 +1,6 @@
+# version 4.0.1
+- increasing field size of field byteSize in table status from int to bigint in mysql/maria db and from int to long in Java
+
 # version 4.0.0
 - separation of API and mysql implementation in sub-projects rasa-api and rasa-mysql-impl
 - reduction and simplification of data access methods in resource classes
