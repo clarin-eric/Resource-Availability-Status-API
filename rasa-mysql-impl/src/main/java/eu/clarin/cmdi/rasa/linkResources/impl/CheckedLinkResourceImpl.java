@@ -81,7 +81,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
             .map(rec -> new CheckedLink(rec.get("id", Long.class),
                rec.get("url_id", Long.class), rec.get("url", String.class), rec.get("method", String.class),
                rec.get("statusCode", Integer.class), rec.get("contentType", String.class),
-               rec.get("byteSize", Integer.class), rec.get("duration", Integer.class),
+               rec.get("byteSize", Long.class), rec.get("duration", Integer.class),
                rec.get("checkingDate", Timestamp.class), rec.get("message", String.class),
                rec.get("redirectCount", Integer.class), Category.valueOf(rec.get("category", String.class))));
 
@@ -196,7 +196,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                statement.setString(3, checkedLink.getCategory().toString());
                statement.setString(4, checkedLink.getMethod());
                statement.setString(5, checkedLink.getContentType());
-               statement.setInt(6, checkedLink.getByteSize());
+               statement.setLong(6, checkedLink.getByteSize());
                statement.setInt(7, checkedLink.getDuration());
                statement.setTimestamp(8, checkedLink.getCheckingDate());
                statement.setInt(9, checkedLink.getRedirectCount());

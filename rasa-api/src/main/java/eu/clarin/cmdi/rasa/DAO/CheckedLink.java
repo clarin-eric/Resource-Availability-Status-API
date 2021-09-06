@@ -36,7 +36,7 @@ public class CheckedLink{
 	private String method;
 	private Integer status;
 	private String contentType;
-	private Integer byteSize;
+	private Long byteSize;
 	private Integer duration;
 	private Timestamp checkingDate;
 	private String message;
@@ -50,7 +50,7 @@ public class CheckedLink{
 	}
 
 	@Deprecated
-	public CheckedLink(String url, String method, Integer status, String contentType, Integer byteSize,
+	public CheckedLink(String url, String method, Integer status, String contentType, Long byteSize,
 			Integer duration, Timestamp checkingDate, String message, String collection, Integer redirectCount,
 			String record, String expectedMimeType, Category category) {
 		this();
@@ -67,7 +67,7 @@ public class CheckedLink{
 		this.category = category;
 	}
 
-	public CheckedLink(Long linkId, Long statusId, String url, String method, Integer status, String contentType, Integer byteSize,
+	public CheckedLink(Long linkId, Long statusId, String url, String method, Integer status, String contentType, Long byteSize,
 			Integer duration, Timestamp checkingDate, String message, Integer redirectCount,
 			Category category) {
 		this();
@@ -116,11 +116,11 @@ public class CheckedLink{
 		this.contentType = contentType;
 	}
 
-	public Integer getByteSize() {
+	public Long getByteSize() {
 		return byteSize;
 	}
 
-	public void setByteSize(Integer byteSize) {
+	public void setByteSize(Long byteSize) {
 		this.byteSize = byteSize;
 	}
 
@@ -249,7 +249,7 @@ public class CheckedLink{
 
 	@Override
 	public String toString() {	
-		return "CheckedLink{" + "url='" + url + '\'' + ", method='" + method + '\'' + ", status=" + status
+		return "CheckedLink{urlId=" + urlId + ", statusId=" + statusId + ", url='" + url + '\'' + ", method='" + method + '\'' + ", status=" + status
 				+ ", contentType='" + contentType + '\'' + ", byteSize=" + byteSize + ", duration=" + duration
 				+ ", checkingDate=" + checkingDate + ", message='" + message + '\'' 
 				+ ", redirectCount=" + redirectCount + ", category='" + category + "\', Contexts{[" 

@@ -80,7 +80,7 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
         Statistics googleStatistics = new Statistics(3L, 358.3333, 440L);
         Statistics overallStatistics = new Statistics(22L, 271.8182, 613L);
 
-        Statistics googleStatisticsActual = checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google"));
+        Statistics googleStatisticsActual = checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Google").setIsActive(true));
         assertEquals(googleStatistics, googleStatisticsActual);
 
         Statistics overallStatisticsActual = checkedLinkResource.getStatistics(checkedLinkResource.getCheckedLinkFilter());
@@ -132,7 +132,7 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
         assertEquals(19, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("NotGoogle")));
 
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null, today));
-        checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100, 100, today, "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
+        checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100l, 100, today, "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
 
         assertEquals(23, checkedLinkResource.getCount(checkedLinkResource.getCheckedLinkFilter()));
