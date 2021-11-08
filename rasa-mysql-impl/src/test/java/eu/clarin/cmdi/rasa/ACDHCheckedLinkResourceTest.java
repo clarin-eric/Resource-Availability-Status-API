@@ -261,7 +261,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
         }
 
         //save(first urls then status)
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "GoogleRecord", "Google", "mimeType", today));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "source", "GoogleRecord", "Google", "mimeType", today));
         CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100l, 100, tomorrow, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
         checkedLinkResource.save(checkedLink);
 

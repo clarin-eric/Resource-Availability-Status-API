@@ -279,8 +279,9 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       if (!this.lastContextId.getKey().contentEquals(key)) {
          this.lastContextId = new AbstractMap.SimpleEntry<String, Long>(key, null);
 
-         String query = "SELECT id FROM context WHERE record "
-               + (linkToBeChecked.getRecord() == null ? "IS NULL" : "= '" + linkToBeChecked.getRecord() + "'")
+         String query = "SELECT id FROM context WHERE source "
+               + (linkToBeChecked.getSource() == null ? "IS NULL" : "= '" + linkToBeChecked.getSource() + "'")
+               + " AND record " + (linkToBeChecked.getRecord() == null ? "IS NULL" : "= '" + linkToBeChecked.getRecord() + "'")
                + " AND providerGroup_id " + (providerGroupId == null ? "IS NULL" : "= " + providerGroupId)
                + " AND expectedMimeType " + (linkToBeChecked.getExpectedMimeType() == null ? "IS NULL"
                      : "= '" + linkToBeChecked.getExpectedMimeType() + "'");

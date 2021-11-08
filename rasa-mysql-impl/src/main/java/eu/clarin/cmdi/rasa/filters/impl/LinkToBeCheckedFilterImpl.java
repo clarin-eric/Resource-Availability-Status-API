@@ -28,6 +28,13 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
       
       return this;
    }
+   
+   @Override
+   public LinkToBeCheckedFilter setSourceIs(String source) {
+      super.setRecordIs(source);
+      
+      return this;
+   }
 
    @Override
    public LinkToBeCheckedFilter setRecordIs(String record) {

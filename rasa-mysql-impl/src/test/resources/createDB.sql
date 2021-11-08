@@ -21,7 +21,7 @@ CREATE TABLE `context` (
   `providerGroup_id` int DEFAULT NULL,
   `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ukey_context_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `ukey_source_context_record_providerGroup_id_expectedMimeType` (`source`, `record`, `providerGroup_id`, `expectedMimeType`)
 );
 
 

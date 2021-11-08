@@ -1,3 +1,7 @@
+# version 4.1.0
+- adding source field to composed unique key in table record
+- adding source field to LinkToBeChecked and to Filter
+
 # version 4.0.1
 - increasing field size of field byteSize in table status from int to bigint in mysql/maria db and from int to long in Java
 

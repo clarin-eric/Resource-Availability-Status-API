@@ -58,6 +58,13 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 
       return this;
    }
+   
+   @Override
+   public CheckedLinkFilter setSourceIs(String source) {
+      super.setRecordIs(source);
+
+      return this;
+   }
 
    @Override
    public CheckedLinkFilter setRecordIs(String record) {
