@@ -84,3 +84,9 @@ CREATE TABLE `history` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `ukey_history_url_id_ceckingDate` (`url_id`,`checkingDate`)
 );
+
+CREATE TABLE `nextCheck` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `url_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+);

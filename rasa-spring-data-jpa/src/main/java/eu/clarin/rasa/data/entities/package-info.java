@@ -1,0 +1,1 @@
+package eu.clarin.rasa.data.entities;
