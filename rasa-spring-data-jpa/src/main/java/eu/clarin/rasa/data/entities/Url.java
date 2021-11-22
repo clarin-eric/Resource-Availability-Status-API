@@ -16,7 +16,7 @@ import lombok.Setter;
 
 @Getter @Setter @NoArgsConstructor
 @Entity
-@Table(indexes = {@Index(columnList = "url", unique = true)})
+@Table(name="url", indexes = {@Index(columnList = "url", unique = true)})
 public class Url {
    
    @Id
