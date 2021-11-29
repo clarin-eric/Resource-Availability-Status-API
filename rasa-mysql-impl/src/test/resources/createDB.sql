@@ -1,5 +1,5 @@
 # This script creates a linkchecker database as it is assumed by this mysql implementation of the rasa-api
-# author: Wolfgang Walter SAUER (wowasa) <wolfgang.sauer@oeaw.ac.at>
+# author: Wolfgang Walter SAUER (wowasa) <clarin@wowasa.com>
 # date: July 2021
 
 DROP DATABASE  IF EXISTS `linkchecker`;
@@ -21,7 +21,7 @@ CREATE TABLE `context` (
   `providerGroup_id` int DEFAULT NULL,
   `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ukey_source_context_record_providerGroup_id_expectedMimeType` (`source`, `record`, `providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `ukey_context_source_record_providerGroup_id_expectedMimeType` (`source`, `record`, `providerGroup_id`, `expectedMimeType`)
 );
 
 
@@ -86,7 +86,6 @@ CREATE TABLE `history` (
 );
 
 CREATE TABLE `nextCheck` (
-  `id` int NOT NULL AUTO_INCREMENT,
   `url_id` int NOT NULL,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`url_id`)
 );

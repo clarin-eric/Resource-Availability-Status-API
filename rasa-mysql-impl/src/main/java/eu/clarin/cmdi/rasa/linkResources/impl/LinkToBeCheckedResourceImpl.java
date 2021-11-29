@@ -287,7 +287,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    private synchronized long getContextId(Connection con, LinkToBeChecked linkToBeChecked, Long providerGroupId)
          throws SQLException {
-      String key = linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();
+      String key = linkToBeChecked.getSource() + "-" + linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();
       if (!this.lastContextId.getKey().contentEquals(key)) {
          this.lastContextId = new AbstractMap.SimpleEntry<String, Long>(key, null);
 
@@ -308,10 +308,11 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
          if (this.lastContextId.getValue() == null) {// insert new context
             try (PreparedStatement stmt = con
-                  .prepareStatement("INSERT INTO context(record, providerGroup_id, expectedMimeType) VALUES(?,?,?)")) {
-               stmt.setString(1, linkToBeChecked.getRecord());
-               stmt.setLong(2, providerGroupId);
-               stmt.setString(3, linkToBeChecked.getExpectedMimeType());
+                  .prepareStatement("INSERT INTO context(source, record, providerGroup_id, expectedMimeType) VALUES(?,?,?,?)")) {
+               stmt.setString(1, linkToBeChecked.getSource());
+               stmt.setString(2, linkToBeChecked.getRecord());
+               stmt.setLong(3, providerGroupId);
+               stmt.setString(4, linkToBeChecked.getExpectedMimeType());
 
                stmt.execute();
             }
