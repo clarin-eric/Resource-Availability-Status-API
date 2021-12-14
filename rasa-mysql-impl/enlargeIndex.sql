@@ -4,3 +4,5 @@
 # date: November 2021
 CREATE UNIQUE INDEX ukey_context_source_record_providerGroup_id_expectedMimeType ON context(source, record, providerGroup_id, expectedMimeType); 
 DROP INDEX ukey_context_record_providerGroup_id_expectedMimeType ON context;
+CREATE INDEX key_status_category ON status(category); 
+CREATE INDEX key_context_providerGroup_id ON context(providerGroup_id); 
