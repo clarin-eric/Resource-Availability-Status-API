@@ -130,7 +130,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         	assertEquals(3, stream.count());
         }
         try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(false))){
-        	assertEquals(18, stream.count());
+        	assertEquals(19, stream.count());
         }
     }
 

@@ -80,7 +80,7 @@ public abstract class TestConfig {
 
       // create database and fill it with initDB.sql
       Connection con = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
+            "jdbc:mariadb://localhost:3308/linkchecker?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
             "root", "");
       ScriptRunner runner = new ScriptRunner(con);
       InputStreamReader reader = new InputStreamReader(new FileInputStream("./src/test/resources/createDB.sql"));
@@ -89,8 +89,8 @@ public abstract class TestConfig {
       con.close();
 
       Properties properties = new Properties();
-      properties.setProperty("driverClassName", "com.mysql.cj.jdbc.Driver");
-      properties.setProperty("jdbcUrl", "jdbc:mysql://localhost:3308/linkchecker?useUnicode=true");
+      properties.setProperty("driverClassName", "org.mariadb.jdbc.Driver");
+      properties.setProperty("jdbcUrl", "jdbc:mariadb://localhost:3308/linkchecker?useUnicode=true");
       properties.setProperty("username", "root");
       properties.setProperty("password", "");
 
