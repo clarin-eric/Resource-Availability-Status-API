@@ -355,7 +355,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
       try (PreparedStatement statement = con.prepareStatement(
             "INSERT INTO url_context(url_id, context_id, ingestionDate, active) VALUES (?,?,?, true)"
-            + "ON DUPLICATE KEY UPDATE ingestionDate =?, active = true")) {
+            + " ON DUPLICATE KEY UPDATE ingestionDate =?, active = true")) {
          statement.setLong(1, urlId);
          statement.setLong(2, contextId);
          statement.setTimestamp(3, ingestionDate);
