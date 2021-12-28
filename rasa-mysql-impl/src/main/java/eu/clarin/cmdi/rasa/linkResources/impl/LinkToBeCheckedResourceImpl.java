@@ -138,8 +138,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             }
    
             saveUrlContext(con, urlId, lastContextId.getValue(), linkToBeChecked.getIngestionDate());
+            con.commit();
          }   
-         con.commit();
          con.setAutoCommit(true);
       }
       
