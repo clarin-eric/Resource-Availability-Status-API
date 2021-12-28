@@ -1,7 +1,8 @@
 # version 4.1.0
 - adding source field to composed unique key in table record
 - adding source field to LinkToBeChecked and to Filter
-- adding spring-data-jpa implementation
+- performance tuning in mysql implementation of LinkToBeCheckedResourceImpl through review of synchronization in save methods
+- replacement of mysql jdbc driver through mariadb driver in tests
 
 # version 4.0.1
 - increasing field size of field byteSize in table status from int to bigint in mysql/maria db and from int to long in Java
