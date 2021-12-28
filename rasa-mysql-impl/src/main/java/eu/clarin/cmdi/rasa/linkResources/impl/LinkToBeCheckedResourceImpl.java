@@ -43,13 +43,13 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    private final ConnectionProvider connectionProvider;
 
    private Map<String, Long> providerGroupIdMap; // since the deactivation depends on this we need a map here
-   private Map.Entry<String, Long> lastContextId;
+
 
    public LinkToBeCheckedResourceImpl(ConnectionProvider connectionProvider) {
       this.connectionProvider = connectionProvider;
 
       this.providerGroupIdMap = new HashMap<String, Long>();
-      this.lastContextId = new AbstractMap.SimpleEntry<String, Long>("", null);
+
    }
 
    @Override
@@ -101,9 +101,12 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
       try (Connection con = this.connectionProvider.getConnection()) {
          con.setAutoCommit(false);
-         long urlId = saveUrl(con, linkToBeChecked);
+         long urlId = getUrlId(con, linkToBeChecked);
 
-         long providerGroupId = getProviderGroupId(con, linkToBeChecked);
+         Long providerGroupId = this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())?
+               this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
+               getProviderGroupId(con, linkToBeChecked);
+               
          long contextId = getContextId(con, linkToBeChecked, providerGroupId);
 
          saveUrlContext(con, urlId, contextId, linkToBeChecked.getIngestionDate());
@@ -117,15 +120,24 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
+      Map.Entry<String, Long> lastContextId  = new AbstractMap.SimpleEntry<String, Long>("", null);
+      
       try (Connection con = this.connectionProvider.getConnection()) {
          con.setAutoCommit(false);
          for(LinkToBeChecked linkToBeChecked:linksToBeChecked) {
-            long urlId = saveUrl(con, linkToBeChecked);
+            long urlId = getUrlId(con, linkToBeChecked);
    
-            long providerGroupId = getProviderGroupId(con, linkToBeChecked);
-            long contextId = getContextId(con, linkToBeChecked, providerGroupId);
+            Long providerGroupId = this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())?
+                  this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
+                  getProviderGroupId(con, linkToBeChecked);
+            
+            String key = linkToBeChecked.getSource() + "-" + linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();
+
+            if(!lastContextId.getKey().equals(key)) {
+               lastContextId =  new AbstractMap.SimpleEntry<String, Long>(key, getContextId(con, linkToBeChecked, providerGroupId));
+            }
    
-            saveUrlContext(con, urlId, contextId, linkToBeChecked.getIngestionDate());
+            saveUrlContext(con, urlId, lastContextId.getValue(), linkToBeChecked.getIngestionDate());
          }   
          con.commit();
          con.setAutoCommit(true);
@@ -216,26 +228,37 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       return new LinkToBeCheckedFilterImpl();
    }
 
-   private synchronized long saveUrl(Connection con, LinkToBeChecked linkToBeChecked) throws SQLException {
+   private long getUrlId(Connection con, LinkToBeChecked linkToBeChecked) throws SQLException {
 
-      try (PreparedStatement statement = con.prepareStatement("SELECT id from url where url=?")) {
-         statement.setString(1, linkToBeChecked.getUrl());
-
-         try (ResultSet rs = statement.executeQuery()) {
-            if (rs.next())
-               return rs.getLong("id");
+      for(int i=0;;i++) {
+         try (PreparedStatement statement = con.prepareStatement("SELECT id from url where url=?")) {
+            statement.setString(1, linkToBeChecked.getUrl());
+   
+            try (ResultSet rs = statement.executeQuery()) {
+               if (rs.next()) {
+                  
+                  return rs.getLong("id");
+               
+               }
+            }
          }
-      }
-      
-      try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
-         statement.setString(1, linkToBeChecked.getUrl());
-
-         statement.execute();
          
-         ResultSet rs = statement.getGeneratedKeys();
-         rs.next();
-         
-         return rs.getLong(1);
+         try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, linkToBeChecked.getUrl());
+   
+            statement.execute();
+            
+            ResultSet rs = statement.getGeneratedKeys();
+            if(rs.next()) {
+            
+               return rs.getLong(1);
+            }
+         }
+         catch(SQLException ex) {
+            if(i==1) {
+               throw ex;
+            }
+         }
       }
    }
 
@@ -281,49 +304,53 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       return this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup());
    }
 
-   private synchronized long getContextId(Connection con, LinkToBeChecked linkToBeChecked, Long providerGroupId)
+   private long getContextId(Connection con, LinkToBeChecked linkToBeChecked, Long providerGroupId)
          throws SQLException {
-      String key = linkToBeChecked.getSource() + "-" + linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();
-      if (!this.lastContextId.getKey().contentEquals(key)) {
-         this.lastContextId = new AbstractMap.SimpleEntry<String, Long>(key, null);
 
+      for(int i=0;;i++) {
          String query = "SELECT id FROM context WHERE source "
                + (linkToBeChecked.getSource() == null ? "IS NULL" : "= '" + linkToBeChecked.getSource() + "'")
                + " AND record " + (linkToBeChecked.getRecord() == null ? "IS NULL" : "= '" + linkToBeChecked.getRecord() + "'")
                + " AND providerGroup_id " + (providerGroupId == null ? "IS NULL" : "= " + providerGroupId)
                + " AND expectedMimeType " + (linkToBeChecked.getExpectedMimeType() == null ? "IS NULL"
                      : "= '" + linkToBeChecked.getExpectedMimeType() + "'");
-
+   
          try (Statement stmt = con.createStatement()) {
-
+   
             try (ResultSet rs = stmt.executeQuery(query)) {
-               if (rs.next())
-                  this.lastContextId.setValue(rs.getLong("id"));
+               if (rs.next()) {
+                  
+                  return rs.getLong("id");
+               
+               }
+            }
+         }   
+   
+         try (PreparedStatement stmt = con
+               .prepareStatement("INSERT INTO context(source, record, providerGroup_id, expectedMimeType) VALUES(?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, linkToBeChecked.getSource());
+            stmt.setString(2, linkToBeChecked.getRecord());
+            stmt.setLong(3, providerGroupId);
+            stmt.setString(4, linkToBeChecked.getExpectedMimeType());
+   
+            stmt.execute();
+            
+            ResultSet rs = stmt.getGeneratedKeys();
+            if(rs.next()) {;
+            
+               return rs.getLong(1);
+            
             }
          }
-
-         if (this.lastContextId.getValue() == null) {// insert new context
-            try (PreparedStatement stmt = con
-                  .prepareStatement("INSERT INTO context(source, record, providerGroup_id, expectedMimeType) VALUES(?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
-               stmt.setString(1, linkToBeChecked.getSource());
-               stmt.setString(2, linkToBeChecked.getRecord());
-               stmt.setLong(3, providerGroupId);
-               stmt.setString(4, linkToBeChecked.getExpectedMimeType());
-
-               stmt.execute();
-               
-               ResultSet rs = stmt.getGeneratedKeys();
-               rs.next();
-               
-               this.lastContextId.setValue(rs.getLong(1));
+         catch(SQLException ex) { //the insert is failing when another thread has inserted the record already
+            if(i==1) {
+               throw ex;
             }
          }
       }
-
-      return this.lastContextId.getValue();
    }
 
-   private synchronized void saveUrlContext(Connection con, long urlId, long contextId, Timestamp ingestionDate) throws SQLException {
+   private void saveUrlContext(Connection con, long urlId, long contextId, Timestamp ingestionDate) throws SQLException {
 
 
       try (PreparedStatement statement = con.prepareStatement(
@@ -333,9 +360,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          statement.setLong(2, contextId);
          statement.setTimestamp(3, ingestionDate);
          statement.setTimestamp(4, ingestionDate);
-
+         
          statement.execute();
       }
-
    }
 }
