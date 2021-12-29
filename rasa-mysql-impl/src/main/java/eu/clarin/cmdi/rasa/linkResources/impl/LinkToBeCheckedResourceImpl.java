@@ -266,17 +266,21 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       if (linkToBeChecked.getProviderGroup() == null)
          return null;
       if (!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {
+         
+         Long providerGroupId = null;
 
          try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
             statement.setString(1, linkToBeChecked.getProviderGroup());
 
             try (ResultSet rs = statement.executeQuery()) {
-               if (rs.next())
-                  this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), rs.getLong("id"));
+               if (rs.next()) {
+                  providerGroupId = rs.getLong("id");
+                  
+               }              
             }
          }
 
-         if (!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {// insert new providerGroup
+         if (providerGroupId == null) {// insert new providerGroup
 
             try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
                statement.setString(1, linkToBeChecked.getProviderGroup());
@@ -294,9 +298,11 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                   .prepareStatement("UPDATE url_context uc, context c SET uc.active = false"
                         + " WHERE c.providerGroup_id = ?" + " AND uc.context_id = c.id")) {
 
-               statement.setLong(1, this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()));
+               statement.setLong(1, providerGroupId);
 
                statement.execute();
+               
+               this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), providerGroupId);
             }
          }
       }

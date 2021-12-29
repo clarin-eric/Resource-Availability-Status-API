@@ -44,6 +44,7 @@ CREATE TABLE `url_context` (
   KEY `key_url_context_url_id` (`url_id`),
   KEY `key_url_context_context_id` (`context_id`),
   KEY `key_url_context_url_id_active` (`url_id`, `active`),
+  UNIQUE KEY `ukey_url_context_url_id_context_id` (`url_id`, `context_id`),
   CONSTRAINT `fkey_url_context_url_id` FOREIGN KEY `key_url_context_url_id` (`url_id`) REFERENCES `url` (`id`),
   CONSTRAINT `fkey_url_context_context_id` FOREIGN KEY `key_url_context_context_id` (`context_id`) REFERENCES `context` (`id`)
 );
