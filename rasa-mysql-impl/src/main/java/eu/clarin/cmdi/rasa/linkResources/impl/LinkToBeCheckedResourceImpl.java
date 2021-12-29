@@ -99,14 +99,14 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
+      
+      Long providerGroupId = this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())?
+            this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
+            getProviderGroupId(linkToBeChecked);
+            
       try (Connection con = this.connectionProvider.getConnection()) {
          con.setAutoCommit(false);
          long urlId = getUrlId(con, linkToBeChecked);
-
-         Long providerGroupId = this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())?
-               this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
-               getProviderGroupId(con, linkToBeChecked);
-               
          long contextId = getContextId(con, linkToBeChecked, providerGroupId);
 
          saveUrlContext(con, urlId, contextId, linkToBeChecked.getIngestionDate());
@@ -129,7 +129,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    
             Long providerGroupId = this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())?
                   this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
-                  getProviderGroupId(con, linkToBeChecked);
+                  getProviderGroupId(linkToBeChecked);
             
             String key = linkToBeChecked.getSource() + "-" + linkToBeChecked.getRecord() + "-" + providerGroupId + "-" + linkToBeChecked.getExpectedMimeType();
 
@@ -262,47 +262,50 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       }
    }
 
-   private synchronized Long getProviderGroupId(Connection con, LinkToBeChecked linkToBeChecked) throws SQLException {
+   private synchronized Long getProviderGroupId(LinkToBeChecked linkToBeChecked) throws SQLException {
       if (linkToBeChecked.getProviderGroup() == null)
          return null;
       if (!this.providerGroupIdMap.containsKey(linkToBeChecked.getProviderGroup())) {
          
          Long providerGroupId = null;
-
-         try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
-            statement.setString(1, linkToBeChecked.getProviderGroup());
-
-            try (ResultSet rs = statement.executeQuery()) {
-               if (rs.next()) {
-                  providerGroupId = rs.getLong("id");
-                  
-               }              
-            }
-         }
-
-         if (providerGroupId == null) {// insert new providerGroup
-
-            try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
+         
+         try(Connection con = this.connectionProvider.getConnection()){
+            try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
                statement.setString(1, linkToBeChecked.getProviderGroup());
-
-               statement.execute();
-               
-               ResultSet rs = statement.getGeneratedKeys();
-               rs.next();
-               
-               this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), rs.getLong(1));
+   
+               try (ResultSet rs = statement.executeQuery()) {
+                  if (rs.next()) {
+                     providerGroupId = rs.getLong("id");
+                     
+                  }              
+               }
             }
-         } 
-         else {// deactivate all links of the provider group
-            try (PreparedStatement statement = con
-                  .prepareStatement("UPDATE url_context uc, context c SET uc.active = false"
-                        + " WHERE c.providerGroup_id = ?" + " AND uc.context_id = c.id")) {
 
-               statement.setLong(1, providerGroupId);
+            if (providerGroupId == null) {// insert new providerGroup
+   
+               try (PreparedStatement statement = con.prepareStatement("INSERT INTO providerGroup(name) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
+                  statement.setString(1, linkToBeChecked.getProviderGroup());
+   
+                  statement.execute();
+                  
+                  ResultSet rs = statement.getGeneratedKeys();
+                  rs.next();
+                  
+                  this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), rs.getLong(1));
+               }
+            } 
+            else {// deactivate all links of the provider group
 
-               statement.execute();
-               
-               this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), providerGroupId);
+               try (PreparedStatement statement = con
+                     .prepareStatement("UPDATE url_context uc, context c SET uc.active = false"
+                           + " WHERE c.providerGroup_id = ?" + " AND uc.context_id = c.id")) {
+   
+                  statement.setLong(1, providerGroupId);
+   
+                  statement.execute();
+                  
+                  this.providerGroupIdMap.put(linkToBeChecked.getProviderGroup(), providerGroupId);
+               }
             }
          }
       }
