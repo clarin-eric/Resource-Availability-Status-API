@@ -317,12 +317,12 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          throws SQLException {
 
       for(int i=0;;i++) {
-         String query = "SELECT id FROM context WHERE source "
-               + (linkToBeChecked.getSource() == null ? "IS NULL" : "= '" + linkToBeChecked.getSource() + "'")
-               + " AND record " + (linkToBeChecked.getRecord() == null ? "IS NULL" : "= '" + linkToBeChecked.getRecord() + "'")
+         String query = "SELECT id FROM context WHERE record "               
+               + (linkToBeChecked.getRecord() == null ? "IS NULL" : "= '" + linkToBeChecked.getRecord() + "'")
                + " AND providerGroup_id " + (providerGroupId == null ? "IS NULL" : "= " + providerGroupId)
                + " AND expectedMimeType " + (linkToBeChecked.getExpectedMimeType() == null ? "IS NULL"
-                     : "= '" + linkToBeChecked.getExpectedMimeType() + "'");
+                     : "= '" + linkToBeChecked.getExpectedMimeType() + "'")
+               + " AND source" + (linkToBeChecked.getSource() == null ? "IS NULL" : "= '" + linkToBeChecked.getSource() + "'");
    
          try (Statement stmt = con.createStatement()) {
    
