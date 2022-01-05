@@ -4,9 +4,11 @@ import java.sql.Timestamp;
 
 public interface Filter<T>{
 
-	public T setUrlIs(String url) ;
+	public T setUrlIs(String url);
 	
-	public T setUrlIn(String... urls) ;
+	public T setUrlIn(String... urls);
+	
+	public T setSourceIs(String source);
 	
 	public T setProviderGroupIs(String providerGroup);
 	

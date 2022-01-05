@@ -65,6 +65,14 @@ public abstract class AbstractFilter {
       
       return this;
    }
+   
+   protected Object setSourceIs(String source) {      
+      this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
+      this.join.add("INNER JOIN context c ON uc.context_id=c.id");
+      this.where.add(new Tuple("c.source = ?", java.sql.Types.VARCHAR, source));
+
+      return this;
+   }
 
    protected Object setRecordIs(String record) {      
       this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");

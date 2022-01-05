@@ -28,6 +28,7 @@ public class LinkToBeChecked {
    private Long urlId;
    private String url;
 
+   private String source;
    private String record;
    private String providerGroup;
    private Timestamp ingestionDate;
@@ -46,18 +47,19 @@ public class LinkToBeChecked {
 
    }
 
-   public LinkToBeChecked(String url, String record, String providerGroup, String expectedMimeType,
+   public LinkToBeChecked(String url, String source, String record, String providerGroup, String expectedMimeType,
          Timestamp ingestionDate) {
       this(url);
+      this.source = source;
       this.record = record;
       this.providerGroup = providerGroup;
       this.expectedMimeType = expectedMimeType;
       this.ingestionDate = ingestionDate;
    }
 
-   public LinkToBeChecked(Long urlId, String url, String record, String providerGroup, String expectedMimeType,
+   public LinkToBeChecked(Long urlId, String source, String url, String record, String providerGroup, String expectedMimeType,
          Timestamp ingestionDate) {
-      this(url, record, providerGroup, expectedMimeType, ingestionDate);
+      this(url, source, record, providerGroup, expectedMimeType, ingestionDate);
       this.urlId = urlId;
 
    }
@@ -70,6 +72,14 @@ public class LinkToBeChecked {
       this.url = url;
    }
 
+   public String getSource() {
+      return source;
+   }
+
+   public void setSource(String source) {
+      this.source = source;
+   }
+   
    public String getRecord() {
       return record;
    }
@@ -137,8 +147,9 @@ public class LinkToBeChecked {
 
    @Override
    public String toString() {
-      return "LinkToBeChecked{urlId=" + urlId + ", url='" + url + '\'' + ", record='" + record + '\'' + ", providerGroup='"
+      return "LinkToBeChecked{urlId=" + urlId + ", url='" + url + '\'' + ", source='" + source + ", record='" + record + '\'' + ", providerGroup='"
             + providerGroup + '\'' + ", expectedMimeType='" + expectedMimeType + '\'' + ", injectionDate="
             + ingestionDate + '}';
    }
+
 }

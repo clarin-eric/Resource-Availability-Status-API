@@ -1,6 +1,6 @@
 # the script creates a relational linkchecker database
 # and transfers data from the former stomychecker datase to the linkchecker database
-# author: Wolfgang Walter SAUER (wowasa) <wolfgang.sauer@oeaw.ac.at>
+# author: Wolfgang Walter SAUER (wowasa) <clarin@wowasa.com>
 
 DROP DATABASE  IF EXISTS `linkchecker`;
 CREATE DATABASE  IF NOT EXISTS `linkchecker` CHARACTER SET utf8 COLLATE utf8_general_ci;
@@ -21,7 +21,7 @@ CREATE TABLE `context` (
   `providerGroup_id` int DEFAULT NULL,
   `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ukey_context_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `ukey_context_source_record_providerGroup_id_expectedMimeType` (`source`, `record`, `providerGroup_id`, `expectedMimeType`)
 );
 
 

@@ -131,7 +131,7 @@ public class ACDHCategoryStatisticsResourceTest extends TestConfig {
 
         assertEquals(19, linkToBeCheckedResource.getCount(linkToBeCheckedResource.getLinkToBeCheckedFilter().setProviderGroupIs("NotGoogle")));
 
-        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "FacebookRecord", "Facebook", null, today));
+        linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "datasource", "FacebookRecord", "Facebook", null, today));
         checkedLinkResource.save(new CheckedLink(testURL,"GET", 200, null, 100l, 100, today, "Ok", "Facebook", 0, "FacebookRecord", null, Category.Ok));
 
 

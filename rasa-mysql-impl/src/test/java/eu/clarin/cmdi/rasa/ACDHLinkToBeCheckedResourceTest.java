@@ -47,8 +47,8 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         String urlA = "http://www.ailla.org/waiting.html";
         String urlB = "https://www.google.com";
         
-        LinkToBeChecked linkToBeCheckedA = new LinkToBeChecked(urlA, null, null, null, null);
-        LinkToBeChecked linkToBeCheckedB = new LinkToBeChecked(urlB, null, null, null, null);
+        LinkToBeChecked linkToBeCheckedA = new LinkToBeChecked(urlA, null, null, null, null, null);
+        LinkToBeChecked linkToBeCheckedB = new LinkToBeChecked(urlB, null, null, null, null, null);
 
         // test UrlIs
         try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setUrlIs(urlA))){
@@ -108,7 +108,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         }
         
         // this shouldn't deactivate any links since the providerGroupMap contains the name 'NotGoogle'
-        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", "record", "NotGoogle", null, tomorrow));
+        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", "source", "record", "NotGoogle", null, tomorrow));
         try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter().setIsActive(false))){
         	assertEquals(0, stream.count());
         }
@@ -116,7 +116,7 @@ public class ACDHLinkToBeCheckedResourceTest extends TestConfig {
         // creates a new linkToCheckedRessource with empty providerGroupMap
         linkToBeCheckedResource = rasaFactory.getLinkToBeCheckedResource();
         // deactivates all links of providerGroup 'NotGoogle' and activates the saved link
-        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", "record", "NotGoogle", null, tomorrow));
+        linkToBeCheckedResource.save(new LinkToBeChecked("http://www.ailla.org/waiting.html", "source", "record", "NotGoogle", null, tomorrow));
         try(Stream<LinkToBeChecked> stream =  linkToBeCheckedResource.get(linkToBeCheckedResource.getLinkToBeCheckedFilter())){
         	assertEquals(22, stream.count());
         }

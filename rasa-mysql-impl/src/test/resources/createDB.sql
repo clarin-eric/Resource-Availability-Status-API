@@ -1,5 +1,5 @@
 # This script creates a linkchecker database as it is assumed by this mysql implementation of the rasa-api
-# author: Wolfgang Walter SAUER (wowasa) <wolfgang.sauer@oeaw.ac.at>
+# author: Wolfgang Walter SAUER (wowasa) <clarin@wowasa.com>
 # date: July 2021
 
 DROP DATABASE  IF EXISTS `linkchecker`;
@@ -21,7 +21,9 @@ CREATE TABLE `context` (
   `providerGroup_id` int DEFAULT NULL,
   `expectedMimeType` varchar(256) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ukey_context_record_providerGroup_id_expectedMimeType` (`record`,`providerGroup_id`, `expectedMimeType`)
+  UNIQUE KEY `ukey_context_record_providerGroup_id_expectedMimeType_source` (`record`, `providerGroup_id`, `expectedMimeType`, `source`),
+  KEY `key_providerGroup_id` (`providerGroup_id`),
+  CONSTRAINT `fkey_context_providerGroup_id` FOREIGN KEY `key_providerGroup_id` (`providerGroup_id`) REFERENCES `providerGroup` (`id`)
 );
 
 
@@ -41,17 +43,17 @@ CREATE TABLE `url_context` (
   `ingestionDate` datetime NOT NULL DEFAULT NOW(),
   `active` boolean NOT NULL DEFAULT false,
   PRIMARY KEY (`id`),
-  KEY `key_url_context_url_id` (`url_id`),
-  KEY `key_url_context_context_id` (`context_id`),
-  KEY `key_url_context_url_id_active` (`url_id`, `active`),
-  CONSTRAINT `fkey_url_context_url_id` FOREIGN KEY `key_url_context_url_id` (`url_id`) REFERENCES `url` (`id`),
-  CONSTRAINT `fkey_url_context_context_id` FOREIGN KEY `key_url_context_context_id` (`context_id`) REFERENCES `context` (`id`)
+  KEY `key_url_context_url_id_active_context_id` (`url_id`, `active`, `context_id`),
+  KEY `key_url_context_context_id_active_url_id` (`context_id`, `active`, `url_id`),
+  UNIQUE KEY `ukey_url_context_url_id_context_id` (`url_id`, `context_id`),
+  CONSTRAINT `fkey_url_context_url_id` FOREIGN KEY `key_url_context_url_id_active_context_id` (`url_id`) REFERENCES `url` (`id`),
+  CONSTRAINT `fkey_url_context_context_id` FOREIGN KEY `key_url_context_context_id_active_url_id` (`context_id`) REFERENCES `context` (`id`)
 );
 
 
 CREATE TABLE `status` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `url_id` int DEFAULT NULL,
+  `url_id` int NOT NULL,
   `statusCode` int DEFAULT NULL,
   `message` varchar(1024),
   `category` varchar(25) NOT NULL,
@@ -83,4 +85,9 @@ CREATE TABLE `history` (
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ukey_history_url_id_ceckingDate` (`url_id`,`checkingDate`)
+);
+
+CREATE TABLE `nextCheck` (
+  `url_id` int NOT NULL,
+  PRIMARY KEY (`url_id`)
 );
