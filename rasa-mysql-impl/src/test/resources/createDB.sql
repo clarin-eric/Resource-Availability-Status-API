@@ -31,8 +31,11 @@ CREATE TABLE `context` (
 CREATE TABLE `url` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url` varchar(1024) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `host` varchar(256) DEFAULT NULL,
+  `valid` boolean NOT NULL DEFAULT false, 
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ukey_url_url` (`url`)
+  UNIQUE KEY `ukey_url_url` (`url`),
+  KEY `key_url_host` (`host`)
 );
 
 
@@ -55,9 +58,9 @@ CREATE TABLE `status` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url_id` int NOT NULL,
   `statusCode` int DEFAULT NULL,
-  `message` varchar(1024),
+  `message` varchar(1024) NOT NULL,
   `category` varchar(25) NOT NULL,
-  `method` varchar(10) NOT NULL,
+  `method` varchar(10) DEFAULT NULL,
   `contentType` varchar(256) DEFAULT NULL,
   `byteSize` bigint DEFAULT NULL,
   `duration` int DEFAULT NULL,

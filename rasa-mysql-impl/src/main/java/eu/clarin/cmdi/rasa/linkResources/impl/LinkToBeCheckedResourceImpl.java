@@ -22,12 +22,15 @@ import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.filters.impl.AbstractFilter;
 import eu.clarin.cmdi.rasa.filters.impl.LinkToBeCheckedFilterImpl;
 import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
+import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 
 import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.*;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -243,21 +246,60 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             }
          }
          
-         try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, linkToBeChecked.getUrl());
-   
-            statement.execute();
+         try{
+            URL url = new URL(linkToBeChecked.getUrl());           
             
-            ResultSet rs = statement.getGeneratedKeys();
-            if(rs.next()) {
-            
-               return rs.getLong(1);
+            try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, host) VALUES(?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+               statement.setString(1, linkToBeChecked.getUrl());
+               statement.setString(2, url.getHost());
+      
+               statement.execute();
+               
+               ResultSet rs = statement.getGeneratedKeys();
+               if(rs.next()) {
+               
+                  return rs.getLong(1);
+               }
+            }
+            catch(SQLException ex2) {
+               if(i==1) {
+                  throw ex2;
+               }
             }
          }
-         catch(SQLException ex) {
-            if(i==1) {
-               throw ex;
+         catch(MalformedURLException ex) {
+            
+            long urlId = -1;
+            
+            try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, host) VALUES(?)", Statement.RETURN_GENERATED_KEYS)) {
+               statement.setString(1, linkToBeChecked.getUrl());
+      
+               statement.execute();
+               
+               ResultSet rs = statement.getGeneratedKeys();
+               
+               if(rs.next()) {
+                  
+                  urlId = rs.getLong(1);
+               
+               }
             }
+            catch(SQLException ex2) {
+               if(i==1) {
+                  throw ex2;
+               }
+            }
+            // in case of MalformedURLException we can directly add a record to status table
+            try(PreparedStatement statement = con.prepareStatement("INSERT INTO status(url_id, message, category, checkingDate) VALUES(?,?,?,?)")){
+               statement.setLong(1, urlId);
+               statement.setString(2, "Malformed URL");
+               statement.setString(3, Category.Undetermined.name());
+               statement.setTimestamp(4, linkToBeChecked.getIngestionDate());
+               
+               statement.execute();
+            }
+            
+            return urlId;
          }
       }
    }

@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ACDHCategoryStatisticsResourceTest extends TestConfig {
 
-    private static final String testURL = "www.facebook.com";
+    private static final String testURL = "https://www.facebook.com";
 
     @Test
     public void AbasicCategoryStatisticsTestShouldReturnCorrectResults() throws SQLException {

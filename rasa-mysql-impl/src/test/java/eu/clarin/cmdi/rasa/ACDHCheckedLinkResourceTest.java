@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +39,15 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     private String testURL = "https://maps.google.com";
 
 
+    @Test
+    public void basicInsertWithNulls() throws SQLException {
+       
+       CheckedLink checkedLink = new CheckedLink("http://www.ailla.org/waiting.html", null, null, null, null,
+             null, new Timestamp(System.currentTimeMillis()), "Invalid URL", null, null,
+             null, null, Category.Undetermined);
+       
+       assertTrue(checkedLinkResource.save(checkedLink));
+    }
 
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
@@ -89,7 +99,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     public void categoryCollectionFilterShouldReturnCorrectResults() throws SQLException {
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall").setCategoryIs(Category.Ok))) {
             long count = links.count();
-            assertEquals(16, count);
+            assertEquals(15, count);
         }
 
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall").setCategoryIs(Category.Broken))) {
@@ -113,7 +123,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     public void categoryRecordFilterShouldReturnCorrectResults() throws SQLException {
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall").setRecordIs("record").setCategoryIs(Category.Ok))) {
             long count = links.count();
-            assertEquals(13, count);
+            assertEquals(12, count);
         }
 
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setProviderGroupIs("Overall").setRecordIs("record").setCategoryIs(Category.Broken))) {
@@ -162,7 +172,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setStatusBetween(100,600))) {
             long count = links.count();
-            assertEquals(22, count);
+            assertEquals(21, count);
         }
 
         try (Stream<CheckedLink> links = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setStatusBetween(1,90))) {
