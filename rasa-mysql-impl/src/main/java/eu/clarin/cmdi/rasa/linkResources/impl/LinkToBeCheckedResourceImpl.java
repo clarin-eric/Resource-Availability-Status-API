@@ -339,7 +339,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                .prepareStatement("INSERT INTO context(source, record, providerGroup_id, expectedMimeType) VALUES(?,?,?,?)", Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, linkToBeChecked.getSource());
             stmt.setString(2, linkToBeChecked.getRecord());
-            stmt.setLong(3, providerGroupId);
+            stmt.setObject(3, providerGroupId, Types.BIGINT);
             stmt.setString(4, linkToBeChecked.getExpectedMimeType());
    
             stmt.execute();

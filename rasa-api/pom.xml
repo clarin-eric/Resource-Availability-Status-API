@@ -3,7 +3,7 @@
   <parent>
     <groupId>eu.clarin.cmdi</groupId>
     <artifactId>resource-availability-status-api</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
   </parent>
   <artifactId>rasa-api</artifactId>
       <build>
