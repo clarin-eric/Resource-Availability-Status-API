@@ -191,17 +191,18 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
             query = "UPDATE status SET statusCode=?, message=?, category=?, method=?, contentType=?, byteSize=?, duration=?, checkingDate=?, redirectCount=? WHERE id=?";
             try (PreparedStatement statement = con.prepareStatement(query)) {
-               
-               statement.setObject(1, checkedLink.getStatus(), JDBCType.INTEGER);
+
+               statement.setObject(1, checkedLink.getStatus(), Types.INTEGER);
+
                statement.setString(2, checkedLink.getMessage());
                statement.setString(3, checkedLink.getCategory().toString());
                statement.setString(4, checkedLink.getMethod());
                statement.setString(5, checkedLink.getContentType());
-               statement.setObject(6, checkedLink.getByteSize(), JDBCType.BIGINT);
-               statement.setObject(7, checkedLink.getDuration(), JDBCType.INTEGER);
+               statement.setObject(6, checkedLink.getByteSize(), Types.BIGINT);
+               statement.setObject(7, checkedLink.getDuration(), Types.INTEGER);
                statement.setTimestamp(8, checkedLink.getCheckingDate());
-               statement.setObject(9, checkedLink.getRedirectCount(), JDBCType.INTEGER);
-               statement.setObject(10, checkedLink.getStatusId(), JDBCType.BIGINT);
+               statement.setObject(9, checkedLink.getRedirectCount(), Types.INTEGER);
+               statement.setObject(10, checkedLink.getStatusId(), Types.BIGINT);
 
                statement.execute();
             }
