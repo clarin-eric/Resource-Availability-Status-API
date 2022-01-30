@@ -49,30 +49,12 @@ public class CheckedLink{
 		this.contexts = new ArrayList<Context>(); 
 	}
 
-	@Deprecated
-	public CheckedLink(String url, String method, Integer status, String contentType, Long byteSize,
-			Integer duration, Timestamp checkingDate, String message, String collection, Integer redirectCount,
-			String record, String expectedMimeType, Category category) {
-		this();
-
-		this.url = url;
-		this.method = method;
-		this.status = status;
-		this.contentType = contentType;
-		this.byteSize = byteSize;
-		this.duration = duration;
-		this.checkingDate = checkingDate;
-		this.message = message;
-		this.redirectCount = redirectCount;
-		this.category = category;
-	}
-
-	public CheckedLink(Long linkId, Long statusId, String url, String method, Integer status, String contentType, Long byteSize,
+	public CheckedLink(Long urlId, Long statusId, String url, String method, Integer status, String contentType, Long byteSize,
 			Integer duration, Timestamp checkingDate, String message, Integer redirectCount,
 			Category category) {
-		this();
 
-		this.url = url;
+	   this.urlId = urlId;
+		setUrl(url);
 		this.method = method;
 		this.status = status;
 		this.contentType = contentType;
@@ -89,7 +71,7 @@ public class CheckedLink{
 	}
 
 	public void setUrl(String url) {
-		this.url = url;
+		this.url = url.trim();
 	}
 
 	public String getMethod() {
@@ -293,7 +275,7 @@ public class CheckedLink{
 		}
 
 		public void setCollection(String collection) {
-			this.providerGroup = providerGroup;
+			this.providerGroup = collection;
 		}
 
 		public String getExpectedMimeType() {

@@ -31,11 +31,11 @@ CREATE TABLE `context` (
 CREATE TABLE `url` (
   `id` int NOT NULL AUTO_INCREMENT,
   `url` varchar(1024) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  `host` varchar(256) DEFAULT NULL,
-  `valid` boolean NOT NULL DEFAULT false, 
+  `groupKey` varchar(128) DEFAULT NULL,
+  `valid` boolean DEFAULT NULL, 
   PRIMARY KEY (`id`),
   UNIQUE KEY `ukey_url_url` (`url`),
-  KEY `key_url_host` (`host`)
+  KEY `key_url_host` (`groupKey`)
 );
 
 

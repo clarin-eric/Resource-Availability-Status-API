@@ -23,5 +23,6 @@ public enum Category {
     Broken,
     Undetermined,
     Restricted_Access,
-    Blocked_By_Robots_txt
+    Blocked_By_Robots_txt, 
+    Invalid_URL
 }
