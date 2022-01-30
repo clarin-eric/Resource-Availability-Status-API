@@ -78,12 +78,18 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                   LOG.error("Can't close connection.");
                }
             })
-            .map(rec -> new CheckedLink(rec.get("id", Long.class),
-               rec.get("url_id", Long.class), rec.get("url", String.class), rec.get("method", String.class),
-               rec.get("statusCode", Integer.class), rec.get("contentType", String.class),
-               rec.get("byteSize", Long.class), rec.get("duration", Integer.class),
-               rec.get("checkingDate", Timestamp.class), rec.get("message", String.class),
-               rec.get("redirectCount", Integer.class), Category.valueOf(rec.get("category", String.class))));
+            .map(rec -> new CheckedLink(
+                  rec.get("url", String.class), 
+                  rec.get("method", String.class),
+                  rec.get("statusCode", Integer.class), 
+                  rec.get("contentType", String.class),
+                  rec.get("byteSize", Long.class), 
+                  rec.get("duration", Integer.class),
+                  rec.get("checkingDate", Timestamp.class), 
+                  rec.get("message", String.class),
+                  rec.get("redirectCount", Integer.class), 
+                  Category.valueOf(rec.get("category", String.class))
+               ));
 
       } 
       catch (SQLException ex) {

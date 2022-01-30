@@ -263,7 +263,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          
          long urlId = -1;
             
-         try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, host, valid) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+         try (PreparedStatement statement = con.prepareStatement("INSERT INTO url(url, groupKey, valid) VALUES(?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, urlString);
             statement.setString(2, host);
             statement.setBoolean(3,  isValid);

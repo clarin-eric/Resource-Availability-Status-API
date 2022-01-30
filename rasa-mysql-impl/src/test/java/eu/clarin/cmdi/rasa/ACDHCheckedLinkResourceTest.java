@@ -42,9 +42,8 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicInsertWithNulls() throws SQLException {
        
-       CheckedLink checkedLink = new CheckedLink("http://www.ailla.org/waiting.html", null, null, null, null,
-             null, new Timestamp(System.currentTimeMillis()), "Invalid URL", null, null,
-             null, null, Category.Undetermined);
+       CheckedLink checkedLink = new CheckedLink("http://www.ailla.org/waiting.html", null, null, null, null, null,
+             new Timestamp(System.currentTimeMillis()), "Invalid URL", 0, Category.Undetermined);
        
        assertTrue(checkedLinkResource.save(checkedLink));
     }
@@ -52,7 +51,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
     @Test
     public void basicGETTestShouldReturnCorrectResults() throws SQLException {
 
-        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100l, 132, today, "Ok", "NotGoogle", 0, "record", null, Category.Ok);
+        CheckedLink expected = new CheckedLink("http://www.ailla.org/waiting.html", "HEAD", 200, "text/html; charset=UTF-8", 100l, 132, today, "Ok", 0, Category.Ok);
         
         try(Stream<CheckedLink> stream = checkedLinkResource.get(checkedLinkResource.getCheckedLinkFilter().setUrlIs("http://www.ailla.org/waiting.html"))){
 	        Optional<CheckedLink> actual = stream.findFirst();
@@ -226,7 +225,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
     @Test
     public void saveWithoutTupleInUrlsTableTestShouldNotSave() throws SQLException {
-        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0l, 0, null, null, null, 0, null, null, Category.Broken)));
+        assertFalse(checkedLinkResource.save(new CheckedLink("not in urls table url", null, 0, null, 0l, 0, null, null, 0, null)));
     }
 
     @Test
@@ -272,7 +271,7 @@ public class ACDHCheckedLinkResourceTest extends TestConfig {
 
         //save(first urls then status)
         linkToBeCheckedResource.save(new LinkToBeChecked(testURL, "source", "GoogleRecord", "Google", "mimeType", today));
-        CheckedLink checkedLink = new CheckedLink(testURL, "HEAD", 200, null, 100l, 100, tomorrow, "Ok", "Google", 0, "GoogleRecord", "mimeType",Category.Ok);
+        CheckedLink checkedLink = new CheckedLink(testURL, null, 200, null, 100l, 100, tomorrow, "Ok", 0, Category.Ok);
         checkedLinkResource.save(checkedLink);
 
         //after saving should be 3
