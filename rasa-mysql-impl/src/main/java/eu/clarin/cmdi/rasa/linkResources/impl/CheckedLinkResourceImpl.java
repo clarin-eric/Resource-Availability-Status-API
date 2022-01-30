@@ -186,7 +186,8 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                statement.execute();
             }
 
-         } else { // otherwise copy existing status record to history and update status record
+         } 
+         else { // otherwise copy existing status record to history and update status record
             query = "INSERT IGNORE INTO history(status_id, url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
                   + " SELECT * FROM status WHERE id=?";
             try (PreparedStatement statement = con.prepareStatement(query)) {
@@ -213,6 +214,16 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                statement.execute();
             }
          }
+         if(checkedLink.getCategory() == Category.Invalid_URL) { //set valid flag to false to prevent further processing of invalid URLs
+            query = "UPDATE url SET valid=false WHERE id=?";
+            
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+               statement.setLong(1, checkedLink.getUrlId());
+
+               statement.execute();
+            }
+         }
+         
          con.commit();
          con.setAutoCommit(true);
       }
