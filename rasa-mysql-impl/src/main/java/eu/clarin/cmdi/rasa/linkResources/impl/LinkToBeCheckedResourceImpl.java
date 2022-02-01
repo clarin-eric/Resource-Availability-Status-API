@@ -474,7 +474,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                Statement readStmt = readCon.createStatement(); 
                PreparedStatement writeURLStmt = writeCon.prepareStatement("UPDATE url SET url=?, groupKey=?, valid=? where id=?");
                PreparedStatement writeStatusStmt = writeCon.prepareStatement(
-                     "INSERT INTO status(url_id, category, message, checkingDate) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE category=?, message=?, checkingDate=?"
+                     "INSERT INTO status(url_id, category, message, checkingDate) VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE category=?, message=?, checkingDate=?"
                      )
             ){
             try(ResultSet rs = readStmt.executeQuery("select * from url where valid is null")){

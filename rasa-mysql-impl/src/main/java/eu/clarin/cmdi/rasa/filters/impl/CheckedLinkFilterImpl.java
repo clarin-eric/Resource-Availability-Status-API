@@ -16,16 +16,16 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 
    @Override
    public CheckedLinkFilter setUrlIs(String url) {
-      super.where.add(new Tuple("u.url = ?", java.sql.Types.VARCHAR, url));
-
+      
+      super.where.add(new Tuple("u.url = ?", java.sql.Types.VARCHAR, url==null?null:url.trim()));
       return this;
    }
 
    @Override
    public CheckedLinkFilter setUrlIn(String... urls) {
+      
       super.where.add(new Tuple(Arrays.stream(urls).map(u -> "?").collect(Collectors.joining(",", "u.url IN(", ")")),
-            java.sql.Types.VARCHAR, (Object[]) urls));
-
+            java.sql.Types.VARCHAR, Arrays.asList(urls).stream().map(url -> url==null?null:url.trim()).toArray(Object[]::new)));
       return this;
    }
 
