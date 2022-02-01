@@ -510,6 +510,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                      if(!VALID_PROTOCOLS.contains(url.getProtocol())){
                         throw new MalformedURLException("invalid protocol"); 
                      }
+                     
+                     isValid = true;
                   }
                   catch(MalformedURLException e) {
                      
