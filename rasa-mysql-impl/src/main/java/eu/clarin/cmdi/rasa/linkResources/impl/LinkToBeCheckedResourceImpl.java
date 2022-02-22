@@ -417,13 +417,13 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       try {
          final PreparedStatement stmt = con.prepareStatement(
                "SELECT tab1.* FROM" 
-                  + " (SELECT ROW_NUMBER() OVER (PARTITION BY host ORDER BY s.checkingDate) AS orderNr, u.id, u.url, u.host, s.checkingDate" 
+                  + " (SELECT ROW_NUMBER() OVER (PARTITION BY u.groupKey ORDER BY s.checkingDate) AS orderNr, u.id, u.url, u.groupKey, s.checkingDate" 
                   + " FROM url u"
                   + " LEFT JOIN status s ON s.url_id = u.id"
                   + " INNER JOIN url_context uc ON u.id = uc.url_id"
                   + " WHERE u.valid=true"
                   + " AND uc.active = true"
-                  + " ORDER BY u.host, s.checkingDate) tab1"
+                  + " ORDER BY u.groupKey, s.checkingDate) tab1"
                + " WHERE orderNr <=200"
                + " ORDER by tab1.checkingDate"
             );
@@ -454,14 +454,15 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                .map(rec -> new LinkToBeChecked(rec.get("id", Long.class), rec.get("url", String.class)));
       }
       catch(SQLException ex) {
+         log.error("", ex);
          try {
             con.close();
          } 
          catch (SQLException e) {
             log.error("Can't close connection.");
          }
+         throw ex;
       }
-      return Stream.empty();
    }
 
    @Override
