@@ -1,9 +1,9 @@
-# version 4.2.0
+# version 5.0.0
 - trimming URLs before any processing
 - adding indexed groupKey field to table url (the criteria by which linkchecker is grouping URLs, f.e. to respect crawl delays)
 - adding boolean valid field to table url
 - checking new URLs for validity with status record in case of invalid URLs
-- extracting from URL and saving it in host field for new URLs  
+- extracting host from URL and saving it in groupKey field for new URLs  
 - adding a new method getLinksToChecked to API and implementation
 
 # version 4.1.0
