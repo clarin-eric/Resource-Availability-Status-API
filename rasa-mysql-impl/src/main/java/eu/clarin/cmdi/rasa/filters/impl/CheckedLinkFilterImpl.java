@@ -17,7 +17,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
    @Override
    public CheckedLinkFilter setUrlIs(String url) {
       
-      super.where.add(new Tuple("u.url = ?", java.sql.Types.VARCHAR, url==null?null:url.trim()));
+      super.where.add(new Tuple("u.url = ?", java.sql.Types.CHAR, url==null?null:url.trim()));
       return this;
    }
 
@@ -25,7 +25,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
    public CheckedLinkFilter setUrlIn(String... urls) {
       
       super.where.add(new Tuple(Arrays.stream(urls).map(u -> "?").collect(Collectors.joining(",", "u.url IN(", ")")),
-            java.sql.Types.VARCHAR, Arrays.asList(urls).stream().map(url -> url==null?null:url.trim()).toArray(Object[]::new)));
+            java.sql.Types.CHAR, Arrays.asList(urls).stream().map(url -> url==null?null:url.trim()).toArray(Object[]::new)));
       return this;
    }
 
@@ -96,7 +96,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
 
    @Override
    public CheckedLinkFilter setCategoryIs(Category category) {
-      this.where.add(new Tuple("s.category = ?", java.sql.Types.VARCHAR, category.name()));
+      this.where.add(new Tuple("s.category = ?", java.sql.Types.CHAR, category.name()));
 
       return this;
    }
@@ -105,7 +105,7 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
    public CheckedLinkFilter setCategoryIn(Category... categories) {
       this.where.add(
             new Tuple(Arrays.stream(categories).map(c -> "?").collect(Collectors.joining(",", "category IN (", ")")),
-                  java.sql.Types.VARCHAR,
+                  java.sql.Types.CHAR,
                   Arrays.stream(categories).map(Category::name).collect(Collectors.toList()).toArray()));
 
       return this;

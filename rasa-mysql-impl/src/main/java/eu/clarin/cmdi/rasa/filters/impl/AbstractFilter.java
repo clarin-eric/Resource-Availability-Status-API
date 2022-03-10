@@ -26,7 +26,7 @@ public abstract class AbstractFilter {
 	
 
    protected Object setUrlIs(String url) {
-      this.where.add(new Tuple("u.url = ?", java.sql.Types.VARCHAR, url));
+      this.where.add(new Tuple("u.url = ?", java.sql.Types.CHAR, url));
       
       return this;
    }
@@ -34,7 +34,7 @@ public abstract class AbstractFilter {
    protected Object setUrlIn(String... urls) {      
       this.where.add(new Tuple(
             Arrays.stream(urls).map(u -> "?").collect(Collectors.joining(",", "u.url IN(", ")")), 
-            java.sql.Types.VARCHAR, 
+            java.sql.Types.CHAR, 
             (Object[]) urls));
       
       return this;
@@ -60,7 +60,7 @@ public abstract class AbstractFilter {
          this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
          this.join.add("INNER JOIN context c ON uc.context_id=c.id");
          this.join.add("INNER JOIN providerGroup p ON c.providerGroup_id=p.id");
-         this.where.add(new Tuple("p.name = ?", java.sql.Types.VARCHAR, providerGroup));
+         this.where.add(new Tuple("p.name = ?", java.sql.Types.CHAR, providerGroup));
       }
       
       return this;
@@ -69,7 +69,7 @@ public abstract class AbstractFilter {
    protected Object setSourceIs(String source) {      
       this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
       this.join.add("INNER JOIN context c ON uc.context_id=c.id");
-      this.where.add(new Tuple("c.source = ?", java.sql.Types.VARCHAR, source));
+      this.where.add(new Tuple("c.source = ?", java.sql.Types.CHAR, source));
 
       return this;
    }
@@ -77,7 +77,7 @@ public abstract class AbstractFilter {
    protected Object setRecordIs(String record) {      
       this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
       this.join.add("INNER JOIN context c ON uc.context_id=c.id");
-      this.where.add(new Tuple("c.record = ?", java.sql.Types.VARCHAR, record));
+      this.where.add(new Tuple("c.record = ?", java.sql.Types.CHAR, record));
 
       return this;
    }
