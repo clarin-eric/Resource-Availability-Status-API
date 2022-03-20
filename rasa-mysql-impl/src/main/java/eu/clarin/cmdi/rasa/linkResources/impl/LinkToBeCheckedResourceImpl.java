@@ -21,7 +21,6 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.filters.impl.AbstractFilter;
 import eu.clarin.cmdi.rasa.filters.impl.LinkToBeCheckedFilterImpl;
-import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +37,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -45,13 +45,13 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    
    private final static List<String> VALID_PROTOCOLS = Arrays.asList("http", "https", "ftp");
 
-   private final ConnectionProvider connectionProvider;
+   private final Supplier<Connection> connectionSupplier;
 
    private Map<String, Long> providerGroupIdMap; // since the deactivation depends on this we need a map here
 
 
-   public LinkToBeCheckedResourceImpl(ConnectionProvider connectionProvider) {
-      this.connectionProvider = connectionProvider;
+   public LinkToBeCheckedResourceImpl(Supplier<Connection> connectionSupplier) {
+      this.connectionSupplier = connectionSupplier;
 
       this.providerGroupIdMap = new HashMap<String, Long>();
 
@@ -61,7 +61,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
       
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT u.*");
@@ -109,7 +109,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
             getProviderGroupId(linkToBeChecked);
             
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          con.setAutoCommit(false);
          long urlId = getUrlId(con, linkToBeChecked);
          long contextId = getContextId(con, linkToBeChecked, providerGroupId);
@@ -127,7 +127,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
       Map.Entry<String, Long> lastContextId  = new AbstractMap.SimpleEntry<String, Long>("", null);
       
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          con.setAutoCommit(false);
          for(LinkToBeChecked linkToBeChecked:linksToBeChecked) {
             long urlId = getUrlId(con, linkToBeChecked);
@@ -165,7 +165,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public List<String> getProviderGroupNames() throws SQLException {
-      try (Connection con = connectionProvider.getConnection()) {
+      try (Connection con = connectionSupplier.get()) {
          List<String> collectionNames = new ArrayList<>();
 
          String query = "SELECT name from providerGroup";
@@ -198,7 +198,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -305,7 +305,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          
          Long providerGroupId = null;
          
-         try(Connection con = this.connectionProvider.getConnection()){
+         try(Connection con = this.connectionSupplier.get()){
             try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
                statement.setString(1, linkToBeChecked.getProviderGroup());
    
@@ -412,7 +412,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException {
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
       
       try {
          final PreparedStatement stmt = con.prepareStatement(
@@ -468,8 +468,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    @Override
    public Boolean updateURLs() throws SQLException {
       try(
-            Connection readCon = this.connectionProvider.getConnection(); 
-            Connection writeCon = this.connectionProvider.getConnection()
+            Connection readCon = this.connectionSupplier.get(); 
+            Connection writeCon = this.connectionSupplier.get()
          ) {
          try(
                Statement readStmt = readCon.createStatement(); 

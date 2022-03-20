@@ -25,7 +25,6 @@ import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.AbstractFilter;
 import eu.clarin.cmdi.rasa.filters.impl.CheckedLinkFilterImpl;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
-import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
 import org.jooq.impl.DSL;
@@ -38,6 +37,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,17 +45,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
    private final static Logger LOG = LoggerFactory.getLogger(CheckedLinkResourceImpl.class);
 
-   private final ConnectionProvider connectionProvider;
+   private final Supplier<Connection> connectionSupplier;
 
-   public CheckedLinkResourceImpl(ConnectionProvider connectionProvider) {
-      this.connectionProvider = connectionProvider;
+   public CheckedLinkResourceImpl(Supplier<Connection> connectionSupplier) {
+      this.connectionSupplier = connectionSupplier;
    }
 
    @Override
    public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
 
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT s.*, u.url");
@@ -138,7 +138,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Boolean save(CheckedLink checkedLink) throws SQLException {
       String query = null;
 
-      try (Connection con = connectionProvider.getConnection()) {
+      try (Connection con = connectionSupplier.get()) {
          con.setAutoCommit(false);
          // look up urlId if not set in checkedLink
          if (checkedLink.getUrlId() == null) {
@@ -235,7 +235,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public int getCount(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -250,7 +250,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Statistics getStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con,
                "SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(DISTINCT s.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
@@ -266,9 +266,9 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
    @Override
    public Stream<CategoryStatistics> getCategoryStatistics(CheckedLinkFilter filter) throws SQLException {
-      AbstractFilter aFilter = AbstractFilter.class.cast(filter.setGroupByCategory().setOrderByCategory(true));
+      AbstractFilter aFilter = AbstractFilter.class.cast(filter.setGroupByCategory());
       
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
 
       try {
          
@@ -313,7 +313,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Stream<StatusStatistics> getStatusStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
          
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con,
