@@ -12,11 +12,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class AbstractFilter {
-   private Logger LOG = LoggerFactory.getLogger(this.getClass());
+
 	protected String from;
 	protected Set<String> join = new LinkedHashSet<String>();
 	protected List<Tuple> where = new ArrayList<Tuple>();
@@ -103,12 +103,12 @@ public abstract class AbstractFilter {
             try {
                stmt.setObject(valueNr.incrementAndGet(), value, tuple.sqlType);
             } catch (SQLException e) {
-               LOG.error("can't set value number {} of SQL type {} with value {}", valueNr.get(), tuple.sqlType, value);
+               log.error("can't set value number {} of SQL type {} with value {}", valueNr.get(), tuple.sqlType, value);
             }
          });
 	   });
 	   
-	   LOG.debug("prepared statement:\n{}", stmt.toString());
+	   log.debug("prepared statement:\n{}", stmt.toString());
 	   
 	   return stmt;
 	};

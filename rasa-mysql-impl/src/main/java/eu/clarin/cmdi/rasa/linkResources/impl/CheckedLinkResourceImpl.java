@@ -25,7 +25,6 @@ import eu.clarin.cmdi.rasa.filters.CheckedLinkFilter;
 import eu.clarin.cmdi.rasa.filters.impl.AbstractFilter;
 import eu.clarin.cmdi.rasa.filters.impl.CheckedLinkFilterImpl;
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
-import eu.clarin.cmdi.rasa.helpers.ConnectionProvider;
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
 import org.jooq.impl.DSL;
@@ -38,6 +37,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,17 +45,17 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
    private final static Logger LOG = LoggerFactory.getLogger(CheckedLinkResourceImpl.class);
 
-   private final ConnectionProvider connectionProvider;
+   private final Supplier<Connection> connectionSupplier;
 
-   public CheckedLinkResourceImpl(ConnectionProvider connectionProvider) {
-      this.connectionProvider = connectionProvider;
+   public CheckedLinkResourceImpl(Supplier<Connection> connectionSupplier) {
+      this.connectionSupplier = connectionSupplier;
    }
 
    @Override
    public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
 
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT s.*, u.url");
@@ -78,12 +78,18 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                   LOG.error("Can't close connection.");
                }
             })
-            .map(rec -> new CheckedLink(rec.get("id", Long.class),
-               rec.get("url_id", Long.class), rec.get("url", String.class), rec.get("method", String.class),
-               rec.get("statusCode", Integer.class), rec.get("contentType", String.class),
-               rec.get("byteSize", Long.class), rec.get("duration", Integer.class),
-               rec.get("checkingDate", Timestamp.class), rec.get("message", String.class),
-               rec.get("redirectCount", Integer.class), Category.valueOf(rec.get("category", String.class))));
+            .map(rec -> new CheckedLink(
+                  rec.get("url", String.class), 
+                  rec.get("method", String.class),
+                  rec.get("statusCode", Integer.class), 
+                  rec.get("contentType", String.class),
+                  rec.get("byteSize", Long.class), 
+                  rec.get("duration", Integer.class),
+                  rec.get("checkingDate", Timestamp.class), 
+                  rec.get("message", String.class),
+                  rec.get("redirectCount", Integer.class), 
+                  Category.valueOf(rec.get("category", String.class))
+               ));
 
       } 
       catch (SQLException ex) {
@@ -132,7 +138,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Boolean save(CheckedLink checkedLink) throws SQLException {
       String query = null;
 
-      try (Connection con = connectionProvider.getConnection()) {
+      try (Connection con = connectionSupplier.get()) {
          con.setAutoCommit(false);
          // look up urlId if not set in checkedLink
          if (checkedLink.getUrlId() == null) {
@@ -180,7 +186,8 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                statement.execute();
             }
 
-         } else { // otherwise copy existing status record to history and update status record
+         } 
+         else { // otherwise copy existing status record to history and update status record
             query = "INSERT IGNORE INTO history(status_id, url_id, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount)"
                   + " SELECT * FROM status WHERE id=?";
             try (PreparedStatement statement = con.prepareStatement(query)) {
@@ -191,7 +198,9 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
             query = "UPDATE status SET statusCode=?, message=?, category=?, method=?, contentType=?, byteSize=?, duration=?, checkingDate=?, redirectCount=? WHERE id=?";
             try (PreparedStatement statement = con.prepareStatement(query)) {
+
                statement.setObject(1, checkedLink.getStatus(), Types.INTEGER);
+
                statement.setString(2, checkedLink.getMessage());
                statement.setString(3, checkedLink.getCategory().toString());
                statement.setString(4, checkedLink.getMethod());
@@ -205,6 +214,16 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                statement.execute();
             }
          }
+         if(checkedLink.getCategory() == Category.Invalid_URL) { //set valid flag to false to prevent further processing of invalid URLs
+            query = "UPDATE url SET valid=false WHERE id=?";
+            
+            try (PreparedStatement statement = con.prepareStatement(query)) {
+               statement.setLong(1, checkedLink.getUrlId());
+
+               statement.execute();
+            }
+         }
+         
          con.commit();
          con.setAutoCommit(true);
       }
@@ -216,7 +235,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public int getCount(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -231,7 +250,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Statistics getStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionProvider.getConnection()) {
+      try (Connection con = this.connectionSupplier.get()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con,
                "SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(DISTINCT s.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
@@ -247,9 +266,9 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
    @Override
    public Stream<CategoryStatistics> getCategoryStatistics(CheckedLinkFilter filter) throws SQLException {
-      AbstractFilter aFilter = AbstractFilter.class.cast(filter.setGroupByCategory().setOrderByCategory(true));
+      AbstractFilter aFilter = AbstractFilter.class.cast(filter.setGroupByCategory());
       
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
 
       try {
          
@@ -294,7 +313,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Stream<StatusStatistics> getStatusStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionProvider.getConnection();
+      final Connection con = connectionSupplier.get();
          
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con,

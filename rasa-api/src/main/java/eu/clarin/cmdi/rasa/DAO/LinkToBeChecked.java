@@ -38,7 +38,7 @@ public class LinkToBeChecked {
    }
 
    public LinkToBeChecked(String url) {
-      this.url = url;
+      setUrl(url);
    }
 
    public LinkToBeChecked(Long urlId, String url) {
@@ -69,7 +69,7 @@ public class LinkToBeChecked {
    }
 
    public void setUrl(String url) {
-      this.url = url;
+      this.url = url.trim();
    }
 
    public String getSource() {

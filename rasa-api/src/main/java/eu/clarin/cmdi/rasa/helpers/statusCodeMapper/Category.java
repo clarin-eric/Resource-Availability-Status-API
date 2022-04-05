@@ -20,8 +20,9 @@ package eu.clarin.cmdi.rasa.helpers.statusCodeMapper;
 
 public enum Category {
     Ok,
-    Broken,
     Undetermined,
     Restricted_Access,
-    Blocked_By_Robots_txt
+    Blocked_By_Robots_txt, 
+    Broken,
+    Invalid_URL
 }

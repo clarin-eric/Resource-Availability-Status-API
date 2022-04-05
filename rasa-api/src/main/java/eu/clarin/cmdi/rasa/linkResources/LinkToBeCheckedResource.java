@@ -22,7 +22,6 @@ import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -60,20 +59,6 @@ public interface LinkToBeCheckedResource {
     */
    Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException;
 
-   /**
-    * Updates the harvestDate for the given links. This way the report generation
-    * date is persisted and if there are old links in the database which are not
-    * part of the current report generation (not in the clarin records anymore)
-    * they can be deleted with the deleteOldLinks() method.
-    * 
-    * @param linkId        identifier of the link
-    * @param nextFetchDate next (earliest) date the link is fetched for link
-    *                      checking
-    * @return
-    * @throws SQLException occurs if there was an error during statement
-    *                      preparation or execution
-    */
-   Boolean updateNextFetchDate(Long linkId, Timestamp nextFetchDate) throws SQLException;
 
    /**
     * Delete an element from urls table
@@ -95,24 +80,6 @@ public interface LinkToBeCheckedResource {
     */
    Boolean delete(List<String> urls) throws SQLException;
 
-   /**
-    * Retrieve LinkToBeChecked for single url
-    *
-    * @param url url of the row
-    * @return found LinkToBeChecked
-    * @throws SQLException occurs if there was an error during statement
-    *                      preparation or execution
-    */
-
-   /**
-    * Retrieve all the names of all collections in the database(urls table)
-    *
-    * @return List of all collection names
-    * @throws SQLException occurs if there was an error during statement
-    *                      preparation or execution
-    */
-   @Deprecated
-   List<String> getCollectionNames() throws SQLException;
 
    List<String> getProviderGroupNames() throws SQLException;
 
@@ -140,4 +107,12 @@ public interface LinkToBeCheckedResource {
    int deleteOldLinks(Long date, String collection) throws SQLException;
 
    LinkToBeCheckedFilter getLinkToBeCheckedFilter();
+   
+   /**
+    * @return Stream of LinkToBeChecked
+    * @throws SQLException
+    */
+   Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException;
+   
+   Boolean updateURLs() throws SQLException;
 }

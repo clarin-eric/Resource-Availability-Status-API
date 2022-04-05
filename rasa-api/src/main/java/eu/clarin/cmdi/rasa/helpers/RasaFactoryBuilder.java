@@ -4,5 +4,8 @@ import java.util.Properties;
 
 public interface RasaFactoryBuilder {
 
-    RasaFactory getRasaFactory(Properties properties);
+    public RasaFactory getRasaFactory();
+    
+    @Deprecated(forRemoval = true)
+    public RasaFactory getRasaFactory(Properties properties);
 }

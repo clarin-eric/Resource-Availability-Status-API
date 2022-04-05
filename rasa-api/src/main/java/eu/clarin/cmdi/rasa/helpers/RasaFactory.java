@@ -22,6 +22,7 @@ import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Properties;
 
 public interface RasaFactory {
 
@@ -30,17 +31,19 @@ public interface RasaFactory {
      *
      * @return checkedLinkResource to query and update the status table
      */
-    CheckedLinkResource getCheckedLinkResource();
+    public CheckedLinkResource getCheckedLinkResource();
 
     /**
      * Get linkToBeCheckedResource to query and update the urls table
      *
      * @return checkedLinkResource to query and update the status table
      */
-    LinkToBeCheckedResource getLinkToBeCheckedResource();
+    public LinkToBeCheckedResource getLinkToBeCheckedResource();
     
     void writeStatusSummary(Writer writer) throws IOException;
-
+    
+    
+    public RasaFactory init(Properties properties);
 
     /**
      * Close all opened connections

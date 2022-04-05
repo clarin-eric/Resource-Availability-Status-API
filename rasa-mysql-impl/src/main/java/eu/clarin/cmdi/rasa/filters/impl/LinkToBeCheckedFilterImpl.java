@@ -1,6 +1,7 @@
 package eu.clarin.cmdi.rasa.filters.impl;
 
 import java.sql.Timestamp;
+import java.util.Arrays;
 
 import eu.clarin.cmdi.rasa.filters.LinkToBeCheckedFilter;
 
@@ -12,13 +13,15 @@ public class LinkToBeCheckedFilterImpl extends AbstractFilter implements LinkToB
 
    @Override
    public LinkToBeCheckedFilter setUrlIs(String url) {
-      super.setUrlIs(url);
+
+      super.setUrlIs(url==null?null:url.trim());
       return this;
    }
 
    @Override
    public LinkToBeCheckedFilter setUrlIn(String... urls) {
-      super.setUrlIn(urls);
+      
+      super.setUrlIn(Arrays.asList(urls).stream().map(url -> url==null?null:url.trim()).toArray(String[]::new));
       return this;
    }
 
