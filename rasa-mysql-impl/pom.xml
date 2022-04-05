@@ -3,7 +3,7 @@
    <parent>
       <groupId>eu.clarin.cmdi</groupId>
       <artifactId>resource-availability-status-api</artifactId>
-      <version>5.0.1-beta1</version>
+      <version>${revision}</version>
    </parent>
    <artifactId>rasa-mysql-impl</artifactId>
    <build>
@@ -25,12 +25,6 @@
                <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
             </configuration>
          </plugin>
-
-         <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.22.2</version>
-         </plugin>
-
       </plugins>
    </build>
    <properties>
@@ -60,18 +54,10 @@
          <version>3.0</version>
          <scope>test</scope>
       </dependency>
-      <!-- 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
-			<scope>test</scope>
-		</dependency>
-		 -->
       <dependency>
          <groupId>eu.clarin.cmdi</groupId>
          <artifactId>rasa-api</artifactId>
-         <version>5.0.1-beta1</version>
+         <version>${project.version}</version>
       </dependency>
       <dependency>
          <groupId>org.jooq</groupId>
@@ -104,7 +90,8 @@
 			<groupId>ch.vorburger.mariaDB4j</groupId>
 			<artifactId>mariaDB4j</artifactId>
 			<version>2.5.3</version>
-		</dependency>
+			<scope>test</scope>
+      </dependency>
       <dependency>
       	<groupId>org.mariadb.jdbc</groupId>
       	<artifactId>mariadb-java-client</artifactId>

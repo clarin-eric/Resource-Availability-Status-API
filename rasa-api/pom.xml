@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>eu.clarin.cmdi</groupId>
 		<artifactId>resource-availability-status-api</artifactId>
-		<version>5.0.1-beta1</version>
+		<version>${revision}</version>
 	</parent>
 	<artifactId>rasa-api</artifactId>
 	<build>
