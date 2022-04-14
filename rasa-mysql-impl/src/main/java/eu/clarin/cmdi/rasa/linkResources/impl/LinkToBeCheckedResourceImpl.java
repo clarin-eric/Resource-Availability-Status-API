@@ -553,4 +553,109 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       }
       return null;
    }
+
+   @Override
+   public Boolean deactivateLinksAfter(int periodInDays) throws SQLException {
+      
+      log.info("deactivation of links older then {} days", periodInDays);
+      
+      try (Connection con = connectionSupplier.get()) {
+         try (PreparedStatement stmt = con.prepareStatement("UPADTE url_context uc SET uc.active = false WHERE active = true AND timestampdiff(day, uc.ingestionDate, now()) > ?")){
+            stmt.setInt(1, periodInDays);
+            
+            return stmt.execute();
+         }
+      }
+   }
+
+   @Override
+   public Boolean deleteLinksAfter(int periodInDays) throws SQLException {
+      
+      log.info("multi step deletion of links older then {} days", periodInDays);
+      
+      int step = 0;
+
+      try (Connection con = connectionSupplier.get()) {
+         String query = "INSERT INTO obsolete (url, source, providerGroupName, record, expectedMimeType, ingestionDate, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount) "
+                           + "SELECT u.url, c.source, p.name, c.record, c.expectedMimeType, uc.ingestionDate, s.statusCode, s.message, s.category, s.method, s.contentType, s.byteSize, s.duration, s.checkingDate, s.redirectCount "
+                           + "FROM url_context uc "
+                           + "INNER JOIN (url u, context c) "
+                           + "ON (u.id=uc.url_id AND c.id=uc.context_id) "
+                           + "INNER JOIN providerGroup p "
+                           + "ON p.id=c.providerGroup_id "
+                           + "INNER JOIN status s "
+                           + "ON s.url_id=u.id "
+                           + "WHERE timestampdiff(day, uc.ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: saving status records", ++step);
+            stmt.execute();
+         }
+         
+         query = "INSERT INTO obsolete (url, source, providerGroupName, record, expectedMimeType, ingestionDate, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount) "
+                     + "SELECT u.url, c.source, p.name, c.record, c.expectedMimeType, uc.ingestionDate, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.checkingDate, h.redirectCount "
+                     + "FROM url_context uc "
+                     + "INNER JOIN (url u, context c) "
+                     + "ON (u.id=uc.url_id AND c.id=uc.context_id) "
+                     + "INNER JOIN providerGroup p "
+                     + "ON p.id=c.providerGroup_id "
+                     + "INNER JOIN history h "
+                     + "ON h.url_id=u.id "
+                     + "WHERE timestampdiff(day, uc.ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: saving history records", ++step);
+            stmt.execute();
+         }
+         query = "DELETE FROM url_context WHERE timestampdiff(day, ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: saving history records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM history WHERE url_id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting history records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM status WHERE url_id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting status records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM url WHERE id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting url records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM context where id NOT IN (SELECT context_id FROM url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting url_context records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM providerGroup WHERE id NOT IN (SELECT providerGroup_id from context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting providerGroup records", ++step);
+            return stmt.execute();
+         }
+      }
+   }
 }

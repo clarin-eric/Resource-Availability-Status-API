@@ -106,6 +106,11 @@ public interface LinkToBeCheckedResource {
     */
    int deleteOldLinks(Long date, String collection) throws SQLException;
 
+   
+   
+   /**
+    * @return an instance of LinkToBeCheckedFilter
+    */
    LinkToBeCheckedFilter getLinkToBeCheckedFilter();
    
    /**
@@ -114,5 +119,28 @@ public interface LinkToBeCheckedResource {
     */
    Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException;
    
+   /**
+    * trimming url.url, setting url.groupKey field for host, setting url.invalid
+    * and adding a record to the status table in case of an invalid URL
+    * @return 
+    * @throws SQLException
+    */
    Boolean updateURLs() throws SQLException;
+   
+   /**
+    * Links older than the period of time are deactivated by setting the active field in table url_context to false
+    * @param periodInDays the maximal period in days between now and the ingestion date. 
+    * @return true, if the procedure terminates without errors
+    * @throws SQLException
+    */
+   Boolean deactivateLinksAfter(int periodInDays) throws SQLException;
+   
+   /**
+    * Links older than the period of time are deleted. This means that the information is flattened and stored in an external table first. 
+    * Then the record is deleted from url_context table. At least all orphaned records are deleted from table url, status, context and providerGroup
+    * @param periodInDays the maximal period in days between now and the ingestion date
+    * @return true, if the procedure terminates without errors
+    * @throws SQLException
+    */
+   Boolean deleteLinksAfter(int periodInDays) throws SQLException;
 }
