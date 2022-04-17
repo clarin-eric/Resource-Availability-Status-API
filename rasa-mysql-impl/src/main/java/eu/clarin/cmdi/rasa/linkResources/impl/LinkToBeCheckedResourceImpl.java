@@ -37,21 +37,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 @Slf4j
 public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    
    private final static List<String> VALID_PROTOCOLS = Arrays.asList("http", "https", "ftp");
 
-   private final Supplier<Connection> connectionSupplier;
+   private final DataSource dataSource;
 
    private Map<String, Long> providerGroupIdMap; // since the deactivation depends on this we need a map here
 
 
-   public LinkToBeCheckedResourceImpl(Supplier<Connection> connectionSupplier) {
-      this.connectionSupplier = connectionSupplier;
+   public LinkToBeCheckedResourceImpl(DataSource dataSource) {
+      this.dataSource = dataSource;
 
       this.providerGroupIdMap = new HashMap<String, Long>();
 
@@ -61,7 +62,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
       
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT u.*");
@@ -109,7 +110,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
             getProviderGroupId(linkToBeChecked);
             
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          con.setAutoCommit(false);
          long urlId = getUrlId(con, linkToBeChecked);
          long contextId = getContextId(con, linkToBeChecked, providerGroupId);
@@ -127,7 +128,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
       Map.Entry<String, Long> lastContextId  = new AbstractMap.SimpleEntry<String, Long>("", null);
       
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          con.setAutoCommit(false);
          for(LinkToBeChecked linkToBeChecked:linksToBeChecked) {
             long urlId = getUrlId(con, linkToBeChecked);
@@ -165,7 +166,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public List<String> getProviderGroupNames() throws SQLException {
-      try (Connection con = connectionSupplier.get()) {
+      try (Connection con = dataSource.getConnection()) {
          List<String> collectionNames = new ArrayList<>();
 
          String query = "SELECT name from providerGroup";
@@ -198,7 +199,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -305,7 +306,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          
          Long providerGroupId = null;
          
-         try(Connection con = this.connectionSupplier.get()){
+         try(Connection con = this.dataSource.getConnection()){
             try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
                statement.setString(1, linkToBeChecked.getProviderGroup());
    
@@ -412,7 +413,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException {
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
       
       try {
          final PreparedStatement stmt = con.prepareStatement(
@@ -468,8 +469,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    @Override
    public Boolean updateURLs() throws SQLException {
       try(
-            Connection readCon = this.connectionSupplier.get(); 
-            Connection writeCon = this.connectionSupplier.get()
+            Connection readCon = this.dataSource.getConnection(); 
+            Connection writeCon = this.dataSource.getConnection()
          ) {
          try(
                Statement readStmt = readCon.createStatement(); 
@@ -559,7 +560,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       
       log.info("deactivation of links older then {} days", periodInDays);
       
-      try (Connection con = connectionSupplier.get()) {
+      try (Connection con = dataSource.getConnection()) {
          try (PreparedStatement stmt = con.prepareStatement("UPADTE url_context uc SET uc.active = false WHERE active = true AND timestampdiff(day, uc.ingestionDate, now()) > ?")){
             stmt.setInt(1, periodInDays);
             
@@ -575,7 +576,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       
       int step = 0;
 
-      try (Connection con = connectionSupplier.get()) {
+      try (Connection con = dataSource.getConnection()) {
          String query = "INSERT INTO obsolete (url, source, providerGroupName, record, expectedMimeType, ingestionDate, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount) "
                            + "SELECT u.url, c.source, p.name, c.record, c.expectedMimeType, uc.ingestionDate, s.statusCode, s.message, s.category, s.method, s.contentType, s.byteSize, s.duration, s.checkingDate, s.redirectCount "
                            + "FROM url_context uc "
