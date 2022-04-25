@@ -25,6 +25,7 @@ import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jooq.Record;
 import org.jooq.impl.DSL;
 
 import java.net.MalformedURLException;
@@ -90,6 +91,49 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
                   }
                })
                .map(rec -> new LinkToBeChecked(rec.get("id", Long.class), rec.get("url", String.class)));
+         
+      }
+      catch(SQLException ex) {
+         try {
+            con.close();
+         } 
+         catch (SQLException e) {
+            log.error("Can't close connection.");
+         }
+      }
+      return Stream.empty();
+   }
+   
+   @Override
+   public Stream<Map<String, Object>> get(String sqlString) throws SQLException {
+      final Connection con = dataSource.getConnection();
+      
+      try {
+         final PreparedStatement stmt = con.prepareStatement(sqlString);
+         final ResultSet rs = stmt.executeQuery();
+         
+         return DSL.using(con).fetchStream(rs)
+               .onClose(() -> {
+                  try {
+                     rs.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close resultset.");
+                  }
+                  try {
+                     stmt.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close prepared statement.");
+                  }
+                  try {
+                     con.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close connection.");
+                  }
+               })
+               .map(Record::intoMap);
          
       }
       catch(SQLException ex) {
@@ -561,7 +605,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       log.info("deactivation of links older then {} days", periodInDays);
       
       try (Connection con = dataSource.getConnection()) {
-         try (PreparedStatement stmt = con.prepareStatement("UPADTE url_context uc SET uc.active = false WHERE active = true AND timestampdiff(day, uc.ingestionDate, now()) > ?")){
+         try (PreparedStatement stmt = con.prepareStatement("UPDATE url_context uc SET uc.active = false WHERE active = true AND timestampdiff(day, uc.ingestionDate, now()) > ?")){
             stmt.setInt(1, periodInDays);
             
             return stmt.execute();
@@ -614,7 +658,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          try (PreparedStatement stmt = con.prepareStatement(query)){
             stmt.setInt(1, periodInDays);
             
-            log.info("step {}: saving history records", ++step);
+            log.info("step {}: deleting url_context records", ++step);
             stmt.execute();
          }
          
@@ -646,7 +690,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          
          try (PreparedStatement stmt = con.prepareStatement(query)){
             
-            log.info("step {}: deleting url_context records", ++step);
+            log.info("step {}: deleting context records", ++step);
             stmt.execute();
          }
          

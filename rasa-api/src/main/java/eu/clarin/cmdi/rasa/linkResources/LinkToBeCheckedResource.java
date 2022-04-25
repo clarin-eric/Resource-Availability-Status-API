@@ -23,6 +23,7 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public interface LinkToBeCheckedResource {
@@ -33,6 +34,13 @@ public interface LinkToBeCheckedResource {
     * @throws SQLException
     */
    Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException;
+   
+   /**
+    * @param sqlString usually a SELECT statement
+    * @return a Stream of Map, where each map represents one record. The key is the field name and the value the field value. 
+    * @throws SQLException
+    */
+   Stream<Map<String, Object>> get(String sqlString) throws SQLException;
 
    int getCount(LinkToBeCheckedFilter filter) throws SQLException;
 
