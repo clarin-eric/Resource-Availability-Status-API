@@ -51,6 +51,8 @@ public class CheckedLink {
 
    private CheckedLink(String method, Integer status, String contentType, Long byteSize, Integer duration,
          Timestamp checkingDate, String message, Integer redirectCount, Category category) {
+      
+      this();
 
       this.method = method;
       this.status = status;
