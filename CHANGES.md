@@ -1,5 +1,6 @@
 # version 5.1.x
 - adding methods for deactivation and deletion of links which haven't been confirmed for a certain amount of time in days
+- adding method, which takes an SQL String as parameter and returns a Stream of Map. This method is basically for testing 
 - leaving choice of database driver and the use of a connection pool to the parent project
 
 # version 5.0.x
