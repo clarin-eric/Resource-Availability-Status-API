@@ -59,7 +59,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
       final Connection con = dataSource.getConnection();
 
       try {
-         final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT s.*, u.url");
+         final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT s.*, u.url, p.name, c.record, c.expectedMimeType");
          final ResultSet rs = stmt.executeQuery();
 
          return DSL.using(con).fetchStream(rs).onClose(() -> {
@@ -89,7 +89,10 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                   rec.get("checkingDate", Timestamp.class), 
                   rec.get("message", String.class),
                   rec.get("redirectCount", Integer.class), 
-                  Category.valueOf(rec.get("category", String.class))
+                  Category.valueOf(rec.get("category", String.class)), 
+                  rec.get("providerGroup", String.class),
+                  rec.get("record", String.class),
+                  rec.get("expectedMimeType", String.class)
                ));
 
       } 

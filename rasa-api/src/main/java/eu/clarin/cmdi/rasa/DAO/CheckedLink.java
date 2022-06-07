@@ -18,10 +18,7 @@
 package eu.clarin.cmdi.rasa.DAO;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 
@@ -42,11 +39,15 @@ public class CheckedLink {
    private String message;
    private Integer redirectCount;
    private Category category;
+   
+   // in fact this doesn't represent the n-n relationship between url and context
+   private String providerGroup;
+   private String record;
+   private String expectedMimeType;
 
-   private List<Context> contexts;
+
 
    public CheckedLink() {
-      this.contexts = new ArrayList<Context>();
    }
 
    private CheckedLink(String method, Integer status, String contentType, Long byteSize, Integer duration,
@@ -82,6 +83,19 @@ public class CheckedLink {
       this.urlId = urlId;
 
    }
+   
+   public CheckedLink(String url, String method, Integer status, String contentType, Long byteSize, Integer duration,
+         Timestamp checkingDate, String message, Integer redirectCount, Category category, 
+         String providerGroup, String record, String expectedMimeType) {
+      
+      
+      this(url, method, status, contentType, byteSize, duration, checkingDate, message, redirectCount, category);
+      
+      this.providerGroup = providerGroup;
+      this.record = record;
+      this.expectedMimeType = expectedMimeType;
+   }
+
 
    public String getUrl() {
       return url;
@@ -152,43 +166,28 @@ public class CheckedLink {
       this.redirectCount = redirectCount;
    }
 
-   @Deprecated
-   public String getCollection() {
-      return this.contexts.size() > 0 ? this.contexts.get(0).getProviderGroup() : null;
+   public String getProviderGroup() {     
+      return this.providerGroup;      
    }
 
-   @Deprecated
-   public void setCollection(String collection) {
-      if (this.contexts.size() == 0)
-         this.contexts.add(new Context());
-
-      this.contexts.get(0).setCollection(collection);
+   public void setProviderGroup(String providerGroup) {
+      this.providerGroup = providerGroup;     
    }
 
-   @Deprecated
-   public String getRecord() {
-      return this.contexts.size() > 0 ? this.getContexts().get(0).getRecord() : null;
+   public String getRecord() {     
+      return this.record;
    }
 
-   @Deprecated
    public void setRecord(String record) {
-      if (this.contexts.size() == 0)
-         this.contexts.add(new Context());
-
-      this.contexts.get(0).setRecord(record);
+      this.record = record;
    }
 
-   @Deprecated
-   public String getExpectedMimeType() {
-      return this.contexts.size() > 0 ? this.getContexts().get(0).getExpectedMimeType() : null;
+   public String getExpectedMimeType() {     
+      return this.expectedMimeType;
    }
 
-   @Deprecated
    public void setExpectedMimeType(String expectedMimeType) {
-      if (this.contexts.size() == 0)
-         this.contexts.add(new Context());
-
-      this.contexts.get(0).setExpectedMimeType(expectedMimeType);
+      this.expectedMimeType = expectedMimeType;
    }
 
    public String getMessage() {
@@ -223,13 +222,6 @@ public class CheckedLink {
       this.statusId = statusId;
    }
 
-   public void addContext(String record, String collection, String expectedMimeType, Timestamp injectionDate) {
-      this.contexts.add(new Context(record, collection, expectedMimeType, injectionDate));
-   }
-
-   public List<Context> getContexts() {
-      return this.contexts;
-   }
 
    @Override
    public boolean equals(Object o) {
@@ -241,101 +233,24 @@ public class CheckedLink {
       return url.equals(that.url) && Objects.equals(method, that.method) && Objects.equals(status, that.status)
             && Objects.equals(contentType, that.contentType) && Objects.equals(byteSize, that.byteSize)
             && Objects.equals(duration, that.duration) && Objects.equals(checkingDate, that.checkingDate)
-            && Objects.equals(message, that.message) && Objects.equals(contexts, that.contexts)
+            && Objects.equals(message, that.message) && Objects.equals(providerGroup, that.providerGroup)
+            && Objects.equals(record, that.record) && Objects.equals(expectedMimeType, that.expectedMimeType)
             && Objects.equals(redirectCount, that.redirectCount) && Objects.equals(category, that.category);
    }
 
    @Override
    public int hashCode() {
-      return Objects.hash(url, method, status, contentType, byteSize, duration, checkingDate, message, contexts,
-            redirectCount, category, contexts);
+      return Objects.hash(url, method, status, contentType, byteSize, duration, checkingDate, message,
+            redirectCount, category, providerGroup, record, expectedMimeType);
    }
 
    @Override
    public String toString() {
-      return "CheckedLink{urlId=" + urlId + ", statusId=" + statusId + ", url='" + url + '\'' + ", method='" + method
-            + '\'' + ", status=" + status + ", contentType='" + contentType + '\'' + ", byteSize=" + byteSize
-            + ", duration=" + duration + ", checkingDate=" + checkingDate + ", message='" + message + '\''
-            + ", redirectCount=" + redirectCount + ", category='" + category + "\', Contexts{["
-            + this.contexts.stream().map(Context::toString).collect(Collectors.joining(", ")) + "]}}";
-
-   }
-
-   public class Context {
-
-      private String record;
-      private String providerGroup;
-      private String expectedMimeType;
-      private Timestamp injectionDate;
-
-      public Context() {
-
-      }
-
-      public Context(String record, String providerGroup, String expectedMimeType, Timestamp injectionDate) {
-
-         this.record = record;
-         this.providerGroup = providerGroup;
-         this.expectedMimeType = expectedMimeType;
-         this.injectionDate = injectionDate;
-      }
-
-      public String getRecord() {
-         return record;
-      }
-
-      public void setRecord(String record) {
-         this.record = record;
-      }
-
-      public String getProviderGroup() {
-         return providerGroup;
-      }
-
-      public void setCollection(String collection) {
-         this.providerGroup = collection;
-      }
-
-      public String getExpectedMimeType() {
-         return expectedMimeType;
-      }
-
-      public void setExpectedMimeType(String expectedMimeType) {
-         this.expectedMimeType = expectedMimeType;
-      }
-
-      public Timestamp getInjectionDate() {
-         return injectionDate;
-      }
-
-      public void setInjectionDate(Timestamp injectionDate) {
-         this.injectionDate = injectionDate;
-      }
-
-      @Override
-      public boolean equals(Object obj) {
-         if (this == obj)
-            return true;
-         if (obj == null || getClass() != obj.getClass())
-            return false;
-         Context that = (Context) obj;
-         return Objects.equals(this.providerGroup, that.providerGroup) && Objects.equals(this.record, that.record)
-               && Objects.equals(this.expectedMimeType, that.expectedMimeType)
-               && Objects.equals(this.injectionDate, that.injectionDate);
-      }
-
-      @Override
-      public String toString() {
-         // TODO Auto-generated method stub
-         return "Context{record='" + record + '\'' + ", collection='" + providerGroup + '\'' + ", injectionDate="
-               + injectionDate + ", expectedMimeType='" + expectedMimeType + "\'}";
-      }
-
-      @Override
-      public int hashCode() {
-
-         return Objects.hash(record, providerGroup, injectionDate, expectedMimeType);
-      }
+      return "CheckedLink{urlId=" + urlId + ", statusId=" + statusId + ", url='" + url + "', method='" + method
+            + "', status=" + status + ", contentType='" + contentType + "', byteSize=" + byteSize
+            + ", duration=" + duration + ", checkingDate=" + checkingDate + ", message='" + message 
+            + "', redirectCount=" + redirectCount + ", category='" + category + "', providerGroup='" + providerGroup
+            + "', record='" + record + "', expectedMimeType='" + expectedMimeType + "'}";
 
    }
 }

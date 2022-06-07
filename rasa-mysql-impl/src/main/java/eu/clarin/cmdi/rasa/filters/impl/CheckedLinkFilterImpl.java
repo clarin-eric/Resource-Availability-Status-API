@@ -12,6 +12,9 @@ public class CheckedLinkFilterImpl extends AbstractFilter implements CheckedLink
    public CheckedLinkFilterImpl() {
       super.from = "status s";
       super.join.add("INNER JOIN url u ON s.url_id=u.id");
+      this.join.add("INNER JOIN url_context uc ON u.id=uc.url_id");
+      this.join.add("INNER JOIN context c ON uc.context_id=c.id");
+      this.join.add("INNER JOIN providerGroup p ON c.providerGroup_id=p.id");
    }
 
    @Override
