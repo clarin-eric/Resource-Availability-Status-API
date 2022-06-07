@@ -90,7 +90,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                   rec.get("message", String.class),
                   rec.get("redirectCount", Integer.class), 
                   Category.valueOf(rec.get("category", String.class)), 
-                  rec.get("providerGroup", String.class),
+                  rec.get("name", String.class),
                   rec.get("record", String.class),
                   rec.get("expectedMimeType", String.class)
                ));
