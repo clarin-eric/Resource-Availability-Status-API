@@ -68,7 +68,7 @@ CREATE TABLE `status` (
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ukey_status_url_id` (`url_id`),
-  KEY `key_status_statusCode` (`statusCode`),
+  KEY `key_status_category` (`category`),
   CONSTRAINT `fkey_status_url_id` FOREIGN KEY `ukey_status_url_id` (`url_id`) REFERENCES `url` (`id`)
 );
 
