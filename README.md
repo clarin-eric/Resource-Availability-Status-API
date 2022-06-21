@@ -2,10 +2,10 @@
 
 Resource Availability Status API project, aka `RASA`, contains an abstract Java API (rasa-api) and currently one 
 mysql implementation of the API (rasa-mysql-impl) that queries the link checking database of 
-the [Curation Module](https://github.com/clarin-eric/clarin-curation-module)
-and the [Linkchecker](https://github.com/clarin-eric/linkchecker). 
+the [Curation Dashboard](https://github.com/clarin-eric/curation-dashboard)
+and the [Link Checker](https://github.com/clarin-eric/linkchecker). 
 It takes care of the database specific code and provides convenience methods for developers who want to access 
-meaningful information extracted from the results of Linkchecker. 
+meaningful information extracted from the results of Link Checker. 
 
 ### Usage
 
