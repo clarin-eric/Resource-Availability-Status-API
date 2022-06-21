@@ -6,6 +6,7 @@
       <version>${revision}</version>
    </parent>
    <artifactId>rasa-mysql-impl</artifactId>
+
    <properties>
       <mariadb.version>2.7.5</mariadb.version>
       <hikari.version>5.0.1</hikari.version>
