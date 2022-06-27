@@ -1,3 +1,6 @@
+# version 5.1.1
+- flattening url-context relationship and loading context to CheckedLink object
+
 # version 5.1.0
 - adding methods for deactivation and deletion of links which haven't been confirmed for a certain amount of time in days
 - adding method, which takes an SQL String as parameter and returns a Stream of Map. This method is basically for testing 
