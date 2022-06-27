@@ -2,9 +2,10 @@ package eu.clarin.cmdi.rasa.helpers.impl;
 
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import com.zaxxer.hikari.HikariPoolMXBean;
 
 
 import eu.clarin.cmdi.rasa.helpers.RasaFactory;
@@ -13,68 +14,52 @@ import eu.clarin.cmdi.rasa.linkResources.impl.CheckedLinkResourceImpl;
 import eu.clarin.cmdi.rasa.linkResources.impl.LinkToBeCheckedResourceImpl;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.sql.SQLException;
-
 @Slf4j
 public class RasaFactoryBuilderImpl implements RasaFactoryBuilder {
 
    @Override
    public RasaFactory getRasaFactory() {
       return new RasaFactory() {
-         private HikariDataSource ds;
+         private DataSource datasource;
          
          @Override
          public RasaFactory init(Properties properties) {
+            
             log.info("Connecting to database...");
 
             HikariConfig config = new HikariConfig(properties);
 
-            ds = new HikariDataSource(config);
+            return init(new HikariDataSource(config));
+         }
+         
+         @Override
+         public RasaFactory init(DataSource dataSource) {
+
+            datasource = dataSource;
             
             return this;
          }
 
          @Override
          public CheckedLinkResourceImpl getCheckedLinkResource() {
-            return new CheckedLinkResourceImpl(() -> {
-               try {
-                  return ds.getConnection();
-               }
-               catch (SQLException e) {
-                  log.error("can't get connection. You might not have called the init()-method");
-                  throw new RuntimeException();
-               }
-            });
+            return new CheckedLinkResourceImpl(this.datasource);
          }
 
          @Override
          public LinkToBeCheckedResourceImpl getLinkToBeCheckedResource() {
-            return new LinkToBeCheckedResourceImpl(() -> {
-               try {
-                  return ds.getConnection();
-               }
-               catch (SQLException e) {
-                  log.error("can't get connection. You might not have called the init()-method");
-                  throw new RuntimeException();
-               }
-            });
+            return new LinkToBeCheckedResourceImpl(this.datasource);
          }
 
          @Override
          public void tearDown() {
-            this.ds.close();
-         }
+            
+            try {
+               HikariDataSource.class.cast(this.datasource).close();
+            }
+            catch(ClassCastException ex) {
+               log.error("datasource not an instance of HikariDataSource");
+            }
 
-         @Override
-         public void writeStatusSummary(Writer writer) throws IOException {
-            final HikariPoolMXBean hikariPoolMXBean = ds.getHikariPoolMXBean();
-            writer.write(String.format(
-                  "HikariDataSource <active connections: %d, idle connections: %d, threads awaiting connection: %d, total connections: %d>",
-                  hikariPoolMXBean.getActiveConnections(), hikariPoolMXBean.getIdleConnections(),
-                  hikariPoolMXBean.getThreadsAwaitingConnection(), hikariPoolMXBean.getTotalConnections()));
-            writer.flush();
          }
       };
    }

@@ -23,6 +23,7 @@ import eu.clarin.cmdi.rasa.DAO.LinkToBeChecked;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public interface LinkToBeCheckedResource {
@@ -33,6 +34,13 @@ public interface LinkToBeCheckedResource {
     * @throws SQLException
     */
    Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException;
+   
+   /**
+    * @param sqlString usually a SELECT statement
+    * @return a Stream of Map, where each map represents one record. The key is the field name and the value the field value. 
+    * @throws SQLException
+    */
+   Stream<Map<String, Object>> get(String sqlString) throws SQLException;
 
    int getCount(LinkToBeCheckedFilter filter) throws SQLException;
 
@@ -106,6 +114,11 @@ public interface LinkToBeCheckedResource {
     */
    int deleteOldLinks(Long date, String collection) throws SQLException;
 
+   
+   
+   /**
+    * @return an instance of LinkToBeCheckedFilter
+    */
    LinkToBeCheckedFilter getLinkToBeCheckedFilter();
    
    /**
@@ -114,5 +127,28 @@ public interface LinkToBeCheckedResource {
     */
    Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException;
    
+   /**
+    * trimming url.url, setting url.groupKey field for host, setting url.invalid
+    * and adding a record to the status table in case of an invalid URL
+    * @return 
+    * @throws SQLException
+    */
    Boolean updateURLs() throws SQLException;
+   
+   /**
+    * Links older than the period of time are deactivated by setting the active field in table url_context to false
+    * @param periodInDays the maximal period in days between now and the ingestion date. 
+    * @return true, if the procedure terminates without errors
+    * @throws SQLException
+    */
+   Boolean deactivateLinksAfter(int periodInDays) throws SQLException;
+   
+   /**
+    * Links older than the period of time are deleted. This means that the information is flattened and stored in an external table first. 
+    * Then the record is deleted from url_context table. At least all orphaned records are deleted from table url, status, context and providerGroup
+    * @param periodInDays the maximal period in days between now and the ingestion date
+    * @return true, if the procedure terminates without errors
+    * @throws SQLException
+    */
+   Boolean deleteLinksAfter(int periodInDays) throws SQLException;
 }

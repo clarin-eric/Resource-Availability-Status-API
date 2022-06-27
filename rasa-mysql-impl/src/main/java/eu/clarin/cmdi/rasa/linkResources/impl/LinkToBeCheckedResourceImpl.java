@@ -25,6 +25,7 @@ import eu.clarin.cmdi.rasa.helpers.statusCodeMapper.Category;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
 import lombok.extern.slf4j.Slf4j;
 
+import org.jooq.Record;
 import org.jooq.impl.DSL;
 
 import java.net.MalformedURLException;
@@ -37,21 +38,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 @Slf4j
 public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    
    private final static List<String> VALID_PROTOCOLS = Arrays.asList("http", "https", "ftp");
 
-   private final Supplier<Connection> connectionSupplier;
+   private final DataSource dataSource;
 
    private Map<String, Long> providerGroupIdMap; // since the deactivation depends on this we need a map here
 
 
-   public LinkToBeCheckedResourceImpl(Supplier<Connection> connectionSupplier) {
-      this.connectionSupplier = connectionSupplier;
+   public LinkToBeCheckedResourceImpl(DataSource dataSource) {
+      this.dataSource = dataSource;
 
       this.providerGroupIdMap = new HashMap<String, Long>();
 
@@ -61,7 +63,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Stream<LinkToBeChecked> get(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
       
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT u.*");
@@ -101,6 +103,49 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
       }
       return Stream.empty();
    }
+   
+   @Override
+   public Stream<Map<String, Object>> get(String sqlString) throws SQLException {
+      final Connection con = dataSource.getConnection();
+      
+      try {
+         final PreparedStatement stmt = con.prepareStatement(sqlString);
+         final ResultSet rs = stmt.executeQuery();
+         
+         return DSL.using(con).fetchStream(rs)
+               .onClose(() -> {
+                  try {
+                     rs.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close resultset.");
+                  }
+                  try {
+                     stmt.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close prepared statement.");
+                  }
+                  try {
+                     con.close();
+                  } 
+                  catch (SQLException e) {
+                     log.error("Can't close connection.");
+                  }
+               })
+               .map(Record::intoMap);
+         
+      }
+      catch(SQLException ex) {
+         try {
+            con.close();
+         } 
+         catch (SQLException e) {
+            log.error("Can't close connection.");
+         }
+      }
+      return Stream.empty();
+   }
 
    @Override
    public Boolean save(LinkToBeChecked linkToBeChecked) throws SQLException {
@@ -109,7 +154,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
             this.providerGroupIdMap.get(linkToBeChecked.getProviderGroup()):
             getProviderGroupId(linkToBeChecked);
             
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          con.setAutoCommit(false);
          long urlId = getUrlId(con, linkToBeChecked);
          long contextId = getContextId(con, linkToBeChecked, providerGroupId);
@@ -127,7 +172,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public Boolean save(List<LinkToBeChecked> linksToBeChecked) throws SQLException {
       Map.Entry<String, Long> lastContextId  = new AbstractMap.SimpleEntry<String, Long>("", null);
       
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          con.setAutoCommit(false);
          for(LinkToBeChecked linkToBeChecked:linksToBeChecked) {
             long urlId = getUrlId(con, linkToBeChecked);
@@ -165,7 +210,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public List<String> getProviderGroupNames() throws SQLException {
-      try (Connection con = connectionSupplier.get()) {
+      try (Connection con = dataSource.getConnection()) {
          List<String> collectionNames = new ArrayList<>();
 
          String query = "SELECT name from providerGroup";
@@ -198,7 +243,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    public int getCount(LinkToBeCheckedFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
       
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -305,7 +350,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          
          Long providerGroupId = null;
          
-         try(Connection con = this.connectionSupplier.get()){
+         try(Connection con = this.dataSource.getConnection()){
             try (PreparedStatement statement = con.prepareStatement("SELECT id FROM providerGroup where name=?")) {
                statement.setString(1, linkToBeChecked.getProviderGroup());
    
@@ -412,7 +457,7 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
 
    @Override
    public Stream<LinkToBeChecked> getNextLinksToCheck() throws SQLException {
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
       
       try {
          final PreparedStatement stmt = con.prepareStatement(
@@ -468,8 +513,8 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
    @Override
    public Boolean updateURLs() throws SQLException {
       try(
-            Connection readCon = this.connectionSupplier.get(); 
-            Connection writeCon = this.connectionSupplier.get()
+            Connection readCon = this.dataSource.getConnection(); 
+            Connection writeCon = this.dataSource.getConnection()
          ) {
          try(
                Statement readStmt = readCon.createStatement(); 
@@ -552,5 +597,110 @@ public class LinkToBeCheckedResourceImpl implements LinkToBeCheckedResource {
          }  
       }
       return null;
+   }
+
+   @Override
+   public Boolean deactivateLinksAfter(int periodInDays) throws SQLException {
+      
+      log.info("deactivation of links older then {} days", periodInDays);
+      
+      try (Connection con = dataSource.getConnection()) {
+         try (PreparedStatement stmt = con.prepareStatement("UPDATE url_context uc SET uc.active = false WHERE active = true AND timestampdiff(day, uc.ingestionDate, now()) > ?")){
+            stmt.setInt(1, periodInDays);
+            
+            return stmt.execute();
+         }
+      }
+   }
+
+   @Override
+   public Boolean deleteLinksAfter(int periodInDays) throws SQLException {
+      
+      log.info("multi step deletion of links older then {} days", periodInDays);
+      
+      int step = 0;
+
+      try (Connection con = dataSource.getConnection()) {
+         String query = "INSERT INTO obsolete (url, source, providerGroupName, record, expectedMimeType, ingestionDate, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount) "
+                           + "SELECT u.url, c.source, p.name, c.record, c.expectedMimeType, uc.ingestionDate, s.statusCode, s.message, s.category, s.method, s.contentType, s.byteSize, s.duration, s.checkingDate, s.redirectCount "
+                           + "FROM url_context uc "
+                           + "INNER JOIN (url u, context c) "
+                           + "ON (u.id=uc.url_id AND c.id=uc.context_id) "
+                           + "INNER JOIN providerGroup p "
+                           + "ON p.id=c.providerGroup_id "
+                           + "INNER JOIN status s "
+                           + "ON s.url_id=u.id "
+                           + "WHERE timestampdiff(day, uc.ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: saving status records", ++step);
+            stmt.execute();
+         }
+         
+         query = "INSERT INTO obsolete (url, source, providerGroupName, record, expectedMimeType, ingestionDate, statusCode, message, category, method, contentType, byteSize, duration, checkingDate, redirectCount) "
+                     + "SELECT u.url, c.source, p.name, c.record, c.expectedMimeType, uc.ingestionDate, h.statusCode, h.message, h.category, h.method, h.contentType, h.byteSize, h.duration, h.checkingDate, h.redirectCount "
+                     + "FROM url_context uc "
+                     + "INNER JOIN (url u, context c) "
+                     + "ON (u.id=uc.url_id AND c.id=uc.context_id) "
+                     + "INNER JOIN providerGroup p "
+                     + "ON p.id=c.providerGroup_id "
+                     + "INNER JOIN history h "
+                     + "ON h.url_id=u.id "
+                     + "WHERE timestampdiff(day, uc.ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: saving history records", ++step);
+            stmt.execute();
+         }
+         query = "DELETE FROM url_context WHERE timestampdiff(day, ingestionDate, now()) > ?";
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            stmt.setInt(1, periodInDays);
+            
+            log.info("step {}: deleting url_context records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM history WHERE url_id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting history records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM status WHERE url_id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting status records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM url WHERE id NOT IN (SELECT url_id from url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting url records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM context where id NOT IN (SELECT context_id FROM url_context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting context records", ++step);
+            stmt.execute();
+         }
+         
+         query = "DELETE FROM providerGroup WHERE id NOT IN (SELECT providerGroup_id from context)";
+         
+         try (PreparedStatement stmt = con.prepareStatement(query)){
+            
+            log.info("step {}: deleting providerGroup records", ++step);
+            return stmt.execute();
+         }
+      }
    }
 }

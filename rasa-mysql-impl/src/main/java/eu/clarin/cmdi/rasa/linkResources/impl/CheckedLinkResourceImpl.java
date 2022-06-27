@@ -37,28 +37,29 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 public class CheckedLinkResourceImpl implements CheckedLinkResource {
 
    private final static Logger LOG = LoggerFactory.getLogger(CheckedLinkResourceImpl.class);
 
-   private final Supplier<Connection> connectionSupplier;
+   private final DataSource dataSource;
 
-   public CheckedLinkResourceImpl(Supplier<Connection> connectionSupplier) {
-      this.connectionSupplier = connectionSupplier;
+   public CheckedLinkResourceImpl(DataSource dataSource) {
+      this.dataSource = dataSource;
    }
 
    @Override
    public Stream<CheckedLink> get(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
 
       try {
-         final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT DISTINCT s.*, u.url");
+         final PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT s.*, u.url, p.name, c.record, c.expectedMimeType");
          final ResultSet rs = stmt.executeQuery();
 
          return DSL.using(con).fetchStream(rs).onClose(() -> {
@@ -88,7 +89,10 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
                   rec.get("checkingDate", Timestamp.class), 
                   rec.get("message", String.class),
                   rec.get("redirectCount", Integer.class), 
-                  Category.valueOf(rec.get("category", String.class))
+                  Category.valueOf(rec.get("category", String.class)), 
+                  rec.get("name", String.class),
+                  rec.get("record", String.class),
+                  rec.get("expectedMimeType", String.class)
                ));
 
       } 
@@ -138,7 +142,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Boolean save(CheckedLink checkedLink) throws SQLException {
       String query = null;
 
-      try (Connection con = connectionSupplier.get()) {
+      try (Connection con = dataSource.getConnection()) {
          con.setAutoCommit(false);
          // look up urlId if not set in checkedLink
          if (checkedLink.getUrlId() == null) {
@@ -235,7 +239,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public int getCount(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con, "SELECT count(DISTINCT u.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
                if (rs.next())
@@ -250,7 +254,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Statistics getStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      try (Connection con = this.connectionSupplier.get()) {
+      try (Connection con = this.dataSource.getConnection()) {
          try (PreparedStatement stmt = aFilter.getPreparedStatement(con,
                "SELECT IFNULL(AVG(s.duration), 0.0) AS avgDuration, IFNULL(MAX(s.duration), 0) AS maxDuration, COUNT(DISTINCT s.id) AS count")) {
             try (ResultSet rs = stmt.executeQuery()) {
@@ -268,7 +272,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Stream<CategoryStatistics> getCategoryStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter.setGroupByCategory());
       
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
 
       try {
          
@@ -313,7 +317,7 @@ public class CheckedLinkResourceImpl implements CheckedLinkResource {
    public Stream<StatusStatistics> getStatusStatistics(CheckedLinkFilter filter) throws SQLException {
       AbstractFilter aFilter = AbstractFilter.class.cast(filter);
 
-      final Connection con = connectionSupplier.get();
+      final Connection con = dataSource.getConnection();
          
       try {
          final PreparedStatement stmt = aFilter.getPreparedStatement(con,

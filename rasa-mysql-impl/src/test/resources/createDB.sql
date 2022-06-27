@@ -68,7 +68,7 @@ CREATE TABLE `status` (
   `redirectCount` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ukey_status_url_id` (`url_id`),
-  KEY `key_status_statusCode` (`statusCode`),
+  KEY `key_status_category` (`category`),
   CONSTRAINT `fkey_status_url_id` FOREIGN KEY `ukey_status_url_id` (`url_id`) REFERENCES `url` (`id`)
 );
 
@@ -90,7 +90,21 @@ CREATE TABLE `history` (
   UNIQUE KEY `ukey_history_url_id_ceckingDate` (`url_id`,`checkingDate`)
 );
 
-CREATE TABLE `nextCheck` (
-  `url_id` int NOT NULL,
-  PRIMARY KEY (`url_id`)
+CREATE TABLE `obsolete` (
+  `url` varchar(1024) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `source` varchar(256) DEFAULT NULL,
+  `providerGroupName` varchar(256) DEFAULT NULL,
+  `record` varchar(256) DEFAULT NULL,
+  `expectedMimeType` varchar(256) DEFAULT NULL,
+  `ingestionDate` datetime DEFAULT NULL,
+  `statusCode` int DEFAULT NULL,
+  `message` varchar(1024) DEFAULT NULL,
+  `category` varchar(25) NOT NULL,
+  `method` varchar(10) DEFAULT NULL,
+  `contentType` varchar(256) DEFAULT NULL,
+  `byteSize` bigint DEFAULT NULL,
+  `duration` int DEFAULT NULL,
+  `checkingDate` datetime NOT NULL,
+  `redirectCount` int DEFAULT NULL,
+  `deletionDate` datetime NOT NULL DEFAULT NOW()
 );

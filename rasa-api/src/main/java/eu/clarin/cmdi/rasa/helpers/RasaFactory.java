@@ -20,9 +20,9 @@ package eu.clarin.cmdi.rasa.helpers;
 
 import eu.clarin.cmdi.rasa.linkResources.CheckedLinkResource;
 import eu.clarin.cmdi.rasa.linkResources.LinkToBeCheckedResource;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Properties;
+
+import javax.sql.DataSource;
 
 public interface RasaFactory {
 
@@ -40,13 +40,27 @@ public interface RasaFactory {
      */
     public LinkToBeCheckedResource getLinkToBeCheckedResource();
     
-    void writeStatusSummary(Writer writer) throws IOException;
-    
-    
+    /**
+     * 
+    * @param properties instance of Properties containing settings for a Hikari connection pool
+    * @return
+    * @deprecated this method initializes a HikariCP. Since the data source should be set in the parent project, 
+    * the initialization should be done there
+    */
+   @Deprecated(forRemoval = true)
     public RasaFactory init(Properties properties);
+    
+    /**
+    * @param dataSource instance of DataSource, most commonly a HikariDataSource
+    * @return
+    */
+   public RasaFactory init(DataSource dataSource);
 
     /**
      * Close all opened connections
+     * @deprecated in the future the choice of the data source, which might be a connection pool, should be done in the 
+     * parent project. If anything has to be done before or after use of the data source, it should be done in the parent project.     
      */
+   @Deprecated(forRemoval = true)
     void tearDown();
 }
