@@ -1,3 +1,5 @@
+**Project code is frozen. A new project, based on Spring data JPA, is registered on github under the name [Curation Persistence API](https://github.com/clarin-eric/curation-persistence)**
+
 # Resource Availability Status Api
 
 Resource Availability Status API project, aka `RASA`, contains an abstract Java API (rasa-api) and currently one 
